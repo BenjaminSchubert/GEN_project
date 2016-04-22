@@ -1,6 +1,6 @@
 # editor files
 *.idea
-*.xml
+*.iml
 *.swp
 
 
