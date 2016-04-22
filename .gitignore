@@ -1,0 +1,9 @@
+# editor files
+*.idea
+*.xml
+*.swp
+
+
+# python temporary files
+__pycache__
+*.pyc
