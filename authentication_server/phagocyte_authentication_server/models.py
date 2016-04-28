@@ -1,11 +1,15 @@
 #!/usr/bin/python3
+
+"""
+Models for the Phagocyte Application authentication
+"""
+
 import hashlib
 import os
-
 import random
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, INTEGER, BINARY, VARCHAR
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import validates
 
 from phagocyte_authentication_server.sqlalchemy_session import SQLAlchemy
@@ -14,15 +18,24 @@ from phagocyte_authentication_server.sqlalchemy_session import SQLAlchemy
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
+# database and ORM base class
 db = SQLAlchemy()
 Base = declarative_base()
 
 
 def random_color():
+    """
+    get a new random color in hexadecimal
+
+    :return: new hexadecimal color
+    """
     return "#%06x" % random.randint(0, 0xFFFFFF)
 
 
 class User(Base):
+    """
+    User model containing all information directly linked to a player
+    """
     __tablename__ = "user"
 
     id = Column(INTEGER, primary_key=True, autoincrement=True)

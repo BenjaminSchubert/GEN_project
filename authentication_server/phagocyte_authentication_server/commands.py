@@ -1,5 +1,11 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+
+"""
+Various commands for the runserver utility
+
+These can be called through the manager and are useful for handling
+the state of the application
+"""
 
 from flask_script import Command, Option
 
@@ -8,6 +14,14 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 class Server(Command):
+    """
+    Command to launch the server
+
+    :param host: host on which to listen
+    :param port: port on which to listen
+    :param debug: whether to use debug mode or not
+    """
+
     help = description = "Run Phagocyte Authentication Server"
 
     def __init__(self, host, port, debug):
@@ -17,6 +31,11 @@ class Server(Command):
         self.debug = debug
 
     def get_options(self):
+        """
+        Lists all options available to the given command
+
+        :return: tuple of all options available
+        """
         return (
             Option('-h', '--host', dest='host', default=self.host),
             Option('-p', '--port', dest='port', type=int, default=self.port),
@@ -25,6 +44,14 @@ class Server(Command):
 
     # noinspection PyMethodOverriding
     def run(self, app, host, port, debug):
+        """
+        Launches the application with the given parameters
+
+        :param app: the flask application
+        :param host: host on which to listen
+        :param port: port on which to listen
+        :param debug: whether to launch in debug mode or not
+        """
         app.run(host=host, port=port, debug=debug, threaded=True)
 
     # noinspection PyMethodOverriding
