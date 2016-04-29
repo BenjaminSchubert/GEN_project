@@ -20,6 +20,10 @@ kivy.require('1.0.7')
 __author__ = "Boson Sébastien <sebastboson@gmail.com>"
 
 
+def callback(instance):
+    print("test")
+
+
 class LoginScreen(GridLayout):
     def __init__(self, **kwargs):
         super(LoginScreen, self).__init__(**kwargs)
@@ -40,11 +44,13 @@ class LoginScreen(GridLayout):
         self.add_widget(self.boxLeft)
         self.register = Button(text='Regiser', size_hint=(1, 0.4))
         self.boxLeft.add_widget(self.register)
+        self.register.bind(on_press=callback)
 
         self.boxRight = BoxLayout(padding=30, orientation="horizontal")
         self.add_widget(self.boxRight)
         self.send = Button(text="Send", size_hint=(1, 0.4))
         self.boxRight.add_widget(self.send)
+        self.send.bind(on_press=callback)
 
 
 class MyApp(App):
