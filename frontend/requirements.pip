@@ -1,4 +1,5 @@
 twisted
 cython
 kivy
-flask_jwt
+pyenchant
+cv2

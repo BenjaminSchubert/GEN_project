@@ -8,7 +8,6 @@ self.root.
 """
 
 import kivy
-from docutils.nodes import Body
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
