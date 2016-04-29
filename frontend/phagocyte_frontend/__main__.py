@@ -1,10 +1,7 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 """
-Application that just represent a GUI for connection and register a user
-
-An application can be built if you return a widget on build(), or if you set
-self.root.
+Application that just represents a GUI for connection and creating a user.
 """
 
 import kivy
@@ -15,46 +12,85 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 
+from phagocyte_frontend.client import Client
+from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
+
 kivy.require('1.0.7')
 
 __author__ = "Boson Sébastien <sebastboson@gmail.com>"
 
 
-def callback(instance):
-    print("test")
-
-
 class LoginScreen(GridLayout):
+    """
+    login screen
+
+    :param kwargs: additional key word send to the parent
+    """
     def __init__(self, **kwargs):
-        super(LoginScreen, self).__init__(**kwargs)
+        super().__init__(**kwargs)
+
+        client = Client("127.0.0.1", 8000)
 
         self.cols = 2
 
         self.add_widget(Label(text='User name:'))
 
-        self.username = TextInput(multiline=False)
-        self.add_widget(self.username)
+        username = TextInput(multiline=False)
+        self.add_widget(username)
 
         self.add_widget(Label(text='Password:'))
 
-        self.password = TextInput(password=True, multiline=False)
-        self.add_widget(self.password)
+        password = TextInput(password=True, multiline=False)
+        self.add_widget(password)
 
-        self.boxLeft = BoxLayout(padding=30, orientation='horizontal')
-        self.add_widget(self.boxLeft)
-        self.register = Button(text='Regiser', size_hint=(1, 0.4))
-        self.boxLeft.add_widget(self.register)
-        self.register.bind(on_press=callback)
+        box_left = BoxLayout(padding=30, orientation='horizontal')
+        self.add_widget(box_left)
+        register = Button(text='Register', size_hint=(1, 0.4))
+        box_left.add_widget(register)
+        register.bind(on_press=lambda _: register())
 
-        self.boxRight = BoxLayout(padding=30, orientation="horizontal")
-        self.add_widget(self.boxRight)
-        self.send = Button(text="Send", size_hint=(1, 0.4))
-        self.boxRight.add_widget(self.send)
-        self.send.bind(on_press=callback)
+        box_right = BoxLayout(padding=30, orientation="horizontal")
+        self.add_widget(box_right)
+        login = Button(text="Login", size_hint=(1, 0.4))
+        box_right.add_widget(login)
+        login.bind(on_press=lambda _: connection())
+
+        answer_server = Label()
+        self.add_widget(answer_server)
+
+        def connection():
+            """
+            connects the specified user with his name and password
+            """
+            try:
+                client.login(username.text, password.text)
+            except LoginFailedException as e:
+                answer_server.text = str(e)
+            else:
+                answer_server.text = "logged in"
+
+        def register():
+            """
+            registers the specified user with his name and password
+            """
+            try:
+                client.register(username.text, password.text)
+            except CreateUserException as e:
+                answer_server.text = str(e)
+            else:
+                answer_server.text = "registered"
 
 
 class MyApp(App):
+    """
+    main kivy application
+    """
     def build(self):
+        """
+        builds and returns GUI
+
+        :return: loginScreen
+        """
         return LoginScreen()
 
 

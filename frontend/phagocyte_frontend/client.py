@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
+
 import requests
 import hashlib
+
+from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
@@ -55,7 +59,9 @@ class Client:
         :param password: the password to use.
         """
         r = self.send_json(self.create_credentials_data(username, password), "/register")
-        # TODO : handle status code when auth server stops returning 500
+
+        if r.status_code == requests.codes.conflict:
+            raise CreateUserException(r.json()["error"])
 
     def login(self, username, password):
         """
@@ -65,10 +71,10 @@ class Client:
         """
         r = self.send_json(self.create_credentials_data(username, password), "/auth")
 
-        if r.status_code == requests.codes.ok:
+        if r.status_code < 400:
             self.token = r.json()["access_token"]
         elif r.status_code == requests.codes.unauthorized:
-            raise ConnectionRefusedError
+            raise LoginFailedException("Bad credentials")
 
     def is_logged_in(self):
         """
