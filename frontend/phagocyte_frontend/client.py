@@ -32,8 +32,18 @@ class Client:
 
     def register(self, username, password):
         r = self.send_json(self.create_credentials_data(username, password), "/register")
-        print('register response: ' + r.text)
+        #print('register response: ' + r.text)
 
     def login(self, username, password):
         r = self.send_json(self.create_credentials_data(username, password), "/auth")
-        print('auth response: ' + r.text)
+
+        if r.status_code == requests.codes.ok:
+            self.token = r.json()["access_token"]
+
+        #print('auth response: ' + r.text)
+
+    def is_connected(self):
+        return self.token is not None
+
+    def logout(self):
+        self.token = None
