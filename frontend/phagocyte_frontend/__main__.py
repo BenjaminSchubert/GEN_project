@@ -1,16 +1,14 @@
 #!/usr/bin/python3
 
 """
-Application that just
-==========================================
+Application that just represent a GUI for connection and register a user
 
 An application can be built if you return a widget on build(), or if you set
 self.root.
 """
 
-from locale import _strip_padding
-
 import kivy
+from docutils.nodes import Body
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -20,7 +18,7 @@ from kivy.uix.textinput import TextInput
 
 kivy.require('1.0.7')
 
-__author__ = "Basile Vu <basile.vu@gmail.com>"
+__author__ = "Boson Sébastien <sebastboson@gmail.com>"
 
 
 class LoginScreen(GridLayout):
@@ -39,21 +37,15 @@ class LoginScreen(GridLayout):
         self.password = TextInput(password=True, multiline=False)
         self.add_widget(self.password)
 
-        self.box = BoxLayout(padding=30, orientation='horizontal')
-        self.add_widget(self.box)
-        self.send = Button(text='Send', size_hint=(1, 0.4))
-        self.box.add_widget(self.send)
+        self.boxLeft = BoxLayout(padding=30, orientation='horizontal')
+        self.add_widget(self.boxLeft)
+        self.register = Button(text='Regiser', size_hint=(1, 0.4))
+        self.boxLeft.add_widget(self.register)
 
-        # b = GridLayout(
-        #     cols=1,
-        #     pos_hint={
-        #         'center_x': .5,
-        #         'center_y': .5},
-        #     size_hint=(None, None),
-        #     spacing=20,
-        #     width=200)
-        # b.bind(minimum_height=b.setter('height'))
-        # self.add_widget(b)
+        self.boxRight = BoxLayout(padding=30, orientation="horizontal")
+        self.add_widget(self.boxRight)
+        self.send = Button(text="Send", size_hint=(1, 0.4))
+        self.boxRight.add_widget(self.send)
 
 
 class MyApp(App):
