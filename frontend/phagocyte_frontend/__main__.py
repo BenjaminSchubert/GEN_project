@@ -12,8 +12,8 @@ if __name__ == '__main__':
     print("client logging in")
     client.login("Test", "lol")
 
-    print("client connected ? " + str(client.is_connected()))
+    print("client logged in ? " + str(client.is_logged_in()))
     print("client logging out")
     client.logout()
-    print("client connected ? " + str(client.is_connected()))
+    print("client logged in ? " + str(client.is_logged_in()))
 

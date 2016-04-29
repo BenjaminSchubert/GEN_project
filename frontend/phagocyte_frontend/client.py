@@ -11,19 +11,37 @@ class Client:
     token = None
 
     def __init__(self, host, port):
+        """
+        Initializes the client using a host and a port number.
+        :param host: The hostname of the server.
+        :param port: The port number of the server.
+        """
         self.host = host
         self.port = port
 
     def get_base_url(self):
+        """
+        Creates the base url for the server.
+        """
         return "http://" + self.host + ":" + str(self.port)
 
     def create_credentials_data(self, username, password):
+        """
+        Creates the data to send, containing the username and the hashed password.
+        :param username: the username to send.
+        :param password: the password to hash and send.
+        """
         return {
             "username": username,
             "password": hashlib.sha512((hashlib.sha512(password.encode("utf-8")).hexdigest() + username).encode("utf-8")).hexdigest()
         }
 
     def send_json(self, json, relative_path):
+        """
+        Sends the json using a POST request at the given relative path.
+        :param json: the json to send.
+        :param relative_path: the relative path (relative to the base url).
+        """
         headers = {
             "content-type": "application/json"
         }
@@ -31,19 +49,35 @@ class Client:
         return requests.post(url=self.get_base_url() + relative_path, headers=headers, json=json)
 
     def register(self, username, password):
+        """
+        Registers the user using his username and password.
+        :param username: the username to use.
+        :param password: the password to use.
+        """
         r = self.send_json(self.create_credentials_data(username, password), "/register")
-        #print('register response: ' + r.text)
+        # TODO : handle status code when auth server stops returning 500
 
     def login(self, username, password):
+        """
+        Logs in the user using his username and password.
+        :param username: the username to use.
+        :param password: the password to use.
+        """
         r = self.send_json(self.create_credentials_data(username, password), "/auth")
 
         if r.status_code == requests.codes.ok:
             self.token = r.json()["access_token"]
+        elif r.status_code == requests.codes.unauthorized:
+            raise ConnectionRefusedError
 
-        #print('auth response: ' + r.text)
-
-    def is_connected(self):
+    def is_logged_in(self):
+        """
+        Determines whether the user is logged in.
+        """
         return self.token is not None
 
     def logout(self):
+        """
+        Logs out the user.
+        """
         self.token = None
