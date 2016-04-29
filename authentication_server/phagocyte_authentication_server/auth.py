@@ -1,5 +1,9 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+
+"""
+Authentication for Phagocyte. Here are defined various authentication
+related functions, mostly linked to JWT
+"""
 
 import sqlalchemy.orm
 
@@ -11,6 +15,14 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 def authenticate(username, password):
+    """
+    authenticates a user
+
+    :param username: username of the user
+    :param password: password of the user
+    :return: the user instance if it exists
+    :raise: HttpException if no user with the given username exists or the password is wrong
+    """
     try:
         user = db.session.query(User).filter_by(username=username).one()
     except sqlalchemy.orm.exc.NoResultFound:
@@ -23,4 +35,4 @@ def authenticate(username, password):
 
 
 def identity(payload):
-    print(payload)
+    raise NotImplementedError("Identity is not implemented yet")

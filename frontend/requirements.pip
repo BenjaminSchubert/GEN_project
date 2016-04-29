@@ -1,3 +1,4 @@
 twisted
 cython
 kivy
+flask_jwt
