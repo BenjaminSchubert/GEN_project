@@ -13,17 +13,16 @@ __author__ = "Basile Vu <basile.vu@gmail.com>"
 
 
 class Client:
+    """
+    Provides various utility methods relative to interact with authentication and game servers.
 
-    host = "localhost"
-    port = 8000
+    :param host: The hostname of the server.
+    :param port: The port number of the server.
+    """
+
     token = None
 
     def __init__(self, host, port):
-        """
-        Initializes the client using a host and a port number.
-        :param host: The hostname of the server.
-        :param port: The port number of the server.
-        """
         self.host = host
         self.port = port
 
@@ -33,9 +32,11 @@ class Client:
         """
         return "http://" + self.host + ":" + str(self.port)
 
-    def create_credentials_data(self, username, password):
+    @staticmethod
+    def create_credentials_data(username, password):
         """
         Creates the data to send, containing the username and the hashed password.
+
         :param username: the username to send.
         :param password: the password to hash and send.
         """
@@ -47,6 +48,7 @@ class Client:
     def send_json(self, json, relative_path):
         """
         Sends the json using a POST request at the given relative path.
+
         :param json: the json to send.
         :param relative_path: the relative path (relative to the base url).
         """
@@ -59,6 +61,7 @@ class Client:
     def register(self, username, password):
         """
         Registers the user using his username and password.
+
         :param username: the username to use.
         :param password: the password to use.
         """
@@ -70,6 +73,7 @@ class Client:
     def login(self, username, password):
         """
         Logs in the user using his username and password.
+
         :param username: the username to use.
         :param password: the password to use.
         """
