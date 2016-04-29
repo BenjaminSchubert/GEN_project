@@ -28,10 +28,8 @@ def authenticate(username, password):
     except sqlalchemy.orm.exc.NoResultFound:
         user = None
 
-    if user is None or not user.check_password(password):
-        abort(401)
-
-    return user
+    if user is not None and user.check_password(password):
+        return user
 
 
 def identity(payload):
