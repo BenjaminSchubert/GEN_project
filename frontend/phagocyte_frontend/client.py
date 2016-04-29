@@ -4,6 +4,7 @@
 Contains client-related classes used to interact with the authentication server.
 """
 
+import json
 import requests
 import hashlib
 
@@ -45,18 +46,18 @@ class Client:
             "password": hashlib.sha512((hashlib.sha512(password.encode("utf-8")).hexdigest() + username).encode("utf-8")).hexdigest()
         }
 
-    def send_json(self, json, relative_path):
+    def post_json(self, _json, endpoint):
         """
         Sends the json using a POST request at the given relative path.
 
-        :param json: the json to send.
-        :param relative_path: the relative path (relative to the base url).
+        :param _json: the json to send.
+        :param endpoint: the relative path (relative to the base url).
         """
         headers = {
             "content-type": "application/json"
         }
 
-        return requests.post(url=self.get_base_url() + relative_path, headers=headers, json=json)
+        return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=_json)
 
     def register(self, username, password):
         """
@@ -65,7 +66,7 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.send_json(self.create_credentials_data(username, password), "/register")
+        r = self.post_json(self.create_credentials_data(username, password), "/register")
 
         if r.status_code == requests.codes.conflict:
             raise CredentialsException(r.json().get("error", "register error: got " + str(r.json())))
@@ -77,7 +78,7 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.send_json(self.create_credentials_data(username, password), "/auth")
+        r = self.post_json(self.create_credentials_data(username, password), "/auth")
 
         if r.status_code < 400:
             self.token = r.json()["access_token"]
@@ -95,3 +96,12 @@ class Client:
         Logs out the user.
         """
         self.token = None
+
+    def post_dict_as_json(self, *, endpoint, **kwargs):
+        """
+        Sends a POST request to the server, with data as json.
+
+        :param endpoint: the relative path where to POST ("/auth", for example)
+        :param kwargs: the data as dict to send as json
+        """
+        self.post_json(json.dumps(kwargs), endpoint)
