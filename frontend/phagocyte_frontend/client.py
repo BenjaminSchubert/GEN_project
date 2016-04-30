@@ -9,6 +9,7 @@ import requests
 import hashlib
 
 from phagocyte_frontend.exceptions import CredentialsException
+from phagocyte_frontend.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
@@ -66,7 +67,7 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.post_json(self.create_credentials_data(username, password), "/register")
+        r = self.post_json(self.create_credentials_data(username, password), REGISTER_PATH)
 
         if r.status_code == requests.codes.conflict:
             raise CredentialsException(r.json().get("error", "register error: got " + str(r.json())))
@@ -78,7 +79,7 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.post_json(self.create_credentials_data(username, password), "/auth")
+        r = self.post_json(self.create_credentials_data(username, password), AUTH_PATH)
 
         if r.status_code < 400:
             self.token = r.json()["access_token"]
@@ -105,3 +106,18 @@ class Client:
         :param kwargs: the data as dict to send as json
         """
         self.post_json(json.dumps(kwargs), endpoint)
+
+    def post_account_info(self, **kwargs):
+        """
+        Modifies account info.
+
+        :param kwargs: the data as dict to send as json
+        """
+        self.post_dict_as_json(endpoint=ACCOUNT_PATH, kwargs=kwargs)
+
+    def get_games(self):
+        """
+        Gets the list of available games.
+        """
+        r = requests.get(self.get_base_url() + GAMES_PATH)
+        return r.json()["games"]
