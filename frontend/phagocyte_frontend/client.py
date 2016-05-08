@@ -10,6 +10,7 @@ import hashlib
 
 from phagocyte_frontend.exceptions import CredentialsException
 from phagocyte_frontend.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
+from phagocyte_frontend.client_game import ClientGame
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
@@ -121,3 +122,6 @@ class Client:
         """
         r = requests.get(self.get_base_url() + GAMES_PATH)
         return r.json()["games"]
+
+    def join_game(self, host, port):
+        ClientGame(self.token, host, port)
