@@ -30,9 +30,9 @@ class LoginScreen(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.executor = ThreadPoolExecutor(max_workers=1)
-
         client = Client("127.0.0.1", 8000)
+
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
         self.cols = 2
 
@@ -58,30 +58,34 @@ class LoginScreen(GridLayout):
         box_right.add_widget(login)
         login.bind(on_press=lambda _: self.executor.submit(connection))
 
-        answer_server = Label()
-        self.add_widget(answer_server)
+        info_label = Label()
+        self.add_widget(info_label)
 
         def connection():
             """
             connects the specified user with his name and password
             """
+            info_label.text = "Connecting..."
+
             try:
                 client.login(username.text, password.text)
             except LoginFailedException as e:
-                answer_server.text = str(e)
+                info_label.text = "Error: " + str(e)
             else:
-                answer_server.text = "logged in"
+                info_label.text = "Logged in!"
 
         def register():
             """
             registers the specified user with his name and password
             """
+            info_label.text = "Registering..."
+
             try:
                 client.register(username.text, password.text)
             except CreateUserException as e:
-                answer_server.text = str(e)
+                info_label.text = "Error: " + str(e)
             else:
-                answer_server.text = "registered"
+                info_label.text = "Registered!"
 
 
 class MyApp(App):
