@@ -5,6 +5,9 @@ import twisted.internet
 
 twisted.internet._threadedselect = phagocyte_frontend.twisted_reactor
 
+from kivy.support import install_twisted_reactor
+install_twisted_reactor()
+
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
 
@@ -45,4 +48,3 @@ class ClientGame:
 
     def run(self):
         reactor.listenUDP(0, ClientGameProtocol(self.host, self.port, self.token))
-        reactor.run()
