@@ -11,6 +11,7 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
+from threading import Thread
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
@@ -47,13 +48,13 @@ class LoginScreen(GridLayout):
         self.add_widget(box_left)
         register = Button(text='Register', size_hint=(1, 0.4))
         box_left.add_widget(register)
-        register.bind(on_press=lambda _: register())
+        register.bind(on_press=lambda _: Thread(target=register).start())
 
         box_right = BoxLayout(padding=30, orientation="horizontal")
         self.add_widget(box_right)
         login = Button(text="Login", size_hint=(1, 0.4))
         box_right.add_widget(login)
-        login.bind(on_press=lambda _: connection())
+        login.bind(on_press=lambda _: Thread(target=connection).start())
 
         answer_server = Label()
         self.add_widget(answer_server)
