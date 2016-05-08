@@ -9,7 +9,10 @@ class ClientGameProtocol(protocol.Protocol):
 
     def connectionMade(self):
         print("Connection established!")
-        self.transport.write(self.factory.token)
+        if (self.factory.token is None):
+            self.transport.write("None".encode("utf-8")) # TODO
+        else:
+            self.transport.write(self.factory.token.encode("utf-8"))
 
     def dataReceived(self, data):
         print("Received data.")

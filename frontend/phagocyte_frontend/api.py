@@ -2,7 +2,7 @@
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
-API_PATH = "/api"
+API_PATH = ""
 
 REGISTER_PATH = API_PATH + "/register"
 AUTH_PATH = API_PATH + "/auth"
