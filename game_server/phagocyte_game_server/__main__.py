@@ -1,23 +1,21 @@
 #!/usr/bin/python3
 
-from twisted.internet import protocol, reactor
-from twisted.protocols import basic
+from twisted.internet import reactor
+from twisted.internet.protocol import DatagramProtocol
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
-class TestProtocol(basic.LineReceiver):
+class TestProtocol(DatagramProtocol):
 
-    def connectionMade(self):
-        print("new connection")
+    def startProtocol(self):
+        print("Started")
 
-    def lineReceived(self, line):
-        print("Received:" + line)
-
-
-class TestFactory(protocol.ServerFactory):
-    protocol = TestProtocol
+    def datagramReceived(self, datagram, addr):
+        print("Received datagram!")
+        print(addr)
+        print(datagram)
 
 if __name__ == '__main__':
-    reactor.listenTCP(8090, TestFactory())
+    reactor.listenUDP(8090, TestProtocol())
     reactor.run()

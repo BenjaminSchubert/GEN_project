@@ -124,4 +124,4 @@ class Client:
         return r.json()["games"]
 
     def join_game(self, host, port):
-        ClientGame(self.token, host, port)
+        ClientGame(self.token, host, port).run()

@@ -1,47 +1,48 @@
 #!/usr/bin/env python3
 
-from twisted.internet import defer, protocol, reactor
+import phagocyte_frontend.twisted_reactor
+import twisted.internet
+
+twisted.internet._threadedselect = phagocyte_frontend.twisted_reactor
+
+from twisted.internet import reactor
+from twisted.internet.protocol import DatagramProtocol
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
 
-class ClientGameProtocol(protocol.Protocol):
+class ClientGameProtocol(DatagramProtocol):
 
-    def connectionMade(self):
-        print("Connection established!")
-        if (self.factory.token is None):
-            self.transport.write("None".encode("utf-8")) # TODO
-        else:
-            self.transport.write(self.factory.token.encode("utf-8"))
+    def __init__(self, host, port, token):
+        self.host = host
+        self.port = port
+        self.token = token
 
-    def dataReceived(self, data):
+    def startProtocol(self):
+        print("Connection established! Sending token.")
+
+        # we will only talk with server
+        self.transport.connect(self.host, self.port)
+
+        self.send_token()
+
+    def datagramReceived(self, datagram, addr):
         print("Received data.")
 
-    def connectionLost(self, _):
-        print("Connection lost.")
-
-
-class ClientGameFactory(protocol.ClientFactory):
-
-    def __init__(self, token):
-        self.token = token
-        self.d = defer.Deferred()
-        print(token)
-
-    def startedConnecting(self, connector):
-        print("Started to connect.")
-
-    def buildProtocol(self, _):
-        p = ClientGameProtocol()
-        p.factory = self
-        return p
-
-    def clientConnectionFailed(self, _, reason):
-        print("Connection failed")
+    def send_token(self):
+        if self.token is None:
+            self.transport.write("None".encode("utf-8")) # TODO
+        else:
+            self.transport.write(self.token.encode("utf-8"))
 
 
 class ClientGame:
 
     def __init__(self, token, host, port):
-        reactor.connectTCP(host, port, ClientGameFactory(token))
+        self.host = host
+        self.port = port
+        self.token = token
+
+    def run(self):
+        reactor.listenUDP(0, ClientGameProtocol(self.host, self.port, self.token))
         reactor.run()
