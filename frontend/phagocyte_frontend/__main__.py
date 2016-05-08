@@ -11,7 +11,7 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
@@ -29,6 +29,8 @@ class LoginScreen(GridLayout):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
         client = Client("127.0.0.1", 8000)
 
@@ -48,13 +50,13 @@ class LoginScreen(GridLayout):
         self.add_widget(box_left)
         register = Button(text='Register', size_hint=(1, 0.4))
         box_left.add_widget(register)
-        register.bind(on_press=lambda _: Thread(target=register).start())
+        register.bind(on_press=lambda _: self.executor.submit(register))
 
         box_right = BoxLayout(padding=30, orientation="horizontal")
         self.add_widget(box_right)
         login = Button(text="Login", size_hint=(1, 0.4))
         box_right.add_widget(login)
-        login.bind(on_press=lambda _: Thread(target=connection).start())
+        login.bind(on_press=lambda _: self.executor.submit(connection))
 
         answer_server = Label()
         self.add_widget(answer_server)
