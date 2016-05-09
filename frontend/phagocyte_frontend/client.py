@@ -124,4 +124,10 @@ class Client:
         return r.json()["games"]
 
     def join_game(self, host, port):
+        """
+        Joins a game hosted on a server.
+
+        :param host: the ip address of the host
+        :param port: the port used
+        """
         ClientGame(self.token, host, port).run()
