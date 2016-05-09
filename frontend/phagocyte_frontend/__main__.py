@@ -4,6 +4,8 @@
 Application that just represents a GUI for connection and creating a user.
 """
 
+from concurrent.futures import ThreadPoolExecutor
+
 import kivy
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -15,7 +17,9 @@ from kivy.uix.textinput import TextInput
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
 
+
 kivy.require('1.0.7')
+
 
 __author__ = "Boson Sébastien <sebastboson@gmail.com>"
 
@@ -30,6 +34,8 @@ class LoginScreen(GridLayout):
         super().__init__(**kwargs)
 
         client = Client("127.0.0.1", 8000)
+
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
         self.cols = 2
 
@@ -47,38 +53,45 @@ class LoginScreen(GridLayout):
         self.add_widget(box_left)
         register = Button(text='Register', size_hint=(1, 0.4))
         box_left.add_widget(register)
-        register.bind(on_press=lambda _: register())
+        register.bind(on_press=lambda _: self.executor.submit(register))
 
         box_right = BoxLayout(padding=30, orientation="horizontal")
         self.add_widget(box_right)
         login = Button(text="Login", size_hint=(1, 0.4))
         box_right.add_widget(login)
-        login.bind(on_press=lambda _: connection())
+        login.bind(on_press=lambda _: self.executor.submit(connection))
 
-        answer_server = Label()
-        self.add_widget(answer_server)
+        info_label = Label()
+        self.add_widget(info_label)
 
         def connection():
             """
             connects the specified user with his name and password
             """
+            info_label.text = "Connecting..."
+
             try:
                 client.login(username.text, password.text)
             except LoginFailedException as e:
-                answer_server.text = str(e)
+                info_label.text = "Error: " + str(e)
             else:
-                answer_server.text = "logged in"
+                info_label.text = "Logged in!"
 
         def register():
             """
             registers the specified user with his name and password
             """
+            info_label.text = "Registering..."
+
             try:
                 client.register(username.text, password.text)
             except CreateUserException as e:
-                answer_server.text = str(e)
+                info_label.text = "Error: " + str(e)
             else:
-                answer_server.text = "registered"
+                info_label.text = "Registered!"
+
+    def __del__(self):
+        self.executor.shutdown(True)
 
 
 class MyApp(App):

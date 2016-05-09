@@ -74,7 +74,7 @@ class Client:
         if r.status_code < 400:
             self.token = r.json()["access_token"]
         elif r.status_code == requests.codes.unauthorized:
-            raise LoginFailedException("Bad credentials")
+            raise LoginFailedException("bad credentials")
 
     def is_logged_in(self):
         """
