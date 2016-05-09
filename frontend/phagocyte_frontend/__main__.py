@@ -87,6 +87,9 @@ class LoginScreen(GridLayout):
             else:
                 info_label.text = "Registered!"
 
+    def __del__(self):
+        self.executor.shutdown(True)
+
 
 class MyApp(App):
     """
