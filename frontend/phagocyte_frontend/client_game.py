@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import json
+
 import phagocyte_frontend.twisted_reactor
 import twisted.internet
 
@@ -26,17 +28,20 @@ class ClientGameProtocol(DatagramProtocol):
 
         # we will only talk with server
         self.transport.connect(self.host, self.port)
-
         self.send_token()
 
     def datagramReceived(self, datagram, addr):
         print("Received data.")
 
     def send_token(self):
-        if self.token is None:
-            self.transport.write("None".encode("utf-8")) # TODO
-        else:
-            self.transport.write(self.token.encode("utf-8"))
+        _json = {
+            "token": self.token
+        }
+
+        self.send_dict(_json)
+
+    def send_dict(self, d):
+        self.transport.write(json.dumps(d).encode("utf-8"))
 
 
 class ClientGame:
