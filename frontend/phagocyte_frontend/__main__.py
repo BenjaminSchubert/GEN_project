@@ -4,6 +4,8 @@
 Application that just represents a GUI for connection and creating a user.
 """
 
+from concurrent.futures import ThreadPoolExecutor
+
 import kivy
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -11,12 +13,13 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-from concurrent.futures import ThreadPoolExecutor
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
 
+
 kivy.require('1.0.7')
+
 
 __author__ = "Boson Sébastien <sebastboson@gmail.com>"
 
