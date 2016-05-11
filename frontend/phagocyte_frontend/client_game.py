@@ -20,12 +20,18 @@ __author__ = "Basile Vu <basile.vu@gmail.com>"
 
 
 class Phagocyte:
-    def __init__(self, name, x, y, v_x, v_y):
-        self.id = name
-        self.x = x
-        self.y = y
-        self.v_x = v_x
-        self.v_y = v_y
+    def __init__(self, info):
+        self.id = info["name"]
+        self.x = info["x"]
+        self.y = info["y"]
+        self.v_x = info["v_x"]
+        self.v_y = info["v_y"]
+
+    def update(self, info):
+        self.x = info["x"]
+        self.y = info["y"]
+        self.v_x = info["v_x"]
+        self.v_y = info["v_y"]
 
 
 class ClientGameProtocol(DatagramProtocol):
@@ -49,14 +55,9 @@ class ClientGameProtocol(DatagramProtocol):
         event_type = data.get("event", None)
 
         if event_type == Event.GAME_INFO:
-            self.phagocyte = Phagocyte(data["name"], data["x"], data["y"], data["vx"], data["vy"])
+            self.phagocyte = Phagocyte(data)
         elif event_type == Event.UPDATE:
-            self.phagocyte.name = data["name"]
-            self.phagocyte.x = data["x"]
-            self.phagocyte.y = data["y"]
-            self.phagocyte.v_x = data["v_x"]
-            self.phagocyte.v_y = data["v_y"]
-            print(self.phagocyte)  # FIXME
+            self.update_gui(data)
         elif event_type == Event.ERROR:
             print("Error")  # FIXME
         elif event_type is None:
@@ -64,18 +65,21 @@ class ClientGameProtocol(DatagramProtocol):
         else:
             print("Unhandled event type : data is " + data)
 
+    def update_gui(self, data):
+        self.phagocyte.update(data["phagocyte"])
+        print("updating gui")  # FIXME
+
     def send_token(self):
         self.send_dict(token=self.token, event=Event.TOKEN)
 
     def send_state(self):
-        self.send_dict(v_x=self.phagocyte.v_x, v_y=self.phagocyte.v_y)
+        self.send_dict(v_x=self.phagocyte.v_x, v_y=self.phagocyte.v_y, event=Event.STATE)
 
     def send_dict(self, **kwargs):
         self.transport.write(json.dumps(kwargs).encode("utf-8"))
 
 
 class ClientGame:
-
     def __init__(self, token, host, port):
         self.host = host
         self.port = port
