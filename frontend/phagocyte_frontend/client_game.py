@@ -50,7 +50,7 @@ class ClientGameProtocol(DatagramProtocol):
         self.send_token()
 
     def datagramReceived(self, datagram, addr):
-        print("Received data.")
+        print("Received data: ", datagram)
         data = json.loads(datagram.decode("utf-8"))
         event_type = data.get("event", None)
 
@@ -59,11 +59,11 @@ class ClientGameProtocol(DatagramProtocol):
         elif event_type == Event.UPDATE:
             self.update_gui(data)
         elif event_type == Event.ERROR:
-            print("Error")  # FIXME
+            print("Error: ", data)  # FIXME
         elif event_type is None:
-            print("The datagram doesn't have any event.")
+            print("The datagram doesn't have any event: ", data)
         else:
-            print("Unhandled event type : data is " + data)
+            print("Unhandled event type : data is ", data)
 
     def update_gui(self, data):
         self.phagocyte.update(data["phagocyte"])

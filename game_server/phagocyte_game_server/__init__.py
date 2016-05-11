@@ -38,12 +38,12 @@ class GameProtocol(DatagramProtocol):
         self.url = "http://{}:{}".format(self.auth_ip, self.auth_port)
 
     def random_position(self):
-        return (random.randint(0, self.max_x), random.randint(0, self.max_y))
+        return random.randint(0, self.max_x), random.randint(0, self.max_y)
 
     def authenticate(self, token):
         r = requests.post(self.url + "/validate", json=dict(token=token))
         if r.status_code == requests.codes.ok:
-            return r.json().values()
+            return r.json()["username"], r.json()["color"]
 
         raise AuthenticationError(r.json())
 
@@ -61,9 +61,11 @@ class GameProtocol(DatagramProtocol):
                 e.msg["event"] = Event.ERROR
                 return e.msg
 
-        position = dict(position=self.random_position(), name=name, color=color, max_x=self.max_x, max_y=self.max_y)
+        position = dict(position=self.random_position(), color=color, name=name)
         self.clients[addr] = position
-        return position
+        data = dict(event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y)
+        data.update(position)
+        return data
 
     def datagramReceived(self, datagram, addr):
         data = json.loads(datagram.decode("utf8"))
