@@ -5,6 +5,9 @@ import json
 import phagocyte_frontend.twisted_reactor
 import twisted.internet
 
+from phagocyte_frontend.events import Event
+
+
 twisted.internet._threadedselect = phagocyte_frontend.twisted_reactor
 
 from kivy.support import install_twisted_reactor
@@ -51,7 +54,7 @@ class ClientGameProtocol(DatagramProtocol):
         self.phagocyte = Phagocyte(0, 0, 0, 0, 0)
 
     def send_token(self):
-        self.send_dict(token=self.token)
+        self.send_dict(token=self.token, event=Event.TOKEN)
 
     def send_state(self):
         self.send_dict(v_x=self.phagocyte.v_x, v_y=self.phagocyte.v_y)
