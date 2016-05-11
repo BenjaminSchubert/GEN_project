@@ -14,8 +14,10 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 
+import requests.exceptions
+
 from phagocyte_frontend.client import Client
-from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
+from phagocyte_frontend.exceptions import CredentialsException
 
 
 kivy.require('1.0.7')
@@ -66,29 +68,38 @@ class LoginScreen(GridLayout):
 
         def connection():
             """
-            connects the specified user with his name and password
+            Connects the specified user with his name and password
             """
-            info_label.text = "Connecting..."
-
-            try:
-                client.login(username.text, password.text)
-            except LoginFailedException as e:
-                info_label.text = "Error: " + str(e)
-            else:
-                info_label.text = "Logged in!"
+            handle_credentials_sending("Logging in...", "Logged in!", client.login)
 
         def register():
             """
-            registers the specified user with his name and password
+            Registers the specified user with his name and password
             """
-            info_label.text = "Registering..."
+            handle_credentials_sending("Registering...", "Registered!", client.register)
+
+        def handle_credentials_sending(wait_msg, ok_msg, func):
+            """
+            Executes a function related to sending credentials to the server and displays info related to server
+            responses.
+
+            :param wait_msg: the default message to display when waiting for server response.
+            :param ok_msg: the message to display when everything is ok (no error).
+            :param func: the function to use. Must take username and password as first and second parameter.
+            """
+            info_label.text = wait_msg
 
             try:
-                client.register(username.text, password.text)
-            except CreateUserException as e:
+                func(username.text, password.text)
+            except CredentialsException as e:
                 info_label.text = "Error: " + str(e)
+            except requests.exceptions.ConnectionError:
+                info_label.text = ("Error: could not connect to server. Please check your internet connection and "
+                                   "whether the server is running.")
+            except Exception as e:
+                print(e)  # FIXME handle proper logging
             else:
-                info_label.text = "Registered!"
+                info_label.text = ok_msg
 
     def __del__(self):
         self.executor.shutdown(True)
