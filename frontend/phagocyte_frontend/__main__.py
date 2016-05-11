@@ -17,7 +17,7 @@ from kivy.uix.textinput import TextInput
 import requests.exceptions
 
 from phagocyte_frontend.client import Client
-from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
+from phagocyte_frontend.exceptions import CredentialsException
 
 
 kivy.require('1.0.7')
@@ -82,12 +82,16 @@ class LoginScreen(GridLayout):
             """
             Executes a function related to sending credentials to the server and displays info related to server
             responses.
+
+            :param wait_msg: the default message to display when waiting for server response.
+            :param ok_msg: the message to display when everything is ok (no error).
+            :param func: the function to use. Must take username and password as first and second parameter.
             """
             info_label.text = wait_msg
 
             try:
                 func(username.text, password.text)
-            except CreateUserException as e:
+            except CredentialsException as e:
                 info_label.text = "Error: " + str(e)
             except requests.exceptions.ConnectionError:
                 info_label.text = ("Error: could not connect to server. Please check your internet connection and "

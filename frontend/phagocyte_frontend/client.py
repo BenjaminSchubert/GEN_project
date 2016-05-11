@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Contains client-related classes used to interact with the authentication server.
+"""
+
 import requests
 import hashlib
 
-from phagocyte_frontend.exceptions import CreateUserException, LoginFailedException
+from phagocyte_frontend.exceptions import CredentialsException
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
@@ -61,7 +65,7 @@ class Client:
         r = self.send_json(self.create_credentials_data(username, password), "/register")
 
         if r.status_code == requests.codes.conflict:
-            raise CreateUserException(r.json()["error"])
+            raise CredentialsException(r.json().get("error"))
 
     def login(self, username, password):
         """
@@ -74,7 +78,7 @@ class Client:
         if r.status_code < 400:
             self.token = r.json()["access_token"]
         elif r.status_code == requests.codes.unauthorized:
-            raise LoginFailedException("bad credentials")
+            raise CredentialsException("bad credentials")
 
     def is_logged_in(self):
         """
