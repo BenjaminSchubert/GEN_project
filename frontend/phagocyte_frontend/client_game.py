@@ -22,16 +22,12 @@ __author__ = "Basile Vu <basile.vu@gmail.com>"
 class Phagocyte:
     def __init__(self, info):
         self.id = info["name"]
-        self.x = info["x"]
-        self.y = info["y"]
-        self.v_x = info["v_x"]
-        self.v_y = info["v_y"]
+        self.position = info["position"]
+        self.speed = [0, 0]
 
     def update(self, info):
-        self.x = info["x"]
-        self.y = info["y"]
-        self.v_x = info["v_x"]
-        self.v_y = info["v_y"]
+        self.position = info["position"]
+        self.speed = info["speed"]
 
 
 class ClientGameProtocol(DatagramProtocol):
@@ -55,7 +51,7 @@ class ClientGameProtocol(DatagramProtocol):
         event_type = data.get("event", None)
 
         if event_type == Event.GAME_INFO:
-            self.phagocyte = Phagocyte(data)
+            self.init_gui(data)
         elif event_type == Event.UPDATE:
             self.update_gui(data)
         elif event_type == Event.ERROR:
@@ -65,15 +61,23 @@ class ClientGameProtocol(DatagramProtocol):
         else:
             print("Unhandled event type : data is ", data)
 
+    def init_gui(self, data):
+        print("Changing gui to game view")
+        self.phagocyte = Phagocyte(data)
+
+        # test
+        print(self.phagocyte.position)
+        self.send_state()
+
     def update_gui(self, data):
         self.phagocyte.update(data["phagocyte"])
         print("updating gui")  # FIXME
 
     def send_token(self):
-        self.send_dict(token=self.token, event=Event.TOKEN)
+        self.send_dict(event=Event.TOKEN, token=self.token)
 
     def send_state(self):
-        self.send_dict(v_x=self.phagocyte.v_x, v_y=self.phagocyte.v_y, event=Event.STATE)
+        self.send_dict(event=Event.STATE, position=self.phagocyte.position)
 
     def send_dict(self, **kwargs):
         self.transport.write(json.dumps(kwargs).encode("utf-8"))
