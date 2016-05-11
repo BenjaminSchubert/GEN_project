@@ -65,7 +65,7 @@ class Client:
         r = self.send_json(self.create_credentials_data(username, password), "/register")
 
         if r.status_code == requests.codes.conflict:
-            raise CredentialsException(r.json().get("error"))
+            raise CredentialsException(r.json().get("error", "register error: got " + str(r.json())))
 
     def login(self, username, password):
         """
