@@ -20,7 +20,6 @@ __author__ = "Basile Vu <basile.vu@gmail.com>"
 
 
 class Phagocyte:
-
     def __init__(self, name, x, y, v_x, v_y):
         self.id = name
         self.x = x
@@ -47,11 +46,23 @@ class ClientGameProtocol(DatagramProtocol):
     def datagramReceived(self, datagram, addr):
         print("Received data.")
         data = json.loads(datagram.decode("utf-8"))
+        event_type = data.get("event", None)
 
-        # TODO enum cases
-
-        # TODO when connection OK
-        self.phagocyte = Phagocyte(0, 0, 0, 0, 0)
+        if event_type == Event.GAME_INFO:
+            self.phagocyte = Phagocyte(data["name"], data["x"], data["y"], data["vx"], data["vy"])
+        elif event_type == Event.UPDATE:
+            self.phagocyte.name = data["name"]
+            self.phagocyte.x = data["x"]
+            self.phagocyte.y = data["y"]
+            self.phagocyte.v_x = data["v_x"]
+            self.phagocyte.v_y = data["v_y"]
+            print(self.phagocyte)  # FIXME
+        elif event_type == Event.ERROR:
+            print("Error")  # FIXME
+        elif event_type is None:
+            print("The datagram doesn't have any event.")
+        else:
+            print("Unhandled event type : data is " + data)
 
     def send_token(self):
         self.send_dict(token=self.token, event=Event.TOKEN)
