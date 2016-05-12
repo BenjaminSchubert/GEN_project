@@ -68,9 +68,8 @@ class ClientGameProtocol(DatagramProtocol):
         """
         print("Started protocol")
         self.transport.connect(self.host, self.port)
-        print("connected")
         self.send_token()
-        print("sent")
+        print("sent token")
 
     def datagramReceived(self, datagram, addr):
         """
@@ -100,9 +99,10 @@ class ClientGameProtocol(DatagramProtocol):
         """
         print("Changing gui to game view")
         self.phagocyte = Phagocyte(data)
+        print("game before swap: ", self.widget.game)
         self.widget.next_screen("game")
-        print("widget: ", self.widget)
-        print("game: ", self.widget.game)
+        print("widget after swap: ", self.widget)
+        print("game after swap: ", self.widget.game)
         #self.widget.game.add_food(100)
         #Clock.schedule_interval(self.widget.follow_main_player, 1.0 / 60.0)
         #self.widget.game.main_player.set_random_pos()

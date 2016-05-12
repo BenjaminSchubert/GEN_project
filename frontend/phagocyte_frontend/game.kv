@@ -1,0 +1,58 @@
+#:kivy 1.9
+
+<MainPlayer>:
+    size: 300, 300
+    canvas:
+        Color:
+            rgb: 225/255, 250/255, 0
+        Ellipse:
+            pos: self.pos
+            size: self.size
+
+<Food>:
+    size: 35, 35
+    canvas:
+        Color:
+            rgb: 0, 1, 0
+        Ellipse:
+            pos: self.pos
+            size: self.size
+
+<Background>:
+    size: 9000, 9000
+    size_hint: None, None
+    canvas.before:
+        Color:
+            rgb: 34/255, 112/255, 138/255
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+
+<Game>:
+    size: 8000, 8000
+    pos: 500, 500
+    canvas.before:
+        Color:
+            rgb: 9/255, 56/255, 71/255
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    main_player: main_player
+
+    MainPlayer:
+        id: main_player
+
+<MainCam>:
+    game: game
+    camera: camera
+    background: background
+    ScrollView:
+        id: camera
+        size_hint: None, None
+        size: root.size
+        Background:
+            id: background
+            Game:
+                id: game
