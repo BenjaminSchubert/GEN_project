@@ -32,4 +32,10 @@ def authenticate(username, password):
 
 
 def identity(payload):
+    """
+    get the user identified by the given payload
+
+    :param payload: JWT payload
+    :return: user associated to the payload
+    """
     return db.session.query(User).filter_by(id=payload['identity']).one()

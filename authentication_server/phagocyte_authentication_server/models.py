@@ -78,6 +78,11 @@ class User(Base):
         return self.hash_password(value)
 
     def to_json(self):
+        """
+        Transforms the user to a json format
+
+        :return: dictionary to send to the user
+        """
         return {
             "username": self.username,
             "color": self.color,
