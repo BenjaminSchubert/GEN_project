@@ -1,7 +1,5 @@
 #:kivy 1.8.0
 
-#:import colorpicker kivy.uix.colorpicker
-
 RootWidget:
     # import container, username and password
     container: container
@@ -19,7 +17,10 @@ RootWidget:
             multiline: False
 
         Label:
-            text: "New ball color"
+            text: "New ball color:"
+
+        ColorPicker:
+            size_hint: 1, 3
 
         Label:
             text: "Old password:"
@@ -55,8 +56,6 @@ RootWidget:
             padding: 30
             spacing: 5
             orientation: "horizontal"
-
-            Colorpicker:
 
             Button:
                 id: loginButton

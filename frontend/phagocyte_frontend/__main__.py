@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import kivy
 from kivy.app import App
+from kivy.config import Config
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
@@ -27,6 +28,10 @@ import requests.exceptions
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CredentialsException
+
+Config.set("graphics", "resizable", False)
+Config.set("graphics", "width", "1200")
+Config.set("graphics", "height", "700")
 
 kivy.require('1.0.7')
 
@@ -296,8 +301,4 @@ class Phagocyte(App):
 
 
 if __name__ == '__main__':
-    #Config.set("graphics", "resizable", False)
-    #Config.set("graphics", "width", "700")
-    #Config.set("graphics", "height", "450")
-
     Phagocyte().run()
