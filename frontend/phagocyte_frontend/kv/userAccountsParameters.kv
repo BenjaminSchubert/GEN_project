@@ -1,5 +1,7 @@
 #:kivy 1.8.0
 
+#:import colorpicker kivy.uix.colorpicker
+
 RootWidget:
     # import container, username and password
     container: container
@@ -17,9 +19,7 @@ RootWidget:
             multiline: False
 
         Label:
-            text: " New ball color"
-
-        Colorpicker:
+            text: "New ball color"
 
         Label:
             text: "Old password:"
@@ -41,3 +41,24 @@ RootWidget:
         TextInput:
             password: True
             multiline: False
+
+        BoxLayout:
+            padding: 30
+            spacing: 5
+            orientation: "horizontal"
+
+            Button:
+                text: "Cancel"
+                on_release: root.next_screen("root")
+
+        BoxLayout:
+            padding: 30
+            spacing: 5
+            orientation: "horizontal"
+
+            Colorpicker:
+
+            Button:
+                id: loginButton
+                text: "Validate"
+                on_release: root.user_parameters()

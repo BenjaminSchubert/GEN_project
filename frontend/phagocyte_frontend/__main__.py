@@ -22,7 +22,6 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
-from kivy.config import Config
 
 import requests.exceptions
 
@@ -132,6 +131,7 @@ class RootWidget(BoxLayout, GridLayout):
 
     infoPopup = Popup(title="Info", size_hint=(None, None), size=(350, 200), auto_dismiss=False)
     infoPopup.add_widget(Button(text="Ok"))
+
     client = Client("127.0.0.1", 8000)
 
     def next_screen(self, screen):
@@ -154,7 +154,6 @@ class RootWidget(BoxLayout, GridLayout):
         """
 
         """
-        print(self.client.is_logged_in())
         if not self.client.is_logged_in():
             box = BoxLayout(orientation="vertical")
 
@@ -281,6 +280,7 @@ class RootWidget(BoxLayout, GridLayout):
         """
         modification parameters user account for the specified user
         """
+        print("VALIDER LES PARAMETRES DE L'UTILISATEUR")
 
 
 class Phagocyte(App):
@@ -296,8 +296,8 @@ class Phagocyte(App):
 
 
 if __name__ == '__main__':
-    Config.set("graphics", "resizable", False)
-    Config.set("graphics", "width", "700")
-    Config.set("graphics", "height", "450")
+    #Config.set("graphics", "resizable", False)
+    #Config.set("graphics", "width", "700")
+    #Config.set("graphics", "height", "450")
 
     Phagocyte().run()
