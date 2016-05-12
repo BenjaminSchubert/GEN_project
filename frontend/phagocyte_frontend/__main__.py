@@ -66,6 +66,11 @@ class LoginScreen(GridLayout):
         info_label = Label()
         self.add_widget(info_label)
 
+        # test
+        join = Button(text="join game", size_hint=(1, 0.4))
+        box_right.add_widget(join)
+        join.bind(on_press=lambda _: client.join_game("127.0.0.1", 8090))
+
         def connection():
             """
             Connects the specified user with his name and password

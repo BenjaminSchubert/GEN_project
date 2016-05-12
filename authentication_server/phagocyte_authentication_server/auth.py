@@ -8,7 +8,6 @@ related functions, mostly linked to JWT
 import sqlalchemy.orm
 
 from phagocyte_authentication_server.models import User, db
-from flask import abort
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
@@ -33,4 +32,10 @@ def authenticate(username, password):
 
 
 def identity(payload):
-    raise NotImplementedError("Identity is not implemented yet")
+    """
+    get the user identified by the given payload
+
+    :param payload: JWT payload
+    :return: user associated to the payload
+    """
+    return db.session.query(User).filter_by(id=payload['identity']).one()

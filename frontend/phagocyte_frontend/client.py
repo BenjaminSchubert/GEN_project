@@ -4,26 +4,28 @@
 Contains client-related classes used to interact with the authentication server.
 """
 
+import json
 import requests
 import hashlib
 
 from phagocyte_frontend.exceptions import CredentialsException
+from phagocyte_frontend.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
+from phagocyte_frontend.client_game import ClientGame
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
 
 class Client:
+    """
+    Provides various utility methods relative to interact with authentication and game servers.
 
-    host = "localhost"
-    port = 8000
+    :param host: The hostname of the server.
+    :param port: The port number of the server.
+    """
+
     token = None
 
     def __init__(self, host, port):
-        """
-        Initializes the client using a host and a port number.
-        :param host: The hostname of the server.
-        :param port: The port number of the server.
-        """
         self.host = host
         self.port = port
 
@@ -33,9 +35,11 @@ class Client:
         """
         return "http://" + self.host + ":" + str(self.port)
 
-    def create_credentials_data(self, username, password):
+    @staticmethod
+    def create_credentials_data(username, password):
         """
         Creates the data to send, containing the username and the hashed password.
+
         :param username: the username to send.
         :param password: the password to hash and send.
         """
@@ -44,25 +48,27 @@ class Client:
             "password": hashlib.sha512((hashlib.sha512(password.encode("utf-8")).hexdigest() + username).encode("utf-8")).hexdigest()
         }
 
-    def send_json(self, json, relative_path):
+    def post_json(self, _json, endpoint):
         """
         Sends the json using a POST request at the given relative path.
-        :param json: the json to send.
-        :param relative_path: the relative path (relative to the base url).
+
+        :param _json: the json to send.
+        :param endpoint: the relative path (relative to the base url).
         """
         headers = {
             "content-type": "application/json"
         }
 
-        return requests.post(url=self.get_base_url() + relative_path, headers=headers, json=json)
+        return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=_json)
 
     def register(self, username, password):
         """
         Registers the user using his username and password.
+
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.send_json(self.create_credentials_data(username, password), "/register")
+        r = self.post_json(self.create_credentials_data(username, password), REGISTER_PATH)
 
         if r.status_code == requests.codes.conflict:
             raise CredentialsException(r.json().get("error", "register error: got " + str(r.json())))
@@ -70,10 +76,11 @@ class Client:
     def login(self, username, password):
         """
         Logs in the user using his username and password.
+
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.send_json(self.create_credentials_data(username, password), "/auth")
+        r = self.post_json(self.create_credentials_data(username, password), AUTH_PATH)
 
         if r.status_code < 400:
             self.token = r.json()["access_token"]
@@ -91,3 +98,36 @@ class Client:
         Logs out the user.
         """
         self.token = None
+
+    def post_dict_as_json(self, *, endpoint, **kwargs):
+        """
+        Sends a POST request to the server, with data as json.
+
+        :param endpoint: the relative path where to POST ("/auth", for example)
+        :param kwargs: the data as dict to send as json
+        """
+        self.post_json(json.dumps(kwargs), endpoint)
+
+    def post_account_info(self, **kwargs):
+        """
+        Modifies account info.
+
+        :param kwargs: the data as dict to send as json
+        """
+        self.post_dict_as_json(endpoint=ACCOUNT_PATH, kwargs=kwargs)
+
+    def get_games(self):
+        """
+        Gets the list of available games.
+        """
+        r = requests.get(self.get_base_url() + GAMES_PATH)
+        return r.json()["games"]
+
+    def join_game(self, host, port):
+        """
+        Joins a game hosted on a server.
+
+        :param host: the ip address of the host
+        :param port: the port used
+        """
+        ClientGame(self.token, host, port).run()

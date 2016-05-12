@@ -16,6 +16,7 @@ from flask_script import Manager
 
 from phagocyte_authentication_server.auth import authenticate, identity
 from phagocyte_authentication_server.commands import Server
+from phagocyte_authentication_server.games import GameManager
 from phagocyte_authentication_server.models import db, Base
 
 
@@ -40,6 +41,8 @@ with app.app_context():
 # authentication
 jwt = JWT(app, authenticate, identity)
 
+# games
+games = GameManager(app)
 
 # command line options
 manager = Manager(app, with_default_commands=False)
