@@ -1,0 +1,43 @@
+#:kivy 1.8.0
+
+RootWidget:
+    # import container, username and password
+    container: container
+
+    GridLayout:
+        id: container
+        cols: 2
+        #padding: 10
+        #spacing: 5
+
+        Label:
+            text: "New user name:"
+
+        TextInput:
+            multiline: False
+
+        Label:
+            text: " New ball color"
+
+        Colorpicker:
+
+        Label:
+            text: "Old password:"
+
+        TextInput:
+            password: True
+            multiline: False
+
+        Label:
+            text: "New password:"
+
+        TextInput:
+            password: True
+            multiline: False
+
+        Label:
+            text: "Confirm new password:"
+
+        TextInput:
+            password: True
+            multiline: False

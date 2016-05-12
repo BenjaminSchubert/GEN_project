@@ -2,28 +2,36 @@
 
 """
 Application that just represents a GUI for connection and creating a user.
+
+Container Example
+
+This example shows how to add a container to our screen.
+A container is simply an empty place on the screen which
+could be filled with any other content from a .kv file.
 """
 
 from concurrent.futures import ThreadPoolExecutor
 
 import kivy
 from kivy.app import App
+from kivy.lang import Builder
+from kivy.properties import ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
+from kivy.config import Config
 
 import requests.exceptions
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CredentialsException
 
-
 kivy.require('1.0.7')
 
-
-__author__ = "Boson Sébastien <sebastboson@gmail.com>"
+__author__ = "Sebastien Boson <sebastboson@gmail.com>"
 
 
 class LoginScreen(GridLayout):
@@ -32,6 +40,7 @@ class LoginScreen(GridLayout):
 
     :param kwargs: additional key word send to the parent
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -41,19 +50,19 @@ class LoginScreen(GridLayout):
 
         self.cols = 2
 
-        self.add_widget(Label(text='User name:'))
+        self.add_widget(Label(text="User name:"))
 
         username = TextInput(multiline=False)
         self.add_widget(username)
 
-        self.add_widget(Label(text='Password:'))
+        self.add_widget(Label(text="Password:"))
 
         password = TextInput(password=True, multiline=False)
         self.add_widget(password)
 
-        box_left = BoxLayout(padding=30, orientation='horizontal')
+        box_left = BoxLayout(padding=30, orientation="horizontal")
         self.add_widget(box_left)
-        register = Button(text='Register', size_hint=(1, 0.4))
+        register = Button(text="Register", size_hint=(1, 0.4))
         box_left.add_widget(register)
         register.bind(on_press=lambda _: self.executor.submit(register))
 
@@ -110,18 +119,185 @@ class LoginScreen(GridLayout):
         self.executor.shutdown(True)
 
 
-class MyApp(App):
+class RootWidget(BoxLayout, GridLayout):
+    """
+    create controllers that receive custom widgets from the kv lang file
+    add actions to be called from a kv file
+    """
+    container = ObjectProperty(None)
+    username = ObjectProperty(None)
+    password = ObjectProperty(None)
+    creationButton = ObjectProperty(None)
+    loginButton = ObjectProperty(None)
+
+    infoPopup = Popup(title="Info", size_hint=(None, None), size=(350, 200), auto_dismiss=False)
+    infoPopup.add_widget(Button(text="Ok"))
+    client = Client("127.0.0.1", 8000)
+
+    def next_screen(self, screen):
+        """
+        clear container and load the given screen object from file in kv folder
+
+        :param screen: name of the screen object made from the loaded .kv file
+        """
+        filename = screen + ".kv"
+
+        Builder.unload_file("kv/" + filename)
+
+        self.container.clear_widgets()
+
+        screen = Builder.load_file("kv/" + filename)
+
+        self.container.add_widget(screen)
+
+    def game_creation_process(self):
+        """
+
+        """
+        print(self.client.is_logged_in())
+        if not self.client.is_logged_in():
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Error: you are not connected"))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=self.infoPopup.dismiss))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+        else:
+            print("IL FAUT CREER UNE NOUVELLE PARTIE => 'CHANGER' D'ABORD DE FENETRE")
+
+    def user_creation_process(self):
+        """
+        registers the specified user with his name and password
+        """
+        if self.client.is_logged_in():
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Error: you are already connected"))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=self.infoPopup.dismiss))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+        else:
+            self.next_screen("newUser")
+
+    def user_login_process(self):
+        """
+        connects the specified user with his name and password
+        """
+        if self.client.is_logged_in():
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Error: you are already connected"))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=self.infoPopup.dismiss))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+        else:
+            self.next_screen("userLogin")
+
+    def user_parameters_process(self):
+        """
+        connects the specified user with his name and password
+        """
+        if not self.client.is_logged_in():
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Error: you are not connected"))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=self.infoPopup.dismiss))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+        else:
+            self.next_screen("userAccountsParameters")
+
+    def screen_root(self):
+        self.infoPopup.dismiss()
+        self.next_screen("root")
+
+    def user_creation(self):
+        """
+        registers the specified user with his name and password
+        """
+        self.creationButton.disabled = True
+
+        try:
+            self.client.register(self.username.text, self.password.text)
+        except CreateUserException as e:
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Error: " + str(e)))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=self.infoPopup.dismiss))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+        else:
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Correctly registered"))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=lambda _: self.screen_root()))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+
+        self.creationButton.disabled = False
+
+    def user_login(self):
+        """
+        connects the specified user with his name and password
+        """
+        self.loginButton.disabled = True
+
+        try:
+            self.client.login(self.username.text, self.password.text)
+        except LoginFailedException as e:
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Error: " + str(e)))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=self.infoPopup.dismiss))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+        else:
+            box = BoxLayout(orientation="vertical")
+
+            box.add_widget(Label(text="Correctly login"))
+            box.add_widget(
+                Button(text="Ok", size_hint=(0.4, 0.4), pos_hint={"x": 0.6}, on_release=lambda _: self.screen_root()))
+
+            self.infoPopup.content = box
+            self.infoPopup.open()
+
+        self.loginButton.disabled = False
+
+    def user_parameters(self):
+        """
+        modification parameters user account for the specified user
+        """
+
+
+class Phagocyte(App):
     """
     main kivy application
     """
+
     def build(self):
         """
-        builds and returns GUI
-
-        :return: loginScreen
+        this method loads the root.kv file automatically
         """
-        return LoginScreen()
+        self.root = Builder.load_file("kv/root.kv")
 
 
 if __name__ == '__main__':
-    MyApp().run()
+    Config.set("graphics", "resizable", False)
+    Config.set("graphics", "width", "700")
+    Config.set("graphics", "height", "450")
+
+    Phagocyte().run()

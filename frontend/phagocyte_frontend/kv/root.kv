@@ -1,0 +1,112 @@
+#:kivy 1.8.0
+
+#:import label kivy.uix.label
+#:import sla kivy.adapters.simplelistadapter
+
+<ListViewModal>:
+    size_hint: None,None
+    size: 400,400
+
+    ListView:
+        size_hint: .8,.8
+
+        adapter:
+            sla.SimpleListAdapter(
+            data=["Item #{0}".format(i) for i in range(100)],
+            cls=label.Label)
+
+RootWidget:
+    # import container
+    container: container
+
+    BoxLayout:
+        id: container
+        #padding: 10
+        #spacing: 5
+        orientation: "horizontal"
+
+        BoxLayout:
+            padding: 0
+            spacing: 5
+            orientation: "vertical"
+
+            Label:
+                size: self.texture_size
+                markup: True
+                text: "[b]Running games[/b]"
+                #background_color: [1, 1, 1, 1]
+
+        BoxLayout:
+            padding: 10
+            spacing: 10
+            orientation: "vertical"
+            size_hint: 0.5, 0.6
+            pos_hint: {"y": 0.2}
+
+            Button:
+                text: "Create a new game"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                #disabled: True
+                on_release: root.game_creation_process()
+
+            Button:
+                text: "Create a new user"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.user_creation_process()
+
+            Button:
+                text: "Login"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.user_login_process()
+
+            Button:
+                text: "Modify accounts parameters"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.user_parameters_process()
+
+#    BoxLayout:
+#        orientation: "vertical"
+#        padding: 0
+#        spacing: 6
+#
+#        # bottom-left part
+#        BoxLayout:
+#            orientation: "horizontal"
+#            padding: 0
+#            spacing: 6
+#
+#            # bottom-left
+#            BoxLayout:
+#                size_hint: 0.12, 0.12
+#                orientation: "vertical"
+#                padding: 0
+#                spacing: 6
+#
+#                # option calibrate
+#                Button:
+#                    text: "Appuyer ici" if self.state == "normal" else "Relacher moi"
+#                    on_release: app.next_screen('1')
+#
+#            # create container (bottom-right)
+#            BoxLayout:
+#                id: container
+#<-Button>:
+#    canvas:
+#        #Clear
+#        Color:
+#            rgb: (1, 0, 0)
+#        Rectangle:
+#            pos: self.pos
+#            size: self.size
+#        Rectangle:
+#            pos: self.pos
+#            size: self.texture_size
+#            texture: self.texture
