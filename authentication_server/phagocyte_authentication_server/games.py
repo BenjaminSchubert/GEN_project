@@ -24,13 +24,13 @@ class GameManager:
         """
         Representation of a game server
 
-        :param ip: ip of the server
+        :param host: hostname of the server
         :param port: port of the server
         :param token: token to send to authenticate on the server
         :param capacity: maximum capacity of the server
         """
-        def __init__(self, ip, port, token, capacity):
-            self.ip = ip
+        def __init__(self, host, port, token, capacity):
+            self.host = host
             self.port = port
             self.token = token
             self.capacity = capacity

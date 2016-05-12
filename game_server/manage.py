@@ -37,7 +37,7 @@ def parse_args(args):
     node.set_defaults(func=run_node)
     node.add_argument("-?", "--help", action="help")
     node.add_argument("-p", "--port", dest="port", required=True, type=int, help="port on which to run the server")
-    node.add_argument("-a", "--auth", "--authserver", dest="auth_ip", required=True,
+    node.add_argument("-a", "--auth", "--authserver", dest="auth_host", required=True,
                       help="authentication server ip address")
     node.add_argument("--auth-port", default=8080, dest="auth_port", type=int, help="authentication server port")
     node.add_argument("--name", help="name of the node to create")
