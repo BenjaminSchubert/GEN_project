@@ -63,8 +63,11 @@ class ClientGameProtocol(DatagramProtocol):
         """
         Establishes connection with game server and sends the token.
         """
+        print("Started protocol")
         self.transport.connect(self.host, self.port)
+        print("connected")
         self.send_token()
+        print("sent")
 
     def datagramReceived(self, datagram, addr):
         """

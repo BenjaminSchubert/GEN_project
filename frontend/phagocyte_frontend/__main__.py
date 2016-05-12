@@ -289,8 +289,18 @@ class RootWidget(BoxLayout, GridLayout):
         print("VALIDER LES PARAMETRES DE L'UTILISATEUR")
 
     def get_games(self):
-        games = self.client.get_games()
-        self.getGame.text = games.keys()[0]
+        print("je suis dedans")
+        try:
+            games = self.client.get_games()
+        except Exception as e:
+            print(e)
+        print(games)
+        try:
+            self.getGame.text = games["Main"]["name"]
+        except Exception as e:
+            print(e)
+        print("NB")
+        self.client.join_game(games["Main"]["ip"], games["Main"]["port"])
 
 class Phagocyte(App):
     """
