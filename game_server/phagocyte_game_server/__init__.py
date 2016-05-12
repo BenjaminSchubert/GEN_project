@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Game server implementation
+"""
+
 import json
 import random
 
@@ -14,6 +18,11 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 class AuthenticationError(Exception):
+    """
+    Exception raised when authentication failed
+
+    :param msg: information about the error
+    """
     def __init__(self, msg):
         self.msg = msg
 
@@ -27,20 +36,59 @@ def random_color():
     return "#%06x" % random.randint(0, 0xFFFFFF)
 
 
+def register(port, auth_host, auth_port, name, capacity):
+    """
+    registers the game server against the authentication server
+
+    :param port: port of the game server
+    :param auth_host: address of the authentication server
+    :param auth_port: port of the authentication server
+    :param name: name of the game server
+    :param capacity: max capacity of the game server
+    """
+    r = requests.post(
+        "http://{}:{}/games/server".format(auth_host, auth_port),
+        json={"port": port, "name": name, "capacity": capacity}
+    )
+
+    if r.status_code != requests.codes.ok:
+        exit(2)
+
+
 class GameProtocol(DatagramProtocol):
+    """
+    Implementation of the Game protocol for Phagocytes
+
+    :param auth_host: host address of the authentication server
+    :param auth_port: port of the authentication server
+    :param capacity: max capacity of the server
+    """
     clients = dict()
     max_x = 2000
     max_y = 2000
 
-    def __init__(self, auth_ip, auth_port):
-        self.auth_ip = auth_ip
+    def __init__(self, auth_host, auth_port, capacity):
+        self.auth_host = auth_host
         self.auth_port = auth_port
-        self.url = "http://{}:{}".format(self.auth_ip, self.auth_port)
+        self.max_capacity = capacity
+        self.url = "http://{}:{}".format(self.auth_host, self.auth_port)
 
     def random_position(self):
+        """
+        Returns a random position
+
+        :return: tuple of X,Y position
+        """
         return random.randint(0, self.max_x), random.randint(0, self.max_y)
 
     def authenticate(self, token):
+        """
+        tries to authenticate the user against the authentication server
+
+        :param token: token given by the user
+        :raise AuthenticationError: if authentication failed
+        :return: name and color of the user as returned by the authentication server
+        """
         r = requests.post(self.url + "/validate", json=dict(token=token))
         if r.status_code == requests.codes.ok:
             return r.json()["username"], r.json()["color"]
@@ -48,6 +96,13 @@ class GameProtocol(DatagramProtocol):
         raise AuthenticationError(r.json())
 
     def register(self, data, addr):
+        """
+        register a new player on the game server
+
+        :param data: data got from the client
+        :param addr: client address
+        :return:  message to send to the user
+        """
         if data.get("event") != Event.TOKEN:
             return dict(event=Event.ERROR, error="Client not registered")
 
@@ -68,6 +123,13 @@ class GameProtocol(DatagramProtocol):
         return data
 
     def datagramReceived(self, datagram, addr):
+        """
+        function called every time a new datagram is received.
+        This will dispatch it to the correct handler
+
+        :param datagram: datagram received from the client
+        :param addr: client address
+        """
         data = json.loads(datagram.decode("utf8"))
         if self.clients.get(addr) is None:
             ret = self.register(data, addr)
@@ -77,6 +139,16 @@ class GameProtocol(DatagramProtocol):
         self.transport.write(json.dumps(ret).encode("utf8"), addr)
 
 
-def runserver(port, auth_ip, auth_port):
-    reactor.listenUDP(port, GameProtocol(auth_ip, auth_port))
+def runserver(port, auth_host, auth_port, name, capacity):
+    """
+    launches the game server
+
+    :param port: port on which to listen
+    :param auth_host: hostname of the authentication server to which to refer
+    :param auth_port: port of the authentication server to which to refer
+    :param name: name of the game server
+    :param capacity: capacity of the game server
+    """
+    reactor.listenUDP(port, GameProtocol(auth_host, auth_port, capacity))
+    register(port, auth_host, auth_port, name, capacity)
     reactor.run()
