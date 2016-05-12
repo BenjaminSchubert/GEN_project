@@ -123,11 +123,11 @@ class Client:
         r = requests.get(self.get_base_url() + GAMES_PATH)
         return r.json()
 
-    def join_game(self, host, port):
+    def join_game(self, host, port, widget):
         """
         Joins a game hosted on a server.
 
         :param host: the ip address of the host
         :param port: the port used
         """
-        ClientGame(self.token, host, port).run()
+        ClientGame(self.token, host, port, widget).run()

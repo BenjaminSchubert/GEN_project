@@ -11,20 +11,23 @@ could be filled with any other content from a .kv file.
 """
 
 from concurrent.futures import ThreadPoolExecutor
+from random import randint
 
 import kivy
+import requests.exceptions
 from kivy.app import App
 from kivy.config import Config
+from kivy.core.window import Window
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
-
-import requests.exceptions
+from kivy.uix.widget import Widget
+from kivy.vector import Vector
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CredentialsException
@@ -123,7 +126,54 @@ class LoginScreen(GridLayout):
         self.executor.shutdown(True)
 
 
-class RootWidget(BoxLayout, GridLayout):
+class MainPlayer(Widget):
+    def move(self):
+        if Window.mouse_pos[0] < (Window.width / 4) - 100:
+            x = -10
+        elif Window.mouse_pos[0] > (Window.width / 4) + 100:
+            x = 10
+        else:
+            x = -(((Window.width / 4) - Window.mouse_pos[0]) / 10)
+
+        if Window.mouse_pos[1] < (Window.height / 4) - 100:
+            y = -10
+        elif Window.mouse_pos[1] > (Window.height / 4) + 100:
+            y = 10
+        else:
+            y = -(((Window.height / 4) - Window.mouse_pos[1]) / 10)
+
+        self.pos = Vector(x, y) + self.pos
+
+    def set_random_pos(self):
+        self.x = randint(2000, 5000)
+        self.y = randint(2000, 5000)
+
+
+class Food(Widget):
+    def __init__(self, x, y, **kwargs):
+        super().__init__(**kwargs)
+        self.x = x
+        self.y = y
+        Clock.schedule_interval(self.shake, 1.0 / 60.0)
+
+    def shake(self, dt):
+        self.x += randint(-5, 5)
+        self.y += randint(-5, 5)
+
+
+class Game(Widget):
+    main_player = ObjectProperty(None)
+
+    def add_food(self, nb):
+        for i in range(nb):
+            self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
+
+
+class Background(Widget):
+    pass
+
+
+class RootWidget(BoxLayout, GridLayout, Widget):
     """
     create controllers that receive custom widgets from the kv lang file
     add actions to be called from a kv file
@@ -135,10 +185,19 @@ class RootWidget(BoxLayout, GridLayout):
     loginButton = ObjectProperty(None)
     getGame = ObjectProperty(None)
 
+    game = ObjectProperty(None)
+    camera = ObjectProperty(None)
+    background = ObjectProperty(None)
+
     infoPopup = Popup(title="Info", size_hint=(None, None), size=(350, 200), auto_dismiss=False)
     infoPopup.add_widget(Button(text="Ok"))
 
     client = Client("127.0.0.1", 8000)
+
+    def follow_main_player(self, dt):
+        self.game.main_player.move()
+        self.camera.scroll_x = ((self.game.main_player.center_x) / self.background.width)
+        self.camera.scroll_y = ((self.game.main_player.center_y) / self.background.height)
 
     def next_screen(self, screen):
         """
@@ -153,6 +212,8 @@ class RootWidget(BoxLayout, GridLayout):
         self.container.clear_widgets()
 
         screen = Builder.load_file("kv/" + filename)
+
+        print(filename)
 
         self.container.add_widget(screen)
 
@@ -300,7 +361,8 @@ class RootWidget(BoxLayout, GridLayout):
         except Exception as e:
             print(e)
         print("NB")
-        self.client.join_game(games["Main"]["ip"], games["Main"]["port"])
+        self.client.join_game(games["Main"]["ip"], games["Main"]["port"], self)
+
 
 class Phagocyte(App):
     """

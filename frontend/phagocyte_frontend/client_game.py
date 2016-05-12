@@ -6,6 +6,8 @@ Client-side classes to communicate with the game server.
 
 import json
 
+from kivy.clock import Clock
+
 import phagocyte_frontend.twisted_reactor
 import twisted.internet
 
@@ -54,10 +56,11 @@ class ClientGameProtocol(DatagramProtocol):
     """
     phagocyte = None
 
-    def __init__(self, host, port, token):
+    def __init__(self, host, port, token, widget):
         self.host = host
         self.port = port
         self.token = token
+        self.widget = widget
 
     def startProtocol(self):
         """
@@ -97,8 +100,12 @@ class ClientGameProtocol(DatagramProtocol):
         """
         print("Changing gui to game view")
         self.phagocyte = Phagocyte(data)
-
-        # TODO
+        self.widget.next_screen("game")
+        print("widget: ", self.widget)
+        print("game: ", self.widget.game)
+        #self.widget.game.add_food(100)
+        #Clock.schedule_interval(self.widget.follow_main_player, 1.0 / 60.0)
+        #self.widget.game.main_player.set_random_pos()
 
     def update_gui(self, data):
         """
@@ -137,13 +144,14 @@ class ClientGame:
     :param port: the port of the server
     :param token: the token of the client
     """
-    def __init__(self, token, host, port):
+    def __init__(self, token, host, port, widget):
         self.host = host
         self.port = port
         self.token = token
+        self.widget = widget
 
     def run(self):
         """
         Runs the client.
         """
-        reactor.listenUDP(0, ClientGameProtocol(self.host, self.port, self.token))
+        reactor.listenUDP(0, ClientGameProtocol(self.host, self.port, self.token, self.widget))
