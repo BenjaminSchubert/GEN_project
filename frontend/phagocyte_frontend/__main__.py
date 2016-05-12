@@ -133,6 +133,7 @@ class RootWidget(BoxLayout, GridLayout):
     password = ObjectProperty(None)
     creationButton = ObjectProperty(None)
     loginButton = ObjectProperty(None)
+    getGame = ObjectProperty(None)
 
     infoPopup = Popup(title="Info", size_hint=(None, None), size=(350, 200), auto_dismiss=False)
     infoPopup.add_widget(Button(text="Ok"))
@@ -231,7 +232,7 @@ class RootWidget(BoxLayout, GridLayout):
 
         try:
             self.client.register(self.username.text, self.password.text)
-        except CreateUserException as e:
+        except CredentialsException as e:
             box = BoxLayout(orientation="vertical")
 
             box.add_widget(Label(text="Error: " + str(e)))
@@ -260,7 +261,7 @@ class RootWidget(BoxLayout, GridLayout):
 
         try:
             self.client.login(self.username.text, self.password.text)
-        except LoginFailedException as e:
+        except CredentialsException as e:
             box = BoxLayout(orientation="vertical")
 
             box.add_widget(Label(text="Error: " + str(e)))
@@ -287,6 +288,9 @@ class RootWidget(BoxLayout, GridLayout):
         """
         print("VALIDER LES PARAMETRES DE L'UTILISATEUR")
 
+    def get_games(self):
+        games = self.client.get_games()
+        self.getGame.text = games.keys()[0]
 
 class Phagocyte(App):
     """

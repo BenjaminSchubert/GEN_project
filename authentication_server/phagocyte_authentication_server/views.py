@@ -88,7 +88,7 @@ def register_manager():
     """
     token = str(uuid.uuid4())
     data = {"token": token}
-    app.games.add_manager(**request.json, token=token)
+    app.games.add_manager(token=token, **request.json)
     if len(app.games.games) <= 1:
         data["create"] = True
         data["name"] = "Main"

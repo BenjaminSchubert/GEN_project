@@ -121,7 +121,7 @@ class Client:
         Gets the list of available games.
         """
         r = requests.get(self.get_base_url() + GAMES_PATH)
-        return r.json()["games"]
+        return json.loads(r)
 
     def join_game(self, host, port):
         """

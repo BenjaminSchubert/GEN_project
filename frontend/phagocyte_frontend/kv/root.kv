@@ -18,6 +18,7 @@
 RootWidget:
     # import container
     container: container
+    getGame: getGame
 
     BoxLayout:
         id: container
@@ -35,6 +36,21 @@ RootWidget:
                 markup: True
                 text: "[b]Running games[/b]"
                 #background_color: [1, 1, 1, 1]
+
+            Button:
+                text:"getGames"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.get_games()
+
+            Button:
+                id: getGame
+                text:"a game"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.get_games()
 
         BoxLayout:
             padding: 10
