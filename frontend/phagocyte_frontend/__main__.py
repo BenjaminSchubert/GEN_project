@@ -31,6 +31,7 @@ from kivy.vector import Vector
 
 from phagocyte_frontend.client import Client
 from phagocyte_frontend.exceptions import CredentialsException
+from phagocyte_frontend.gamedraft_kivy import GameApp
 
 Config.set("graphics", "resizable", False)
 Config.set("graphics", "width", "1200")
@@ -126,53 +127,6 @@ class LoginScreen(GridLayout):
         self.executor.shutdown(True)
 
 
-class MainPlayer(Widget):
-    def move(self):
-        if Window.mouse_pos[0] < (Window.width / 4) - 100:
-            x = -10
-        elif Window.mouse_pos[0] > (Window.width / 4) + 100:
-            x = 10
-        else:
-            x = -(((Window.width / 4) - Window.mouse_pos[0]) / 10)
-
-        if Window.mouse_pos[1] < (Window.height / 4) - 100:
-            y = -10
-        elif Window.mouse_pos[1] > (Window.height / 4) + 100:
-            y = 10
-        else:
-            y = -(((Window.height / 4) - Window.mouse_pos[1]) / 10)
-
-        self.pos = Vector(x, y) + self.pos
-
-    def set_random_pos(self):
-        self.x = randint(2000, 5000)
-        self.y = randint(2000, 5000)
-
-
-class Food(Widget):
-    def __init__(self, x, y, **kwargs):
-        super().__init__(**kwargs)
-        self.x = x
-        self.y = y
-        Clock.schedule_interval(self.shake, 1.0 / 60.0)
-
-    def shake(self, dt):
-        self.x += randint(-5, 5)
-        self.y += randint(-5, 5)
-
-
-class Game(Widget):
-    main_player = ObjectProperty(None)
-
-    def add_food(self, nb):
-        for i in range(nb):
-            self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
-
-
-class Background(Widget):
-    pass
-
-
 class RootWidget(BoxLayout, GridLayout, Widget):
     """
     create controllers that receive custom widgets from the kv lang file
@@ -184,10 +138,6 @@ class RootWidget(BoxLayout, GridLayout, Widget):
     creationButton = ObjectProperty(None)
     loginButton = ObjectProperty(None)
     getGame = ObjectProperty(None)
-
-    game = ObjectProperty(None)
-    camera = ObjectProperty(None)
-    background = ObjectProperty(None)
 
     infoPopup = Popup(title="Info", size_hint=(None, None), size=(350, 200), auto_dismiss=False)
     infoPopup.add_widget(Button(text="Ok"))
@@ -205,11 +155,15 @@ class RootWidget(BoxLayout, GridLayout, Widget):
 
         :param screen: name of the screen object made from the loaded .kv file
         """
-        filename = screen + ".kv"
-        Builder.unload_file("kv/" + filename)
-        self.container.clear_widgets()
-        screen = Builder.load_file("kv/" + filename)
-        self.container.add_widget(screen)
+        # filename = screen + ".kv"
+        # Builder.unload_file("kv/" + filename)
+        # self.container.clear_widgets()
+        # screen = Builder.load_file("kv/" + filename)
+        # self.container.add_widget(screen)
+        self.clear_widgets()
+        game_app = GameApp().build()
+        # @TODO La taille n'est pas la bonne
+        self.add_widget(game_app)
 
     def game_creation_process(self):
         """
@@ -353,7 +307,6 @@ class RootWidget(BoxLayout, GridLayout, Widget):
             self.getGame.text = games["Main"]["name"]
         except Exception as e:
             print(e)
-        print("game before swap: ", self.game)
         self.client.join_game(games["Main"]["ip"], games["Main"]["port"], self)
 
 

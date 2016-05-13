@@ -2,6 +2,7 @@ from random import randint
 
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.lang import Builder
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
@@ -76,9 +77,8 @@ class MainCam(Widget):
 
 class GameApp(App):
     def build(self):
-        main_cam = MainCam()
-
-        return main_cam
+        Builder.load_file('kv/game.kv')
+        return MainCam()
 
 
 if __name__ == '__main__':

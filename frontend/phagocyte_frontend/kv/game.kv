@@ -1,4 +1,4 @@
-#:kivy 1.8.0
+#:kivy 1.9
 
 <MainPlayer>:
     size: 300, 300
@@ -20,7 +20,6 @@
 
 <Background>:
     size: 9000, 9000
-    size_hint: None, None
     canvas.before:
         Color:
             rgb: 34/255, 112/255, 138/255
@@ -44,18 +43,22 @@
     MainPlayer:
         id: main_player
 
-RootWidget:
-    container: container
-
-    id: container
+<MainCam>:
     game: game
     camera: camera
     background: background
+    size: root.size
     ScrollView:
         id: camera
         size_hint: None, None
         size: root.size
-        Background:
-            id: background
-            Game:
-                id: game
+        Scatter:
+            size: 9000, 9000
+            do_scale: False
+            size_hint: None, None
+            do_translation: False, False
+            scale: 1
+            Background:
+                id: background
+                Game:
+                    id: game
