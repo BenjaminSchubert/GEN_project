@@ -98,7 +98,7 @@ class ClientGameProtocol(DatagramProtocol):
         :param data: the data received from server.
         """
         self.phagocyte = Phagocyte(data)
-        self.widget.next_screen("game")
+        self.widget.jump_to_game()
 
     def update_gui(self, data):
         """

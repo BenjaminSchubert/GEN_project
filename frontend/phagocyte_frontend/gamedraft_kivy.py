@@ -58,7 +58,7 @@ class Background(Widget):
     pass
 
 
-class MainCam(Widget):
+class GameInstance(Widget):
     game = ObjectProperty(None)
     camera = ObjectProperty(None)
     background = ObjectProperty(None)
@@ -78,7 +78,7 @@ class MainCam(Widget):
 class GameApp(App):
     def build(self):
         Builder.load_file('kv/game.kv')
-        return MainCam()
+        return GameInstance()
 
 
 if __name__ == '__main__':

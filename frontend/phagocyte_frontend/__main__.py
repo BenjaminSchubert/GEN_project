@@ -127,7 +127,7 @@ class LoginScreen(GridLayout):
         self.executor.shutdown(True)
 
 
-class RootWidget(BoxLayout, GridLayout, Widget):
+class Lobby(BoxLayout, GridLayout, Widget):
     """
     create controllers that receive custom widgets from the kv lang file
     add actions to be called from a kv file
@@ -149,21 +149,23 @@ class RootWidget(BoxLayout, GridLayout, Widget):
         self.camera.scroll_x = ((self.game.main_player.center_x) / self.background.width)
         self.camera.scroll_y = ((self.game.main_player.center_y) / self.background.height)
 
+    # todo ici
+    def jump_to_game(self):
+        self.clear_widgets()
+        game_instance = GameApp().build()
+        self.add_widget(game_instance)
+        pass
+
     def next_screen(self, screen):
         """
         clear container and load the given screen object from file in kv folder
-
         :param screen: name of the screen object made from the loaded .kv file
         """
-        # filename = screen + ".kv"
-        # Builder.unload_file("kv/" + filename)
-        # self.container.clear_widgets()
-        # screen = Builder.load_file("kv/" + filename)
-        # self.container.add_widget(screen)
-        self.clear_widgets()
-        game_app = GameApp().build()
-        # @TODO La taille n'est pas la bonne
-        self.add_widget(game_app)
+        filename = screen + ".kv"
+        Builder.unload_file("kv/" + filename)
+        self.container.clear_widgets()
+        screen = Builder.load_file("kv/" + filename)
+        self.container.add_widget(screen)
 
     def game_creation_process(self):
         """
@@ -316,10 +318,8 @@ class Phagocyte(App):
     """
 
     def build(self):
-        """
-        this method loads the root.kv file automatically
-        """
-        self.root = Builder.load_file("kv/root.kv")
+        Builder.load_file("kv/root.kv")
+        return Lobby()
 
 
 if __name__ == '__main__':
