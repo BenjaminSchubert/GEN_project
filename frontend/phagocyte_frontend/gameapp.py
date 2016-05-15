@@ -62,12 +62,14 @@ class GameInstance(Widget):
     game = ObjectProperty(None)
     camera = ObjectProperty(None)
     background = ObjectProperty(None)
+    screen_manager = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, screen_manager, **kwargs):
         super().__init__(**kwargs)
         self.game.add_food(100)
         Clock.schedule_interval(self.follow_main_player, 1.0 / 60.0)
         self.game.main_player.set_random_pos()
+        self.screen_manager = screen_manager
 
     def follow_main_player(self, dt):
         self.game.main_player.move()
@@ -78,7 +80,11 @@ class GameInstance(Widget):
 class GameApp(App):
     def build(self):
         Builder.load_file('kv/game.kv')
-        return GameInstance()
+        return GameInstance(None)
+
+    def get_instance(self, screen_manager):
+        Builder.load_file('kv/game.kv')
+        return GameInstance(screen_manager)
 
 
 if __name__ == '__main__':

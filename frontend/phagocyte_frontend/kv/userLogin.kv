@@ -1,6 +1,6 @@
 #:kivy 1.8.0
 
-RootWidget:
+<LobbyApp>:
     # import container, username and password
     container: container
     username: username
@@ -35,7 +35,7 @@ RootWidget:
 
             Button:
                 text: "Cancel"
-                on_release: root.next_screen("root")
+                on_release: root.next_screen("lobby")
 
         BoxLayout:
             padding: 30
