@@ -65,6 +65,7 @@ class NotifierFlask(Flask):
         :param options: additional options sent to the server
         """
         self.get_token(host, port)
+        self.debug = debug
         super().run(host, port, debug, **options)
 
     def create_game_server(self, name, capacity):
@@ -76,13 +77,16 @@ class NotifierFlask(Flask):
         if self.capacity == self.next:
             raise FullCapacityException()
 
-        subprocess.Popen(
-            [sys.executable, "manage.py", "node", "-p", str(self.config["PORT_GAMESERVER"] + self.next),
-             "-a", str(app.config["AUTH_SERVER"]), "--auth-port", str(app.config["AUTH_SERVER_PORT"]),
-             "--name", name, "--capacity", str(capacity)],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
-            stderr=sys.stderr, stdout=sys.stdout,
-        )
+        cmd = [
+            sys.executable, "manage.py", "node", "-p", str(self.config["PORT_GAMESERVER"] + self.next),
+            "-a", str(app.config["AUTH_SERVER"]), "--auth-port", str(app.config["AUTH_SERVER_PORT"]),
+            "--name", name, "--capacity", str(capacity)
+        ]
+
+        if self.debug:
+            cmd.append("-d")
+
+        subprocess.Popen(cmd, cwd=os.path.dirname(os.path.abspath(__file__)), stderr=sys.stderr, stdout=sys.stdout)
 
 
 app = NotifierFlask("phagocytes_game_manager")

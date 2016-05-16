@@ -14,11 +14,11 @@ from phagocyte_game_manager import runserver
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
-def parse_args(args):
+def parse_args(_args):
     """
     parse the argument given in parameter
 
-    :param args: args to parse
+    :param _args: args to parse
     :return: dictionary of arguments
     """
     parser = argparse.ArgumentParser(add_help=False)
@@ -42,8 +42,9 @@ def parse_args(args):
     node.add_argument("--auth-port", default=8080, dest="auth_port", type=int, help="authentication server port")
     node.add_argument("--name", help="name of the node to create")
     node.add_argument("--capacity", type=int, help="max user to allow on server")
+    node.add_argument("-d", "--debug", action="store_true", help="turn on debugging")
 
-    parsed_args = vars(parser.parse_args(args))
+    parsed_args = vars(parser.parse_args(_args))
 
     if not parsed_args.get("func", None):
         parser.print_help()
