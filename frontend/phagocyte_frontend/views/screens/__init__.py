@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-
+import os
 
 from abc import ABCMeta
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from phagocyte_frontend.network.authentication import Client
+from phagocyte_frontend.views import KV_DIRECTORY
 from phagocyte_frontend.views.popups import InfoPopup
 
 
@@ -20,7 +21,7 @@ class AutoLoadableScreen(Screen):
     __metaclass__ = ABCMeta
 
     def __init__(self, **kw):
-        Builder.load_file("kv/screens/{name}.kv".format(name=self.screen_name))
+        Builder.load_file(os.path.join(KV_DIRECTORY, "screens/{name}.kv").format(name=self.screen_name))
         super(Screen, self).__init__(**kw)
         self.name = self.screen_name
 

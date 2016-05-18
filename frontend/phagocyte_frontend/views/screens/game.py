@@ -1,21 +1,20 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen
 
 from phagocyte_frontend.network.game import NetworkGameClient, REACTOR
 from phagocyte_frontend.views.game import GameInstance
+from phagocyte_frontend.views.screens import AutoLoadableScreen
 from phagocyte_frontend.views.screens.lobby import LobbyScreen
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
-class GameScreen(Screen):
+class GameScreen(AutoLoadableScreen):
+    screen_name = "game"
+
     def __init__(self, **kw):
-        Builder.load_file('kv/game.kv')
         super().__init__(**kw)
-        self.name = "game"
         self.game_instance = None
 
     def on_pre_enter(self):
