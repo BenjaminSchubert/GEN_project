@@ -14,8 +14,13 @@ class GameScreen(Screen):
     def __init__(self, **kw):
         Builder.load_file('kv/game.kv')
         super().__init__(**kw)
-        self.add_widget(GameInstance())
         self.name = "game"
+
+    def on_enter(self, *args):
+        self.add_widget(GameInstance())
+
+    def on_leave(self, *args):
+        self.clear_widgets()
 
 
 

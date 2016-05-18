@@ -1,26 +1,25 @@
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.properties import ObjectProperty
 from kivy.uix.widget import Widget
 from kivy.vector import Vector
 from random import randint
 
 
 class MainPlayer(Widget):
-    def move(self):
-        if Window.mouse_pos[0] < (Window.width / 4) - 100:
-            x = -10
-        elif Window.mouse_pos[0] > (Window.width / 4) + 100:
-            x = 10
-        else:
-            x = -(((Window.width / 4) - Window.mouse_pos[0]) / 10)
+    MAX_SPEED = 10
 
-        if Window.mouse_pos[1] < (Window.height / 4) - 100:
-            y = -10
-        elif Window.mouse_pos[1] > (Window.height / 4) + 100:
-            y = 10
-        else:
-            y = -(((Window.height / 4) - Window.mouse_pos[1]) / 10)
+    def move(self):
+        def get_speed(pos, center, max_speed=self.MAX_SPEED):
+            if pos < center:
+                return max(-max_speed, (pos - center) / 10)
+            else:
+                return min((pos - center) / 10, max_speed)
+
+        m_x, m_y = Window.mouse_pos
+        center_x, center_y = Window.width / 2, Window.height / 2
+
+        x = get_speed(m_x, center_x)
+        y = get_speed(m_y, center_y)
 
         self.pos = Vector(x, y) + self.pos
 
@@ -42,8 +41,6 @@ class Food(Widget):
 
 
 class Game(Widget):
-    main_player = ObjectProperty(None)
-
     def add_food(self, nb):
         for i in range(nb):
             self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
@@ -54,11 +51,6 @@ class Background(Widget):
 
 
 class GameInstance(Widget):
-    game = ObjectProperty(None)
-    camera = ObjectProperty(None)
-    background = ObjectProperty(None)
-    screen_manager = None
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.game.add_food(100)
@@ -67,5 +59,7 @@ class GameInstance(Widget):
 
     def follow_main_player(self, dt):
         self.game.main_player.move()
+        print(dir(self.game.main_player))
+        print(self.game.main_player.width)
         self.camera.scroll_x = ((self.game.main_player.center_x) / self.background.width)
         self.camera.scroll_y = ((self.game.main_player.center_y) / self.background.height)

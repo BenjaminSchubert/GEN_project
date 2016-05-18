@@ -82,3 +82,5 @@ class LobbyScreen(AutoLoadableScreen):
 
     def play(self):
         self.manager.current = "game"
+        # TODO join the correct game
+        # self.client.join_game(games["Main"]["ip"], games["Main"]["port"], self)
