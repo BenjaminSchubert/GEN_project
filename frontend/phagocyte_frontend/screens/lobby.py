@@ -16,19 +16,28 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 data = [{'text': str(i), 'is_selected': False} for i in range(100)]
 
 
-def game_list_display_converter(row_index, entry):
-    return {
-        "text": entry["name"],
-        "size_hint_y": None,
-        "height": 30
-    }
+class GameListItemButton(ListItemButton):
+    def __init__(self, ip, port, **kwargs):
+        super().__init__(**kwargs)
+        self.ip = ip
+        self.port = port
+
+    @classmethod
+    def display_converter(cls, row_index, entry):
+        return {
+            "text": entry["name"],
+            "size_hint_y": None,
+            "height": 30,
+            "ip": entry["ip"],
+            "port": entry["port"]
+        }
 
 
 class LobbyScreen(AutoLoadableScreen):
     screen_name = "lobby"
 
     game_list = DictAdapter(
-        data={}, cls=ListItemButton, args_converter=game_list_display_converter,
+        data={}, cls=GameListItemButton, args_converter=GameListItemButton.display_converter,
         allow_empty_selection=False
     )
 
@@ -82,5 +91,3 @@ class LobbyScreen(AutoLoadableScreen):
 
     def play(self):
         self.manager.current = "game"
-        # TODO join the correct game
-        # self.client.join_game(games["Main"]["ip"], games["Main"]["port"], self)

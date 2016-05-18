@@ -18,14 +18,6 @@
             pos: self.pos
             size: self.size
 
-<Background>:
-    size: 9000, 9000
-    canvas.before:
-        Color:
-            rgb: 34/255, 112/255, 138/255
-        Rectangle:
-            pos: self.pos
-            size: self.size
 
 
 <Game>:
@@ -47,8 +39,8 @@
     id: game_object
     game: game
     camera: camera
-    background: background
     size: root.size
+
     ScrollView:
         id: camera
         size_hint: None, None
@@ -59,7 +51,12 @@
             size_hint: None, None
             do_translation: False, False
             scale: 1
-            Background:
-                id: background
-                Game:
-                    id: game
+
+            canvas.before:
+                Color:
+                    rgb: 34/255, 112/255, 138/255
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            Game:
+                id: game

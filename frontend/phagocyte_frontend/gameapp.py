@@ -23,9 +23,11 @@ class MainPlayer(Widget):
 
         self.pos = Vector(x, y) + self.pos
 
+        return x, y
+
     def set_random_pos(self):
-        self.x = randint(2000, 5000)
-        self.y = randint(2000, 5000)
+        self.center_x = randint(2000, 5000)
+        self.center_y = randint(2000, 5000)
 
 
 class Food(Widget):
@@ -46,20 +48,29 @@ class Game(Widget):
             self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
 
 
-class Background(Widget):
-    pass
-
-
 class GameInstance(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.server = None
         self.game.add_food(100)
         Clock.schedule_interval(self.follow_main_player, 1.0 / 60.0)
         self.game.main_player.set_random_pos()
 
+        x, y = self.camera.convert_distance_to_scroll(
+            -400 + 9800 / 9000 * self.game.main_player.x,
+            -300 + 9600 / 9000 * self.game.main_player.y
+        )
+        print(x, y)
+        print(self.game.main_player.pos)
+        print(self.game.main_player.center)
+        print(self.game.main_player.center_x / 9000)
+        self.camera.scroll_x = x
+        self.camera.scroll_y = y
+
     def follow_main_player(self, dt):
-        self.game.main_player.move()
-        print(dir(self.game.main_player))
-        print(self.game.main_player.width)
-        self.camera.scroll_x = ((self.game.main_player.center_x) / self.background.width)
-        self.camera.scroll_y = ((self.game.main_player.center_y) / self.background.height)
+        x, y = self.camera.convert_distance_to_scroll(*self.game.main_player.move())
+        self.camera.scroll_x += x
+        self.camera.scroll_y += y
+
+    def register_game_server(self, server):
+        self.server = server
