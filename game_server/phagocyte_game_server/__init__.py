@@ -115,16 +115,16 @@ class GameProtocol(DatagramProtocol):
 
         raise AuthenticationError(r.json())
 
-    def register(self, data, adr):
+    def register(self, data, addr):
         """
         register a new player on the game server
 
         :param data: data got from the client
-        :param adr: client address
+        :param addr: client address
         :return:  message to send to the user
         """
         if data.get("event") != Event.TOKEN:
-            self.logger.warning("User from {adr} not registered tried to gain access".format(adr=adr))
+            self.logger.warning("User from {addr} not registered tried to gain access".format(addr=addr))
             return dict(event=Event.ERROR, error="Client not registered")
 
         elif data.get("token") is None:
@@ -136,14 +136,14 @@ class GameProtocol(DatagramProtocol):
             try:
                 name, color = self.authenticate(data.get("token"))
             except AuthenticationError as e:
-                self.logger.warning("User from {adr} tried to register with invalid token".format(adr=adr))
+                self.logger.warning("User from {addr} tried to register with invalid token".format(addr=addr))
                 e.msg["event"] = Event.ERROR
                 return e.msg
             else:
                 self.logger.debug("Registered new user {name}".format(name=name))
 
         position = dict(position=self.random_position(), color=color, name=name)
-        self.clients[adr] = position
+        self.clients[addr] = position
         data = dict(event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y)
         data.update(position)
         return data
@@ -187,9 +187,9 @@ def runserver(port, auth_host, auth_port, name, capacity, debug):
         reactor.listenUDP(port, GameProtocol(auth_host, auth_port, capacity, logger))
     except CannotListenError as e:
         if isinstance(e.socketError, PermissionError):
-            logger.error("Permission denied. Do you the right to open port {} ?".format(port))
+            logger.error("Permission denied. Do you have the right to open port {} ?".format(port))
         elif isinstance(e.socketError, OSError):
-            logger.error("Couldn't listen on port {}. port is already used".format(port))
+            logger.error("Couldn't listen on port {}. Port is already used.".format(port))
         else:
             raise e.socketError
     else:
