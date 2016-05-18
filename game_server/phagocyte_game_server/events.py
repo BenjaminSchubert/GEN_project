@@ -16,3 +16,5 @@ class Event(enum.IntEnum):
     ERROR = 0
     TOKEN = 1
     GAME_INFO = 2
+    UPDATE = 3
+    STATE = 4

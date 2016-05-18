@@ -11,24 +11,32 @@ class BoundedMixin:
     position_x = 0
     position_y = 0
 
+    delta_x = 0
+    delta_y = 0
+
     def set_position(self, x, y):
+        old_x = self.position_x
+        old_y = self.position_y
+
         self.position_x = max(min(x, self.parent.size[0] - self.size[0]), 0)
         self.position_y = max(min(y, self.parent.size[1] - self.size[1]), 0)
 
         self.x = self.position_x + self.get_parent_window().size[0] / 2
         self.y = self.position_y + self.get_parent_window().size[1] / 2
 
+        self.delta_x += self.position_x - old_x
+        self.delta_y += self.position_y - old_y
+
     def add_position(self, x, y):
         self.set_position(x + self.position_x, y + self.position_y)
 
 
-class MainPlayer(Widget, BoundedMixin):
-    """
-    The main player, the one you can control
-    """
+class Player(Widget, BoundedMixin):
+    pass
 
+
+class MainPlayer(Player):
     MAX_SPEED = 10
-    SIZE = 100
 
     def move(self):
         """
@@ -71,9 +79,8 @@ class Food(Widget):
 
 
 class World(Widget):
-    """
-    The world area class
-    """
+    players = {}
+
     def add_food(self, nb):
         for i in range(nb):
             self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
@@ -102,7 +109,6 @@ class GameInstance(Widget):
 
         self.world.main_player.move()
 
-        # calculate the scroll position
         x, y = self.camera.convert_distance_to_scroll(
             self.world.main_player.center_x - 400,
             self.world.main_player.center_y - 300
@@ -110,13 +116,31 @@ class GameInstance(Widget):
         self.camera.scroll_x = x
         self.camera.scroll_y = y
 
-    def register_game_server(self, server):
-        """
-        set the game server
+    def send_moves(self, dt):
+        self.server.send_state((self.world.main_player.delta_x, self.world.main_player.delta_y))
+        self.world.main_player.delta_x = 0
+        self.world.main_player.delta_y = 0
 
-        :param server: the game server
-        """
+    def start_game(self, server, data):
         self.server = server
+        self.world.size = (data["max_x"], data["max_y"])
+        self.world.main_player.set_position(*data["position"])
+        # FIXME : change color
+        self.start_timers()
 
-        # only when a game server is set let the player be able to move
-        Clock.schedule_interval(self.follow_main_player, self.REFRESH_RATE)
+    def start_timers(self):
+        Clock.schedule_interval(self.follow_main_player, 1 / 60)
+        Clock.schedule_interval(self.send_moves, 1 / 20)
+
+    def update_state(self, states):
+        for state in states:
+            if state["name"] == self.server.name:
+                self.world.main_player.set_position(*state["position"])
+            elif state["name"] in self.world.players.keys():
+                p = self.world.players[state["name"]]
+                p.set_position(*state["position"])
+            else:
+                p = Player()
+                self.world.add_widget(p)
+                p.set_position(*state["position"])
+                self.world.players[state["name"]] = p

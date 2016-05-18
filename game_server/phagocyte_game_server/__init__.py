@@ -7,12 +7,16 @@ Game server implementation
 import json
 import json.decoder
 import logging
+import queue
+import uuid
+from queue import Queue
+
 import random
 import sys
 
 from rainbow_logging_handler import RainbowLoggingHandler
 import requests
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
@@ -83,15 +87,19 @@ class GameProtocol(DatagramProtocol):
     :param capacity: max capacity of the server
     """
     clients = dict()
+    moves_queue = Queue()
     max_x = 2000
     max_y = 2000
 
     def __init__(self, auth_host, auth_port, capacity, logger):
+        logger.error("NOOOOOOOOOOOOOOOOOOOOOOOOO")
         self.auth_host = auth_host
         self.auth_port = auth_port
         self.max_capacity = capacity
         self.logger = logger
         self.url = "http://{}:{}".format(self.auth_host, self.auth_port)
+
+        task.LoopingCall(self.send_players).start(1 / 20)
 
     def random_position(self):
         """
@@ -99,7 +107,7 @@ class GameProtocol(DatagramProtocol):
 
         :return: tuple of X,Y position
         """
-        return random.randint(0, self.max_x), random.randint(0, self.max_y)
+        return [random.randint(0, self.max_x), random.randint(0, self.max_y)]
 
     def authenticate(self, token):
         """
@@ -129,7 +137,7 @@ class GameProtocol(DatagramProtocol):
 
         elif data.get("token") is None:
             color = random_color()
-            name = data.get("name")
+            name = data.get("name", str(uuid.uuid4()))
             log_name = "with name {name}".format(name=name) if name is not None else "with no name"
             self.logger.debug("Registering new user {name}".format(name=log_name))
         else:
@@ -162,12 +170,28 @@ class GameProtocol(DatagramProtocol):
             self.logger.warning("Invalid json received : '{json}'".format(json=datagram.decode("utf-8")))
         else:
             if self.clients.get(addr) is None:
-                ret = self.register(data, addr)
+                self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
+            elif data["event"] == Event.STATE:
+                self.moves_queue.put((addr, data["speed"]))
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
-                return
 
-            self.transport.write(json.dumps(ret).encode("utf8"), addr)
+    def send_players(self):
+        data = {}
+
+        try:
+            while 1:
+                addr, pos = self.moves_queue.get(timeout=0)
+                x, y = max(-30, min(30, pos[0])), max(-30, min(30, pos[1]))
+                self.clients[addr]["position"][0] += x
+                self.clients[addr]["position"][1] += y
+                data[addr] = self.clients[addr]
+        except queue.Empty:
+            pass
+
+        values = json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8")
+        for client in self.clients.keys():
+            self.transport.write(values, addr=client)
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):

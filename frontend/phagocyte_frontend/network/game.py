@@ -41,7 +41,7 @@ class NetworkGameClient(DatagramProtocol):
     :param port: the port of the server
     :param token: the token of the client
     """
-    phagocyte = None
+    name = None
 
     def __init__(self, host, port, token, game):
         self.host = host
@@ -63,29 +63,22 @@ class NetworkGameClient(DatagramProtocol):
         Executes various actions based on the type of the message.
         """
 
-        print("Received data: ", datagram)
         data = json.loads(datagram.decode("utf-8"))
         event_type = data.get("event", None)
 
         if event_type == Event.GAME_INFO:
-            self.init_world(data)
+            self.name = data["name"]
+            self.game.start_game(self, data)
         elif event_type == Event.UPDATE:
             self.update_gui(data)
+        elif event_type == Event.STATE:
+            self.game.update_state(data["updates"])
         elif event_type == Event.ERROR:
             print("Error: ", data)  # FIXME
         elif event_type is None:
             print("The datagram doesn't have any event: ", data)
         else:
             print("Unhandled event type : data is ", data)
-
-    def init_world(self, data):
-        """
-        Changes the view of the gui to the in-game view.
-
-        :param data: the data received from server.
-        """
-        self.game.world.size = (data["max_x"], data["max_y"])
-        self.game.world.main_player.set_position(*data["position"])
 
     def update_gui(self, data):
         """
@@ -103,11 +96,11 @@ class NetworkGameClient(DatagramProtocol):
         """
         self.send_dict(event=Event.TOKEN, token=self.token)
 
-    def send_state(self):
+    def send_state(self, speed):
         """
         Sends the state of the phagocyte to the server.
         """
-        self.send_dict(event=Event.STATE, position=self.phagocyte.position)
+        self.send_dict(event=Event.STATE, speed=speed)
 
     def send_dict(self, **kwargs):
         """
