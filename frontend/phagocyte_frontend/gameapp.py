@@ -1,14 +1,11 @@
-from random import randint
-
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
+from kivy.uix.widget import Widget
 from kivy.vector import Vector
-from kivy.clock import Clock
-from kivy.logger import Logger
+from random import randint
 
 
 class MainPlayer(Widget):

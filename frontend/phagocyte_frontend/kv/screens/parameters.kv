@@ -1,6 +1,6 @@
 #:kivy 1.8.0
 
-<LobbyApp>:
+<ParametersScreen>:
     # import container, username and password
     container: container
 
@@ -50,7 +50,7 @@
 
             Button:
                 text: "Cancel"
-                on_release: root.next_screen("lobby")
+                on_release: root.manager.main_screen()
 
         BoxLayout:
             padding: 30
@@ -60,4 +60,4 @@
             Button:
                 id: loginButton
                 text: "Validate"
-                on_release: root.user_parameters()
+                on_release: root.validate_parameters()

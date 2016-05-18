@@ -1,3 +1,4 @@
 twisted
 rainbow_logging_handler
+requests
 flask
