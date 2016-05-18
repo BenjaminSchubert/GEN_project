@@ -3,11 +3,10 @@
 
 from abc import ABCMeta
 from kivy.lang import Builder
-
 from kivy.uix.screenmanager import ScreenManager, Screen
 
-from phagocyte_frontend.client import Client
-from phagocyte_frontend.popups import InfoPopup
+from phagocyte_frontend.network.authentication import Client
+from phagocyte_frontend.views.popups import InfoPopup
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"

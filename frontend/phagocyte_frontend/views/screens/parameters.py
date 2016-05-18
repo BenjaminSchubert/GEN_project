@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-from phagocyte_frontend.screens import AutoLoadableScreen
+from phagocyte_frontend.views.screens import AutoLoadableScreen
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"

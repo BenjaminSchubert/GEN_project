@@ -1,11 +1,25 @@
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
-from kivy.vector import Vector
 from random import randint
 
 
-class MainPlayer(Widget):
+class BoundedMixin:
+    position_x = 0
+    position_y = 0
+
+    def set_position(self, x, y):
+        self.position_x = max(min(x, self.parent.size[0] - self.size[0]), 0)
+        self.position_y = max(min(y, self.parent.size[1] - self.size[1]), 0)
+
+        self.x = self.position_x + self.get_parent_window().size[0] / 2
+        self.y = self.position_y + self.get_parent_window().size[1] / 2
+
+    def add_position(self, x, y):
+        self.set_position(x + self.position_x, y + self.position_y)
+
+
+class MainPlayer(Widget, BoundedMixin):
     MAX_SPEED = 10
 
     def move(self):
@@ -21,13 +35,7 @@ class MainPlayer(Widget):
         x = get_speed(m_x, center_x)
         y = get_speed(m_y, center_y)
 
-        self.pos = Vector(x, y) + self.pos
-
-        return x, y
-
-    def set_random_pos(self):
-        self.center_x = randint(2000, 5000)
-        self.center_y = randint(2000, 5000)
+        self.add_position(x, y)
 
 
 class Food(Widget):
@@ -42,7 +50,7 @@ class Food(Widget):
         self.y += randint(-5, 5)
 
 
-class Game(Widget):
+class World(Widget):
     def add_food(self, nb):
         for i in range(nb):
             self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
@@ -52,25 +60,18 @@ class GameInstance(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.server = None
-        self.game.add_food(100)
-        Clock.schedule_interval(self.follow_main_player, 1.0 / 60.0)
-        self.game.main_player.set_random_pos()
+        self.world.add_food(100)
 
+    def follow_main_player(self, dt):
+        self.world.main_player.move()
         x, y = self.camera.convert_distance_to_scroll(
-            -400 + 9800 / 9000 * self.game.main_player.x,
-            -300 + 9600 / 9000 * self.game.main_player.y
+            self.world.main_player.center_x - 400,
+            self.world.main_player.center_y - 300
         )
-        print(x, y)
-        print(self.game.main_player.pos)
-        print(self.game.main_player.center)
-        print(self.game.main_player.center_x / 9000)
+
         self.camera.scroll_x = x
         self.camera.scroll_y = y
 
-    def follow_main_player(self, dt):
-        x, y = self.camera.convert_distance_to_scroll(*self.game.main_player.move())
-        self.camera.scroll_x += x
-        self.camera.scroll_y += y
-
     def register_game_server(self, server):
         self.server = server
+        Clock.schedule_interval(self.follow_main_player, 1 / 60)

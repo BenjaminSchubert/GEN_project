@@ -20,9 +20,9 @@
 
 
 
-<Game>:
+<World>:
     size: 8000, 8000
-    pos: 500, 500
+    pos: (root.parent.size[0] - root.size[0]) / 2, (root.parent.size[1] -root.size[1]) / 2
     canvas.before:
         Color:
             rgb: 9/255, 56/255, 71/255
@@ -37,8 +37,12 @@
 
 <GameInstance>:
     id: game_object
-    game: game
+
+    world: world
     camera: camera
+    map: map
+    root: root
+
     size: root.size
 
     ScrollView:
@@ -46,7 +50,8 @@
         size_hint: None, None
         size: root.size
         Scatter:
-            size: 9000, 9000
+            id: map
+            size: world.size[0] + root.size[0], world.size[1] + root.size[1]
             do_scale: False
             size_hint: None, None
             do_translation: False, False
@@ -58,5 +63,5 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
-            Game:
-                id: game
+            World:
+                id: world

@@ -3,16 +3,15 @@
 """
 Client-side classes to communicate with the game server.
 """
-
+import enum
 import json
 
-import phagocyte_frontend.twisted_reactor
 import twisted.internet
 
-from phagocyte_frontend.events import Event
+import phagocyte_frontend.network.twisted_reactor
 
 
-twisted.internet._threadedselect = phagocyte_frontend.twisted_reactor
+twisted.internet._threadedselect = phagocyte_frontend.network.twisted_reactor
 
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()
@@ -26,6 +25,14 @@ __author__ = "Basile Vu <basile.vu@gmail.com>"
 REACTOR = reactor
 
 
+class Event(enum.IntEnum):
+    ERROR = 0
+    TOKEN = 1
+    GAME_INFO = 2
+    UPDATE = 3
+    STATE = 4
+
+
 class NetworkGameClient(DatagramProtocol):
     """
     Executes various actions related to messages related to client - game server communication.
@@ -36,11 +43,11 @@ class NetworkGameClient(DatagramProtocol):
     """
     phagocyte = None
 
-    def __init__(self, host, port, token, world):
+    def __init__(self, host, port, token, game):
         self.host = host
         self.port = port
         self.token = token
-        self.world = world
+        self.game = game
 
     def startProtocol(self):
         """
@@ -77,10 +84,8 @@ class NetworkGameClient(DatagramProtocol):
 
         :param data: the data received from server.
         """
-        print(self.world.world.size)
-        self.world.world.size = (data["max_x"], data["max_y"])
-
-        print(self.world.world.size)
+        self.game.world.size = (data["max_x"], data["max_y"])
+        self.game.world.main_player.set_position(*data["position"])
 
     def update_gui(self, data):
         """

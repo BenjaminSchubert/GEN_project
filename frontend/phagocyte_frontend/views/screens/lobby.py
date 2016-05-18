@@ -4,10 +4,10 @@ from kivy.adapters.dictadapter import DictAdapter
 from kivy.properties import Clock
 from kivy.uix.listview import ListItemButton
 
-from phagocyte_frontend.screens import AutoLoadableScreen
-from phagocyte_frontend.screens.login import LoginScreen
-from phagocyte_frontend.screens.parameters import ParametersScreen
-from phagocyte_frontend.screens.register import RegisterScreen
+from phagocyte_frontend.views.screens import AutoLoadableScreen
+from phagocyte_frontend.views.screens.login import LoginScreen
+from phagocyte_frontend.views.screens.parameters import ParametersScreen
+from phagocyte_frontend.views.screens.register import RegisterScreen
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
