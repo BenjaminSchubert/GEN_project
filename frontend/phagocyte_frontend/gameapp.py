@@ -1,7 +1,5 @@
-from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.widget import Widget
 from kivy.vector import Vector
@@ -61,28 +59,13 @@ class GameInstance(Widget):
     background = ObjectProperty(None)
     screen_manager = None
 
-    def __init__(self, screen_manager, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.game.add_food(100)
         Clock.schedule_interval(self.follow_main_player, 1.0 / 60.0)
         self.game.main_player.set_random_pos()
-        self.screen_manager = screen_manager
 
     def follow_main_player(self, dt):
         self.game.main_player.move()
         self.camera.scroll_x = ((self.game.main_player.center_x) / self.background.width)
         self.camera.scroll_y = ((self.game.main_player.center_y) / self.background.height)
-
-
-class GameApp(App):
-    def build(self):
-        Builder.load_file('kv/game.kv')
-        return GameInstance(None)
-
-    def get_instance(self, screen_manager):
-        Builder.load_file('kv/game.kv')
-        return GameInstance(screen_manager)
-
-
-if __name__ == '__main__':
-    GameApp().run()

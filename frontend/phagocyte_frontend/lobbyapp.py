@@ -9,9 +9,7 @@ could be filled with any other content from a .kv file.
 """
 
 import kivy
-from kivy.app import App
 from kivy.config import Config
-from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -46,11 +44,6 @@ class LobbyApp(BoxLayout, GridLayout, Widget):
         self.game.main_player.move()
         self.camera.scroll_x = ((self.game.main_player.center_x) / self.background.width)
         self.camera.scroll_y = ((self.game.main_player.center_y) / self.background.height)
-
-    def screen_lobby(self):
-        self.infoPopup.dismiss()
-        self.next_screen("lobby")
-
 
     def get_games(self):
         try:

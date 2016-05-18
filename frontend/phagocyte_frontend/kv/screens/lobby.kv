@@ -3,22 +3,10 @@
 #:import label kivy.uix.label
 #:import sla kivy.adapters.simplelistadapter
 
-<ListViewModal>:
-    size_hint: None,None
-    size: 400,400
-
-    ListView:
-        size_hint: .8,.8
-
-        adapter:
-            sla.SimpleListAdapter(
-            data=["Item #{0}".format(i) for i in range(100)],
-            cls=label.Label)
 
 <LobbyScreen>:
     # import container
     container: container
-    getGame: getGame
 
     BoxLayout:
         id: container
@@ -37,20 +25,15 @@
                 text: "[b]Running games[/b]"
                 #background_color: [1, 1, 1, 1]
 
-            Button:
-                text:"game 1"
-                text_size: self.width, None
-                halign: "center"
-                valign: "middle"
-                on_release: root.get_games()
+            ListView:
+                adapter: root.game_list
 
             Button:
-                id: getGame
-                text:"game 2"
+                text:"play"
                 text_size: self.width, None
                 halign: "center"
                 valign: "middle"
-                on_release: root.get_games()
+                on_release: root.play()
 
         BoxLayout:
             padding: 10
