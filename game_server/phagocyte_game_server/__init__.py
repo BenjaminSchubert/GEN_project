@@ -126,7 +126,7 @@ class Player(GameObject):
         }
 
     def update_size(self, obj: 'GameObject'):
-        print("YUP")
+        self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
 
 
 class GameProtocol(DatagramProtocol):
