@@ -142,8 +142,8 @@ class GameProtocol(DatagramProtocol):
     food = list()
     food_notify_index = 0
 
-    max_x = 2000
-    max_y = 2000
+    max_x = 5000
+    max_y = 5000
     default_radius = 50
     max_speed = 400
 
