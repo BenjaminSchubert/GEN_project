@@ -7,6 +7,9 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 class LoginScreen(AutoLoadableScreen):
+    """
+    The login screen
+    """
     screen_name = "login"
 
     def user_login(self):
@@ -14,7 +17,6 @@ class LoginScreen(AutoLoadableScreen):
         connects the specified user with his name and password
         """
         self.loginButton.disabled = True
-
         try:
             self.manager.client.login(self.username.text, self.password.text)
         except CredentialsException as e:

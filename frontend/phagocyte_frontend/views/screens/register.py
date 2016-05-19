@@ -10,6 +10,9 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 class RegisterScreen(AutoLoadableScreen):
+    """
+    Create account (register) screen
+    """
     screen_name = "register"
 
     def user_creation(self):
@@ -17,7 +20,6 @@ class RegisterScreen(AutoLoadableScreen):
         registers the specified user with his name and password
         """
         self.creationButton.disabled = True
-
         try:
             self.manager.client.register(self.username.text, self.password.text)
         except CredentialsException as e:

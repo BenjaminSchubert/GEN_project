@@ -14,10 +14,14 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 def noop(*_):
+    """
+    no operations
+    """
     pass
 
 
 class AutoLoadableScreen(Screen):
+    # TODO
     __metaclass__ = ABCMeta
 
     def __init__(self, **kw):
@@ -31,9 +35,19 @@ class PhagocyteScreenManager(ScreenManager):
     info_popup = InfoPopup()
 
     def main_screen(self, *args, **kwargs):
+        """
+        set the current screen to the lobby main screen
+        """
         self.current = self.screen_names[0]
 
     def warn(self, msg, title="Info", callback=None):
+        """
+        Open a warn popup
+        :param msg: content of the popup
+        :param title: title of the popup
+        :param callback:
+        :return:
+        """
         if callback is None:
             callback = noop
 
@@ -41,6 +55,3 @@ class PhagocyteScreenManager(ScreenManager):
         self.info_popup.title = title
         self.info_popup.bind(on_dismiss=callback)
         self.info_popup.open()
-
-    def __del__(self):
-        self.executor.shutdown(True)
