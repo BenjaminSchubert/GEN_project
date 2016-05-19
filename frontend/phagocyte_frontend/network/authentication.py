@@ -5,12 +5,13 @@ Contains client-related classes used to interact with the authentication server.
 """
 
 import json
-import requests
+
 import hashlib
+import requests
 
 from phagocyte_frontend.exceptions import CredentialsException
-from phagocyte_frontend.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
-from phagocyte_frontend.client_game import ClientGame
+from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
+
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
@@ -121,13 +122,4 @@ class Client:
         Gets the list of available games.
         """
         r = requests.get(self.get_base_url() + GAMES_PATH)
-        return r.json()["games"]
-
-    def join_game(self, host, port):
-        """
-        Joins a game hosted on a server.
-
-        :param host: the ip address of the host
-        :param port: the port used
-        """
-        ClientGame(self.token, host, port).run()
+        return r.json()

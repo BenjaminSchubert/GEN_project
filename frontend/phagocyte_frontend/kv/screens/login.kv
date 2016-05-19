@@ -1,0 +1,48 @@
+#:kivy 1.8.0
+
+<LoginScreen>:
+    # import container, username and password
+    container: container
+    username: username
+    password: password
+    loginButton: loginButton
+
+    GridLayout:
+        id: container
+        cols: 2
+        #padding: 10
+        #spacing: 5
+
+        Label:
+            text: "User name:"
+
+        TextInput:
+            id: username
+            multiline: False
+
+        Label:
+            text: "Password:"
+
+        TextInput:
+            id: password
+            password: True
+            multiline: False
+
+        BoxLayout:
+            padding: 30
+            spacing: 5
+            orientation: "horizontal"
+
+            Button:
+                text: "Cancel"
+                on_release: root.manager.main_screen()
+
+        BoxLayout:
+            padding: 30
+            spacing: 5
+            orientation: "horizontal"
+
+            Button:
+                id: loginButton
+                text: "Login"
+                on_release: root.user_login()

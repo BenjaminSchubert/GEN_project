@@ -3,16 +3,15 @@
 """
 Client-side classes to communicate with the game server.
 """
-
+import enum
 import json
 
-import phagocyte_frontend.twisted_reactor
 import twisted.internet
 
-from phagocyte_frontend.events import Event
+import phagocyte_frontend.network.twisted_reactor
 
 
-twisted.internet._threadedselect = phagocyte_frontend.twisted_reactor
+twisted.internet._threadedselect = phagocyte_frontend.network.twisted_reactor
 
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()
@@ -23,28 +22,18 @@ from twisted.internet.protocol import DatagramProtocol
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
 
-class Phagocyte:
-    """
-    Represents the phagocyte of the player.
-
-    :param info: a dict containing name and position.
-    """
-    def __init__(self, info):
-        self.id = info["name"]
-        self.position = info["position"]
-        self.speed = [0, 0]
-
-    def update(self, info):
-        """
-        Updates the info of the phagocyte.
-
-        :param info: a dict containing the position and speed.
-        """
-        self.position = info["position"]
-        self.speed = info["speed"]
+REACTOR = reactor
 
 
-class ClientGameProtocol(DatagramProtocol):
+class Event(enum.IntEnum):
+    ERROR = 0
+    TOKEN = 1
+    GAME_INFO = 2
+    UPDATE = 3
+    STATE = 4
+
+
+class NetworkGameClient(DatagramProtocol):
     """
     Executes various actions related to messages related to client - game server communication.
 
@@ -54,17 +43,20 @@ class ClientGameProtocol(DatagramProtocol):
     """
     phagocyte = None
 
-    def __init__(self, host, port, token):
+    def __init__(self, host, port, token, game):
         self.host = host
         self.port = port
         self.token = token
+        self.game = game
 
     def startProtocol(self):
         """
         Establishes connection with game server and sends the token.
         """
+        print("Started protocol")
         self.transport.connect(self.host, self.port)
         self.send_token()
+        print("sent token")
 
     def datagramReceived(self, datagram, addr):
         """
@@ -76,7 +68,7 @@ class ClientGameProtocol(DatagramProtocol):
         event_type = data.get("event", None)
 
         if event_type == Event.GAME_INFO:
-            self.init_gui(data)
+            self.init_world(data)
         elif event_type == Event.UPDATE:
             self.update_gui(data)
         elif event_type == Event.ERROR:
@@ -86,16 +78,14 @@ class ClientGameProtocol(DatagramProtocol):
         else:
             print("Unhandled event type : data is ", data)
 
-    def init_gui(self, data):
+    def init_world(self, data):
         """
         Changes the view of the gui to the in-game view.
 
         :param data: the data received from server.
         """
-        print("Changing gui to game view")
-        self.phagocyte = Phagocyte(data)
-
-        # TODO
+        self.game.world.size = (data["max_x"], data["max_y"])
+        self.game.world.main_player.set_position(*data["position"])
 
     def update_gui(self, data):
         """
@@ -124,23 +114,3 @@ class ClientGameProtocol(DatagramProtocol):
         Sends a dictionary as json to the server.
         """
         self.transport.write(json.dumps(kwargs).encode("utf-8"))
-
-
-class ClientGame:
-    """
-    Represents the in-game client.
-
-    :param host: the ip of the server
-    :param port: the port of the server
-    :param token: the token of the client
-    """
-    def __init__(self, token, host, port):
-        self.host = host
-        self.port = port
-        self.token = token
-
-    def run(self):
-        """
-        Runs the client.
-        """
-        reactor.listenUDP(0, ClientGameProtocol(self.host, self.port, self.token))

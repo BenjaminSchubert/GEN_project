@@ -1,0 +1,20 @@
+#:kivy 1.8.0
+
+<InfoPopup>:
+    title: "Info"
+    size_hint: (None, None)
+    size: (350, 200)
+    auto_dismiss: True
+    msg: "TO BE SET"
+
+    BoxLayout:
+        orientation: "vertical"
+
+        Label:
+            text: root.msg
+
+        Button:
+            text: "Ok"
+            size_hint: (0.4, 0.4)
+            pos_hint: {"x": 0.6}
+            on_release: root.dismiss()
