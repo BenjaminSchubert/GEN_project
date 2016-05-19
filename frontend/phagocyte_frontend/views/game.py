@@ -11,21 +11,18 @@ class BoundedMixin:
     position_x = 0
     position_y = 0
 
-    delta_x = 0
-    delta_y = 0
+    correction_x = 0
+    correction_y = 0
 
     def set_position(self, x, y):
-        old_x = self.position_x
-        old_y = self.position_y
+        self.correction_x /= 2
+        self.correction_y /= 2
 
-        self.position_x = max(min(x, self.parent.size[0] - self.size[0]), 0)
-        self.position_y = max(min(y, self.parent.size[1] - self.size[1]), 0)
+        self.position_x = max(min(x + self.correction_x, self.parent.size[0] - self.size[0]), 0)
+        self.position_y = max(min(y + self.correction_y, self.parent.size[1] - self.size[1]), 0)
 
-        self.x = self.position_x + self.get_parent_window().size[0] / 2
-        self.y = self.position_y + self.get_parent_window().size[1] / 2
-
-        self.delta_x += self.position_x - old_x
-        self.delta_y += self.position_y - old_y
+        self.x = self.position_x + Window.size[0] / 2
+        self.y = self.position_y + Window.size[1] / 2
 
     def add_position(self, x, y):
         self.set_position(x + self.position_x, y + self.position_y)
@@ -38,32 +35,18 @@ class Player(Widget, BoundedMixin):
 class MainPlayer(Player):
     MAX_SPEED = 10
 
-    def move(self):
-        """
-        Let the main player move
-        """
+    def move(self, dt):
         def get_speed(pos, center, max_speed=self.MAX_SPEED):
-            """
-            Get the direction of the mouse from the center point
-            from that point calculate de distance like :
-            distance from the center point to the pos if it's smaller than
-            max_speed
-
-            :param pos: x or y
-            :param center: center point to calculate speed from
-            :param max_speed: the maximum speed of the player
-            :return: the speed
-            """
+            ds = 200 * dt
             if pos < center:
-                return max(-max_speed, (pos - center) / 10)
+                return max(-max_speed, (pos - center) / ds)
             else:
-                return min((pos - center) / 10, max_speed)
+                return min((pos - center) / ds, max_speed)
 
         m_x, m_y = Window.mouse_pos
-        center_x, center_y = Window.width / 2, Window.height / 2
 
-        x = get_speed(m_x, center_x)
-        y = get_speed(m_y, center_y)
+        x = get_speed(m_x, Window.width / 2)
+        y = get_speed(m_y, Window.height / 2)
 
         self.add_position(x, y)
 
@@ -107,7 +90,7 @@ class GameInstance(Widget):
         :param dt: date time of the schedule_interval
         """
 
-        self.world.main_player.move()
+        self.world.main_player.move(dt)
 
         x, y = self.camera.convert_distance_to_scroll(
             self.world.main_player.center_x - 400,
@@ -117,9 +100,10 @@ class GameInstance(Widget):
         self.camera.scroll_y = y
 
     def send_moves(self, dt):
-        self.server.send_state((self.world.main_player.delta_x, self.world.main_player.delta_y))
-        self.world.main_player.delta_x = 0
-        self.world.main_player.delta_y = 0
+        self.server.send_state((
+            self.world.main_player.center_x - Window.width / 2,
+            self.world.main_player.center_y - Window.height / 2
+        ))
 
     def start_game(self, server, data):
         self.server = server
@@ -130,15 +114,20 @@ class GameInstance(Widget):
 
     def start_timers(self):
         Clock.schedule_interval(self.follow_main_player, 1 / 60)
-        Clock.schedule_interval(self.send_moves, 1 / 20)
+        Clock.schedule_interval(self.send_moves, 1 / 60)
 
     def update_state(self, states):
         for state in states:
             if state["name"] == self.server.name:
-                self.world.main_player.set_position(*state["position"])
+                if state.get("dirty", None):
+                    self.world.main_player.correction_x += state["dirty"][0]
+                    self.world.main_player.correction_y += state["dirty"][1]
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
-                p.set_position(*state["position"])
+                p.set_position(
+                    state["position"][0] - p.size[0] / 2,
+                    state["position"][1] - p.size[1] / 2
+                )
             else:
                 p = Player()
                 self.world.add_widget(p)

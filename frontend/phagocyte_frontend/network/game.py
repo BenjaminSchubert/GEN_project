@@ -96,11 +96,11 @@ class NetworkGameClient(DatagramProtocol):
         """
         self.send_dict(event=Event.TOKEN, token=self.token)
 
-    def send_state(self, speed):
+    def send_state(self, position):
         """
         Sends the state of the phagocyte to the server.
         """
-        self.send_dict(event=Event.STATE, speed=speed)
+        self.send_dict(event=Event.STATE, position=position)
 
     def send_dict(self, **kwargs):
         """
