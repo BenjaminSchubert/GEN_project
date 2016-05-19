@@ -60,6 +60,9 @@ class Client:
             "content-type": "application/json"
         }
 
+        if self.is_logged_in():
+            headers["authorization"] = "JWT " + self.token
+
         return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=_json)
 
     def register(self, username, password):
