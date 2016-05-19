@@ -30,7 +30,6 @@ class BoundedMixin:
 
 
 class Player(Widget, BoundedMixin):
-
     def set_size(self, size):
         self.size = size, size
 
@@ -66,6 +65,7 @@ class Food(Widget):
     """
     The food let the player grow
     """
+
     def __init__(self, x, y, **kwargs):
         super().__init__(**kwargs)
         self.x = x
@@ -86,6 +86,7 @@ class GameInstance(Widget):
     """
 
     REFRESH_RATE = 1 / 60
+    SCALE_RATIO = 2
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -103,24 +104,24 @@ class GameInstance(Widget):
 
         self.world.main_player.move(dt)
 
-        #TODO remove
+        # TODO remove
         self.world.main_player.set_color(.2, .2, .7)
-        self.world.main_player.set_size(500)
+        self.world.main_player.set_size(300)
 
-        #TODO set the scale relatively to player
-        self.map.scale = 1
+        player_width = self.world.main_player.width
+        self.map.scale = player_width / player_width / self.SCALE_RATIO
 
         x, y = self.camera.convert_distance_to_scroll(
-            self.world.main_player.center_x*self.map.scale - Window.width/2,
-            self.world.main_player.center_y*self.map.scale - Window.height/2
+            self.world.main_player.center_x * self.map.scale - Window.width / 2,
+            self.world.main_player.center_y * self.map.scale - Window.height / 2
         )
         self.camera.scroll_x = x
         self.camera.scroll_y = y
 
     def send_moves(self, dt):
         self.server.send_state((
-            self.world.main_player.center_x - Window.width/2,
-            self.world.main_player.center_y - Window.height/2
+            self.world.main_player.center_x - Window.width / 2,
+            self.world.main_player.center_y - Window.height / 2
         ))
 
     def start_game(self, server, data):
