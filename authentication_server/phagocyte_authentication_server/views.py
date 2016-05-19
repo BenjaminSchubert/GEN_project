@@ -10,6 +10,7 @@ import jwt
 import requests
 import sqlalchemy.exc
 from flask import request, jsonify, make_response
+from flask_jwt import jwt_required, current_identity
 
 from phagocyte_authentication_server import app
 from phagocyte_authentication_server.auth import identity
@@ -96,8 +97,27 @@ def register_manager():
     return jsonify(data)
 
 
-@app.route("/account", methods=["POST"])
+@app.route("/account/parameters", methods=["POST"])
+@jwt_required()
 def change_account_parameters():
+    print("received: ", request.get_json())
+
+    received = request.get_json()
+    if "color" in received:
+        current_identity.color = received["color"]
+
+    if "username" in request.json:
+        current_identity.color = received["username"]
+
+    print(current_identity)
+
+    return "", 200
+
+
+@app.route("/account/password", methods=["POST"])
+@jwt_required()
+def change_password():
     print("received")
     print(request.json)
+
     return "", 200

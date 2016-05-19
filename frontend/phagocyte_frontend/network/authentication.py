@@ -10,7 +10,7 @@ import hashlib
 import requests
 
 from phagocyte_frontend.exceptions import CredentialsException
-from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
+from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, PARAMETERS_PATH, GAMES_PATH
 
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
@@ -115,7 +115,7 @@ class Client:
 
         :param kwargs: the data as dict to send as json
         """
-        self.post_dict_as_json(endpoint=ACCOUNT_PATH, kwargs=kwargs)
+        self.post_dict_as_json(endpoint=PARAMETERS_PATH, kwargs=kwargs)
 
     def get_games(self):
         """
