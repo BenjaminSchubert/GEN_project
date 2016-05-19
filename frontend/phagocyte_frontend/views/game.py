@@ -29,7 +29,14 @@ class BoundedMixin:
 
 
 class Player(Widget, BoundedMixin):
-    pass
+    current_size = 300, 300
+    COLOR = 0, 0, 0
+
+    def set_size(self, size):
+        self.current_size = size
+
+    def set_color(self, color):
+        self.COLOR = color
 
 
 class MainPlayer(Player):
