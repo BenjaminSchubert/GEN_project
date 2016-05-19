@@ -1,10 +1,10 @@
 #:kivy 1.9
 
 <Player>:
-    size: self.current_size
+    size: 100, 100
     canvas:
         Color:
-            rgb: self.COLOR
+            rgb: 0, 0, 0
         Ellipse:
             pos: self.pos
             size: self.size
@@ -54,9 +54,10 @@
         Scatter:
             id: map
             size: world.size[0] + root.size[0], world.size[1] + root.size[1]
-            do_scale: False
             size_hint: None, None
+            do_scale: False
             do_translation: False, False
+            do_rotation: False
             scale: 1
 
             canvas.before:
