@@ -1,5 +1,6 @@
 from kivy.clock import Clock
 from kivy.core.window import Window
+from kivy.graphics.context_instructions import Color
 from kivy.uix.widget import Widget
 from random import randint
 
@@ -29,14 +30,17 @@ class BoundedMixin:
 
 
 class Player(Widget, BoundedMixin):
-    current_size = 300, 300
-    COLOR = 0, 0, 0
 
     def set_size(self, size):
-        self.current_size = size
+        self.size = size, size
 
-    def set_color(self, color):
-        self.COLOR = color
+    def set_color(self, r, g, b):
+        for i in self.canvas.get_group(None):
+            if type(i) is Color:
+                i.r = r
+                i.g = g
+                i.b = b
+                break
 
 
 class MainPlayer(Player):
@@ -99,17 +103,24 @@ class GameInstance(Widget):
 
         self.world.main_player.move(dt)
 
+        #TODO remove
+        self.world.main_player.set_color(.2, .2, .7)
+        self.world.main_player.set_size(500)
+
+        #TODO set the scale relatively to player
+        self.map.scale = 1
+
         x, y = self.camera.convert_distance_to_scroll(
-            self.world.main_player.center_x - 400,
-            self.world.main_player.center_y - 300
+            self.world.main_player.center_x*self.map.scale - Window.width/2,
+            self.world.main_player.center_y*self.map.scale - Window.height/2
         )
         self.camera.scroll_x = x
         self.camera.scroll_y = y
 
     def send_moves(self, dt):
         self.server.send_state((
-            self.world.main_player.center_x - Window.width / 2,
-            self.world.main_player.center_y - Window.height / 2
+            self.world.main_player.center_x - Window.width/2,
+            self.world.main_player.center_y - Window.height/2
         ))
 
     def start_game(self, server, data):
@@ -120,8 +131,8 @@ class GameInstance(Widget):
         self.start_timers()
 
     def start_timers(self):
-        Clock.schedule_interval(self.follow_main_player, 1 / 60)
-        Clock.schedule_interval(self.send_moves, 1 / 60)
+        Clock.schedule_interval(self.follow_main_player, self.REFRESH_RATE)
+        Clock.schedule_interval(self.send_moves, self.REFRESH_RATE)
 
     def update_state(self, states):
         for state in states:
