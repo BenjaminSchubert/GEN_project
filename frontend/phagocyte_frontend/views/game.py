@@ -2,7 +2,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics.context_instructions import Color
 from kivy.uix.widget import Widget
-from random import randint
+from kivy.utils import get_color_from_hex
 
 
 class BoundedMixin:
@@ -33,12 +33,14 @@ class Player(Widget, BoundedMixin):
     def set_size(self, size):
         self.size = size, size
 
-    def set_color(self, r, g, b):
+    def set_color(self, color):
+        r, g, b, a = get_color_from_hex(color)
         for i in self.canvas.get_group(None):
             if type(i) is Color:
                 i.r = r
                 i.g = g
                 i.b = b
+                i.a = a
                 break
 
 
@@ -61,39 +63,30 @@ class MainPlayer(Player):
         self.add_position(x, y)
 
 
-class Food(Widget):
+class Food(Widget, BoundedMixin):
     """
     The food let the player grow
     """
 
-    def __init__(self, x, y, **kwargs):
-        super().__init__(**kwargs)
-        self.x = x
-        self.y = y
-
 
 class World(Widget):
     players = {}
+    food = {}
 
-    def add_food(self, nb):
-        for i in range(nb):
-            self.add_widget(Food(randint(self.x, self.width + self.x), randint(self.y, self.height + self.y)))
+    def add_food(self, x, y, size):
+        food = Food(size=(size, size))
+        self.food[(x, y)] = food
+        self.add_widget(food)
+        food.set_position(x, y)
 
 
 class GameInstance(Widget):
     """
     The instance of the game displayed by the game manager
     """
-
     REFRESH_RATE = 1 / 60
-    SCALE_RATIO = 2
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.server = None
-
-        # TODO remove
-        self.world.add_food(100)
+    SCALE_RATIO = 1 / 2
+    server = None
 
     def follow_main_player(self, dt):
         """
@@ -101,15 +94,10 @@ class GameInstance(Widget):
 
         :param dt: date time of the schedule_interval
         """
-
         self.world.main_player.move(dt)
 
-        # TODO remove
-        self.world.main_player.set_color(.2, .2, .7)
-        self.world.main_player.set_size(300)
-
-        player_width = self.world.main_player.width
-        self.map.scale = player_width / player_width / self.SCALE_RATIO
+        # FIXME : this could be done better
+        self.map.scale = self.SCALE_RATIO
 
         x, y = self.camera.convert_distance_to_scroll(
             self.world.main_player.center_x * self.map.scale - Window.width / 2,
@@ -128,7 +116,7 @@ class GameInstance(Widget):
         self.server = server
         self.world.size = (data["max_x"], data["max_y"])
         self.world.main_player.set_position(*data["position"])
-        # FIXME : change color
+        self.world.main_player.set_color(data["color"])
         self.start_timers()
 
     def start_timers(self):
@@ -136,19 +124,31 @@ class GameInstance(Widget):
         Clock.schedule_interval(self.send_moves, self.REFRESH_RATE)
 
     def update_state(self, states):
+        # FIXME update size
         for state in states:
             if state["name"] == self.server.name:
                 if state.get("dirty", None):
                     self.world.main_player.correction_x += state["dirty"][0]
                     self.world.main_player.correction_y += state["dirty"][1]
+
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
                 p.set_position(
                     state["position"][0] - p.size[0] / 2,
                     state["position"][1] - p.size[1] / 2
                 )
+
             else:
                 p = Player()
                 self.world.add_widget(p)
                 p.set_position(*state["position"])
                 self.world.players[state["name"]] = p
+
+    def update_food(self, new, old):
+        if new is not None:
+            self.world.add_food(new["x"], new["y"], new["size"])
+
+    def check_food(self, food):
+        for entry in food:
+            if (entry["x"], entry["y"]) not in self.world.food.keys():
+                self.world.add_food(entry["x"], entry["y"], entry["size"])

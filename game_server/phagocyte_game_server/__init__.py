@@ -76,7 +76,7 @@ def register(port, auth_host, auth_port, name, capacity):
         exit(2)
 
 
-class Client:
+class Player:
     def __init__(self, name, color, position_x, position_y):
         self.name = name
         self.color = color
@@ -90,7 +90,21 @@ class Client:
             "name": self.name,
             "color": self.color,
             "position": (self.position_x, self.position_y),
-            "radius": self.radius,
+            "radius": self.radius
+        }
+
+
+class Food:
+    def __init__(self, size, x, y):
+        self.size = size
+        self.x = x
+        self.y = y
+
+    def to_json(self):
+        return {
+            "size": self.size,
+            "x": self.x,
+            "y": self.y
         }
 
 
@@ -104,9 +118,13 @@ class GameProtocol(DatagramProtocol):
     """
     clients = dict()
     moves = dict()
+    foods = list()
+    food_notify_index = 0
+
     max_x = 2000
     max_y = 2000
     max_speed = 400
+
     last_time = time.time()
 
     def __init__(self, auth_host, auth_port, capacity, logger):
@@ -116,7 +134,9 @@ class GameProtocol(DatagramProtocol):
         self.logger = logger
         self.url = "http://{}:{}".format(self.auth_host, self.auth_port)
 
-        task.LoopingCall(self.send_players).start(1 / 24)
+        task.LoopingCall(self.handle_players).start(1 / 30)
+        task.LoopingCall(self.handle_food).start(1 / 30)
+        task.LoopingCall(self.handle_food_reminder).start(1 / 2)
 
     def random_position(self):
         """
@@ -167,7 +187,7 @@ class GameProtocol(DatagramProtocol):
             else:
                 self.logger.debug("Registered new user {name}".format(name=name))
 
-        client = Client(name, color, *self.random_position())
+        client = Player(name, color, *self.random_position())
         self.clients[addr] = client
         
         data = dict(
@@ -197,7 +217,11 @@ class GameProtocol(DatagramProtocol):
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
 
-    def send_players(self):
+    def send_all_players(self, data):
+        for client in self.clients.keys():
+            self.transport.write(data, addr=client)
+
+    def handle_players(self):
         data = {}
 
         for addr, update in self.moves.items():
@@ -239,10 +263,36 @@ class GameProtocol(DatagramProtocol):
             client.timestamp = timestamp
 
         if len(data):
-            values = json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8")
+            self.send_all_players(json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8"))
 
-            for client in self.clients.keys():
-                self.transport.write(values, addr=client)
+    def handle_food_reminder(self):
+        if len(self.foods) == 0:
+            return
+
+        self.send_all_players(json.dumps({
+            "event": Event.FOOD_REMINDER,
+            "food": [food.to_json() for food in self.foods[self.food_notify_index]]
+        }).encode("utf8"))
+
+        self.food_notify_index = (self.food_notify_index + 1) % len(self.foods)
+
+    def handle_food(self):
+        event = {"event": Event.FOOD}
+
+        if random.randrange(10) < 1:
+            for entry in self.foods:
+                if len(entry) < 100:
+                    break
+            else:
+                self.foods.append(set())
+                entry = self.foods[-1]
+
+            food = Food(random.randrange(10, 50), *self.random_position())
+            entry.add(food)
+            event["new"] = food.to_json()
+
+        if len(event) > 1:
+            self.send_all_players(json.dumps(event).encode("utf-8"))
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):
