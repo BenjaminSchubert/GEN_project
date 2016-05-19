@@ -7,12 +7,14 @@ Game server implementation
 import json
 import json.decoder
 import logging
-import random
 import sys
+import time
+import uuid
 
-from rainbow_logging_handler import RainbowLoggingHandler
+import random
 import requests
-from twisted.internet import reactor
+from rainbow_logging_handler import RainbowLoggingHandler
+from twisted.internet import reactor, task
 from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
@@ -74,6 +76,24 @@ def register(port, auth_host, auth_port, name, capacity):
         exit(2)
 
 
+class Client:
+    def __init__(self, name, color, position_x, position_y):
+        self.name = name
+        self.color = color
+        self.position_x = position_x
+        self.position_y = position_y
+        self.radius = 50
+        self.timestamp = time.time()
+
+    def to_json(self):
+        return {
+            "name": self.name,
+            "color": self.color,
+            "position": (self.position_x, self.position_y),
+            "radius": self.radius,
+        }
+
+
 class GameProtocol(DatagramProtocol):
     """
     Implementation of the Game protocol for Phagocytes
@@ -83,8 +103,11 @@ class GameProtocol(DatagramProtocol):
     :param capacity: max capacity of the server
     """
     clients = dict()
+    moves = dict()
     max_x = 2000
     max_y = 2000
+    max_speed = 400
+    last_time = time.time()
 
     def __init__(self, auth_host, auth_port, capacity, logger):
         self.auth_host = auth_host
@@ -93,13 +116,15 @@ class GameProtocol(DatagramProtocol):
         self.logger = logger
         self.url = "http://{}:{}".format(self.auth_host, self.auth_port)
 
+        task.LoopingCall(self.send_players).start(1 / 24)
+
     def random_position(self):
         """
         Returns a random position
 
         :return: tuple of X,Y position
         """
-        return random.randint(0, self.max_x), random.randint(0, self.max_y)
+        return [random.randint(0, self.max_x), random.randint(0, self.max_y)]
 
     def authenticate(self, token):
         """
@@ -129,7 +154,7 @@ class GameProtocol(DatagramProtocol):
 
         elif data.get("token") is None:
             color = random_color()
-            name = data.get("name")
+            name = data.get("name", str(uuid.uuid4()))
             log_name = "with name {name}".format(name=name) if name is not None else "with no name"
             self.logger.debug("Registering new user {name}".format(name=log_name))
         else:
@@ -142,10 +167,14 @@ class GameProtocol(DatagramProtocol):
             else:
                 self.logger.debug("Registered new user {name}".format(name=name))
 
-        position = dict(position=self.random_position(), color=color, name=name)
-        self.clients[addr] = position
-        data = dict(event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y)
-        data.update(position)
+        client = Client(name, color, *self.random_position())
+        self.clients[addr] = client
+        
+        data = dict(
+            event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
+            position=(client.position_x, client.position_y), color=color
+        )
+
         return data
 
     def datagramReceived(self, datagram, addr):
@@ -162,12 +191,58 @@ class GameProtocol(DatagramProtocol):
             self.logger.warning("Invalid json received : '{json}'".format(json=datagram.decode("utf-8")))
         else:
             if self.clients.get(addr) is None:
-                ret = self.register(data, addr)
+                self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
+            elif data["event"] == Event.STATE:
+                self.moves[addr] = data["position"]
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
-                return
 
-            self.transport.write(json.dumps(ret).encode("utf8"), addr)
+    def send_players(self):
+        data = {}
+
+        for addr, update in self.moves.items():
+            if update is None:
+                continue
+
+            timestamp = time.time()
+            client = self.clients[addr]
+
+            factor_x = factor_y = 0
+
+            delta_x = update[0] - client.position_x
+            delta_y = update[1] - client.position_y
+            speed_x = abs(delta_x / (timestamp - client.timestamp))
+            speed_y = abs(delta_y / (timestamp - client.timestamp))
+
+            if speed_x > self.max_speed:
+                factor_x = delta_x * self.max_speed / speed_x
+                client.position_x = min(self.max_x - client.radius, max(
+                    client.radius, client.position_x + factor_x
+                ))
+            else:
+                client.position_x = min(self.max_x - client.radius, max(client.radius, update[0]))
+
+            if speed_y > self.max_speed:
+                factor_y = delta_y * self.max_speed / speed_y
+                client.position_y = min(self.max_y - client.radius, max(
+                    client.radius, client.position_y + factor_y
+                ))
+            else:
+                client.position_y = min(self.max_y - client.radius, max(client.radius, update[1]))
+
+            data[addr] = self.clients[addr].to_json()
+
+            if factor_x or factor_y:
+                data[addr]["dirty"] = (factor_x - delta_x, factor_y - delta_y)
+
+            self.moves[addr] = None
+            client.timestamp = timestamp
+
+        if len(data):
+            values = json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8")
+
+            for client in self.clients.keys():
+                self.transport.write(values, addr=client)
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):
