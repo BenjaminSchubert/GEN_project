@@ -114,9 +114,14 @@ class GameInstance(Widget):
 
     def start_game(self, server, data):
         self.server = server
+
         self.world.size = (data["max_x"], data["max_y"])
+
         self.world.main_player.set_position(*data["position"])
         self.world.main_player.set_color(data["color"])
+
+        self.world.main_player.set_size(data["size"])
+
         self.start_timers()
 
     def start_timers(self):
@@ -124,12 +129,12 @@ class GameInstance(Widget):
         Clock.schedule_interval(self.send_moves, self.REFRESH_RATE)
 
     def update_state(self, states):
-        # FIXME update size
         for state in states:
             if state["name"] == self.server.name:
                 if state.get("dirty", None):
                     self.world.main_player.correction_x += state["dirty"][0]
                     self.world.main_player.correction_y += state["dirty"][1]
+                self.world.main_player.set_size(state["size"])
 
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
@@ -137,16 +142,20 @@ class GameInstance(Widget):
                     state["position"][0] - p.size[0] / 2,
                     state["position"][1] - p.size[1] / 2
                 )
+                p.set_size(state["size"])
 
             else:
                 p = Player()
                 self.world.add_widget(p)
+                p.set_size(state["size"])
                 p.set_position(*state["position"])
                 self.world.players[state["name"]] = p
 
     def update_food(self, new, old):
         if new is not None:
             self.world.add_food(new["x"], new["y"], new["size"])
+
+        # FIXME : remove old food
 
     def check_food(self, food):
         for entry in food:

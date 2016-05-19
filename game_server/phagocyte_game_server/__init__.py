@@ -76,35 +76,50 @@ def register(port, auth_host, auth_port, name, capacity):
         exit(2)
 
 
-class Player:
-    def __init__(self, name, color, position_x, position_y):
-        self.name = name
-        self.color = color
-        self.position_x = position_x
-        self.position_y = position_y
-        self.radius = 50
-        self.timestamp = time.time()
+class GameObject:
+    x = None
+    y = None
+    radius = None
+    size = None
 
-    def to_json(self):
-        return {
-            "name": self.name,
-            "color": self.color,
-            "position": (self.position_x, self.position_y),
-            "radius": self.radius
-        }
-
-
-class Food:
-    def __init__(self, size, x, y):
-        self.size = size
-        self.x = x
-        self.y = y
+    def __init__(self, radius, max_x, max_y):
+        self.update_radius(radius)
+        self.set_random_position(max_x, max_y)
 
     def to_json(self):
         return {
             "size": self.size,
             "x": self.x,
             "y": self.y
+        }
+
+    def update_radius(self, new_radius):
+        self.radius = new_radius
+        self.size = new_radius * 2
+
+    def set_random_position(self, max_x, max_y):
+        """
+        Returns a random position
+
+        :return: tuple of X,Y position
+        """
+        self.x = random.randint(self.radius, max_x - self.radius)
+        self.y = random.randint(self.radius, max_y - self.radius)
+
+
+class Player(GameObject):
+    def __init__(self, name, color, radius, max_x, max_y):
+        super().__init__(radius, max_x, max_y)
+        self.name = name
+        self.color = color
+        self.timestamp = time.time()
+
+    def to_json(self):
+        return {
+            "name": self.name,
+            "color": self.color,
+            "position": (self.x, self.y),
+            "size": self.size
         }
 
 
@@ -118,11 +133,12 @@ class GameProtocol(DatagramProtocol):
     """
     clients = dict()
     moves = dict()
-    foods = list()
+    food = list()
     food_notify_index = 0
 
     max_x = 2000
     max_y = 2000
+    default_radius = 50
     max_speed = 400
 
     last_time = time.time()
@@ -137,14 +153,6 @@ class GameProtocol(DatagramProtocol):
         task.LoopingCall(self.handle_players).start(1 / 30)
         task.LoopingCall(self.handle_food).start(1 / 30)
         task.LoopingCall(self.handle_food_reminder).start(1 / 2)
-
-    def random_position(self):
-        """
-        Returns a random position
-
-        :return: tuple of X,Y position
-        """
-        return [random.randint(0, self.max_x), random.randint(0, self.max_y)]
 
     def authenticate(self, token):
         """
@@ -187,12 +195,12 @@ class GameProtocol(DatagramProtocol):
             else:
                 self.logger.debug("Registered new user {name}".format(name=name))
 
-        client = Player(name, color, *self.random_position())
+        client = Player(name, color, self.default_radius, self.max_x, self.max_y)
         self.clients[addr] = client
         
         data = dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
-            position=(client.position_x, client.position_y), color=color
+            position=(client.x, client.y), color=color, size=client.size
         )
 
         return data
@@ -233,26 +241,26 @@ class GameProtocol(DatagramProtocol):
 
             factor_x = factor_y = 0
 
-            delta_x = update[0] - client.position_x
-            delta_y = update[1] - client.position_y
+            delta_x = update[0] - client.x
+            delta_y = update[1] - client.y
             speed_x = abs(delta_x / (timestamp - client.timestamp))
             speed_y = abs(delta_y / (timestamp - client.timestamp))
 
             if speed_x > self.max_speed:
                 factor_x = delta_x * self.max_speed / speed_x
-                client.position_x = min(self.max_x - client.radius, max(
-                    client.radius, client.position_x + factor_x
+                client.x = min(self.max_x - client.radius, max(
+                    client.radius, client.x + factor_x
                 ))
             else:
-                client.position_x = min(self.max_x - client.radius, max(client.radius, update[0]))
+                client.x = min(self.max_x - client.radius, max(client.radius, update[0]))
 
             if speed_y > self.max_speed:
                 factor_y = delta_y * self.max_speed / speed_y
-                client.position_y = min(self.max_y - client.radius, max(
-                    client.radius, client.position_y + factor_y
+                client.y = min(self.max_y - client.radius, max(
+                    client.radius, client.y + factor_y
                 ))
             else:
-                client.position_y = min(self.max_y - client.radius, max(client.radius, update[1]))
+                client.y = min(self.max_y - client.radius, max(client.radius, update[1]))
 
             data[addr] = self.clients[addr].to_json()
 
@@ -266,30 +274,33 @@ class GameProtocol(DatagramProtocol):
             self.send_all_players(json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8"))
 
     def handle_food_reminder(self):
-        if len(self.foods) == 0:
+        if len(self.food) == 0:
             return
 
         self.send_all_players(json.dumps({
             "event": Event.FOOD_REMINDER,
-            "food": [food.to_json() for food in self.foods[self.food_notify_index]]
+            "food": [food.to_json() for food in self.food[self.food_notify_index]]
         }).encode("utf8"))
 
-        self.food_notify_index = (self.food_notify_index + 1) % len(self.foods)
+        self.food_notify_index = (self.food_notify_index + 1) % len(self.food)
 
     def handle_food(self):
         event = {"event": Event.FOOD}
 
         if random.randrange(10) < 1:
-            for entry in self.foods:
+            for entry in self.food:
                 if len(entry) < 100:
                     break
             else:
-                self.foods.append(set())
-                entry = self.foods[-1]
+                self.food.append(set())
+                entry = self.food[-1]
 
-            food = Food(random.randrange(10, 50), *self.random_position())
+            food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
             entry.add(food)
             event["new"] = food.to_json()
+
+        for food in self.food:
+            pass
 
         if len(event) > 1:
             self.send_all_players(json.dumps(event).encode("utf-8"))
