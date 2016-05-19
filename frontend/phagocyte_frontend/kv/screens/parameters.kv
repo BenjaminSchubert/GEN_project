@@ -1,31 +1,37 @@
-#:kivy 1.8.0
+#:kivy 1.9.1
 
 <ParametersScreen>:
-    # import container, username and password
-    container: container
+    #import
+    newUserName: newUserName
+    newBallColor: newBallColor
+    oldPassword: oldPassword
+    newPassword: newPassword
+    newPasswordConfirmation: newPasswordConfirmation
+    buttonSend: buttonSend
 
     GridLayout:
-        id: container
         cols: 2
-        #padding: 10
-        #spacing: 5
+        spacing: 5
 
         Label:
             text: "New user name:"
 
         TextInput:
+            id: newUserName
             multiline: False
 
         Label:
             text: "New ball color:"
 
         ColorPicker:
+            id: newBallColor
             size_hint: 1, 3
 
         Label:
             text: "Old password:"
 
         TextInput:
+            id: oldPassword
             password: True
             multiline: False
 
@@ -33,6 +39,7 @@
             text: "New password:"
 
         TextInput:
+            id: newPassword
             password: True
             multiline: False
 
@@ -40,24 +47,23 @@
             text: "Confirm new password:"
 
         TextInput:
+            id: newPasswordConfirmation
             password: True
             multiline: False
 
         BoxLayout:
-            padding: 30
-            spacing: 5
             orientation: "horizontal"
+            size_hint: 1, 0.3
 
             Button:
                 text: "Cancel"
                 on_release: root.manager.main_screen()
 
         BoxLayout:
-            padding: 30
-            spacing: 5
+            id: buttonSend
             orientation: "horizontal"
+            size_hint: 1, 0.3
 
             Button:
-                id: loginButton
                 text: "Validate"
                 on_release: root.validate_parameters()

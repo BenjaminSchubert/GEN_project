@@ -1,17 +1,15 @@
-#:kivy 1.8.0
+#:kivy 1.9.1
 
 <RegisterScreen>:
-    # import container, username and password
-    container: container
+    # import username, password and creationButton
     username: username
     password: password
     creationButton: creationButton
 
     GridLayout:
-        id: container
         cols: 2
-        padding: 10
-        spacing: 5
+        padding: 20
+        spacing: 60
 
         Label:
             text: "User name:"
@@ -29,18 +27,16 @@
             multiline: False
 
         BoxLayout:
-            padding: 30
-            spacing: 5
             orientation: "horizontal"
+            size_hint: 1, 0.3
 
             Button:
                 text: "Cancel"
                 on_release: root.manager.main_screen()
 
         BoxLayout:
-            padding: 30
-            spacing: 5
             orientation: "horizontal"
+            size_hint: 1, 0.3
 
             Button:
                 id: creationButton

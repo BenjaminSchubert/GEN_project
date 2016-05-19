@@ -17,4 +17,23 @@ class ParametersScreen(AutoLoadableScreen):
         """
         modification parameters user account for the specified user
         """
-        print("VALIDER LES PARAMETRES DE L'UTILISATEUR")
+        print(self.newUserName.text)
+
+        self.buttonSend.disabled = True
+
+        if self.newPassword.text != self.newPasswordConfirmation.text:
+            self.manager.warn("New password doesn't match the confirmation", title="Error")
+        else:
+            parameters = {}
+
+            if self.newUserName != "":
+                parameters["userName"] = self.newUserName.text
+            else:
+                self.manager.warn("New user name can't be emtpy", title="Error")
+
+            #if self.newBallColor.text
+
+        self.buttonSend.disabled = False
+
+        #todo declarer dico
+        #todo tester si les champs ne sont pas vides les uns après les autres

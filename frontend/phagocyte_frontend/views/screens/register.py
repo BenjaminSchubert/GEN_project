@@ -2,7 +2,6 @@
 
 
 from phagocyte_frontend.exceptions import CredentialsException
-
 from phagocyte_frontend.views.screens import AutoLoadableScreen
 
 
@@ -25,7 +24,8 @@ class RegisterScreen(AutoLoadableScreen):
             self.manager.client.register(self.username.text, self.password.text)
         except CredentialsException as e:
             self.manager.warn(str(e), title="Error")
-        else:
+        else:  # we already connect the user if his registration is correct
+            self.manager.client.login(self.username.text, self.password.text)
             self.manager.warn("Welcome here !", callback=self.manager.main_screen)
 
         self.creationButton.disabled = False
