@@ -21,7 +21,9 @@ def noop(*_):
 
 
 class AutoLoadableScreen(Screen):
-    # TODO
+    """
+    Auto load screen from it's name
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, **kw):
@@ -43,6 +45,7 @@ class PhagocyteScreenManager(ScreenManager):
     def warn(self, msg, title="Info", callback=None):
         """
         Open a warn popup
+
         :param msg: content of the popup
         :param title: title of the popup
         :param callback:

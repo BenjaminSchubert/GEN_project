@@ -20,6 +20,7 @@ class RegisterScreen(AutoLoadableScreen):
         registers the specified user with his name and password
         """
         self.creationButton.disabled = True
+
         try:
             self.manager.client.register(self.username.text, self.password.text)
         except CredentialsException as e:

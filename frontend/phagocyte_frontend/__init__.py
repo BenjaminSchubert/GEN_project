@@ -20,6 +20,7 @@ class Phagocyte(App):
     def build(self):
         """
         Load all needed screens into the screen manager
+
         :return: the screen manager
         """
         screen_manager = PhagocyteScreenManager()

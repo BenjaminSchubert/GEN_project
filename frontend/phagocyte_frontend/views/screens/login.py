@@ -17,6 +17,7 @@ class LoginScreen(AutoLoadableScreen):
         connects the specified user with his name and password
         """
         self.loginButton.disabled = True
+
         try:
             self.manager.client.login(self.username.text, self.password.text)
         except CredentialsException as e:

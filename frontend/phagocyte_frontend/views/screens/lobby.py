@@ -9,7 +9,9 @@ from phagocyte_frontend.views.screens.login import LoginScreen
 from phagocyte_frontend.views.screens.parameters import ParametersScreen
 from phagocyte_frontend.views.screens.register import RegisterScreen
 
+
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
+
 
 data = [{'text': str(i), 'is_selected': False} for i in range(100)]
 
@@ -18,7 +20,6 @@ class GameListItemButton(ListItemButton):
     """
     Get the list of game servers
     """
-
     def __init__(self, ip, port, **kwargs):
         super().__init__(**kwargs)
         self.ip = ip
@@ -28,9 +29,9 @@ class GameListItemButton(ListItemButton):
     def display_converter(cls, row_index, entry):
         """
         display a game server infos
+
         :param row_index: index of the server
         :param entry: values
-        :return:
         """
         return {
             "text": entry["name"],
@@ -46,7 +47,6 @@ class LobbyScreen(AutoLoadableScreen):
     The main lobby screen
     """
     screen_name = "lobby"
-    # get the list of game servers
     game_list = DictAdapter(
         data={}, cls=GameListItemButton, args_converter=GameListItemButton.display_converter,
         allow_empty_selection=False
