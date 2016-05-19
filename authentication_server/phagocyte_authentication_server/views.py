@@ -94,3 +94,10 @@ def register_manager():
         data["name"] = "Main"
         data["capacity"] = 200
     return jsonify(data)
+
+
+@app.route("/account", methods=["POST"])
+def change_account_parameters():
+    print("received")
+    print(request.json)
+    return "", 200

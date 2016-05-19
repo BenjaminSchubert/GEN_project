@@ -65,5 +65,9 @@
             size_hint: 1, 0.3
 
             Button:
+                text: "Test param"
+                on_release: root.test_send_param()
+
+            Button:
                 text: "Validate"
                 on_release: root.validate_parameters()

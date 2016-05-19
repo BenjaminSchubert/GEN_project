@@ -37,3 +37,7 @@ class ParametersScreen(AutoLoadableScreen):
 
         #todo declarer dico
         #todo tester si les champs ne sont pas vides les uns après les autres
+
+    def test_send_param(self):
+        print("test")
+        self.manager.client.post_account_info(message="salut")
