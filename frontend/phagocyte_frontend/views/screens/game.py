@@ -24,7 +24,7 @@ class GameScreen(AutoLoadableScreen):
         """
         Define the state of the game screen before you enter it
         """
-        # select the first game server of the list
+        # gets the server selected by the user
         game = self.manager.get_screen(LobbyScreen.screen_name).game_list.selection[0]
 
         self.game_instance = GameInstance()

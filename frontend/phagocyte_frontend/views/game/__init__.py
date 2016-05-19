@@ -4,16 +4,6 @@ from kivy.uix.widget import Widget
 from random import randint
 
 
-"""
-TODO
-ce soir je fais :
-- fin des commentaires
-- changer la taille de la boule
-- changer la couleur de la boule
-- zoom/dezoome de la camera
-- bind follow_main_player
-"""
-
 class BoundedMixin:
     """
     Limit the player to the edge of the map
@@ -34,7 +24,7 @@ class BoundedMixin:
 
 class MainPlayer(Widget, BoundedMixin):
     """
-    The main player, the o m,ne you can control
+    The main player, the one you can control
     """
 
     MAX_SPEED = 10
