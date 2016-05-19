@@ -26,19 +26,13 @@
             password: True
             multiline: False
 
-        BoxLayout:
-            orientation: "horizontal"
+        Button:
+            text: "Cancel"
             size_hint: 1, 0.3
+            on_release: root.manager.main_screen()
 
-            Button:
-                text: "Cancel"
-                on_release: root.manager.main_screen()
-
-        BoxLayout:
-            orientation: "horizontal"
+        Button:
+            id: creationButton
+            text: "Register"
             size_hint: 1, 0.3
-
-            Button:
-                id: creationButton
-                text: "Register"
-                on_release: root.user_creation()
+            on_release: root.user_creation()

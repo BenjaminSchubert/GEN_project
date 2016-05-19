@@ -7,7 +7,8 @@
     oldPassword: oldPassword
     newPassword: newPassword
     newPasswordConfirmation: newPasswordConfirmation
-    buttonSend: buttonSend
+    buttonChangeParameters: buttonChangeParameters
+    buttonChangePassword: buttonChangePassword
 
     GridLayout:
         cols: 2
@@ -26,6 +27,14 @@
         ColorPicker:
             id: newBallColor
             size_hint: 1, 4
+
+        BoxLayout:
+
+        Button:
+            id: buttonChangeParameters
+            size_hint: 1, 0.3
+            text: "Change parameters"
+            on_release: root.validate_parameters()
 
         Label:
             text: "Old password:"
@@ -51,23 +60,13 @@
             password: True
             multiline: False
 
-        BoxLayout:
-            orientation: "horizontal"
+        Button:
             size_hint: 1, 0.3
+            text: "Cancel"
+            on_release: root.manager.main_screen()
 
-            Button:
-                text: "Cancel"
-                on_release: root.manager.main_screen()
-
-        BoxLayout:
-            id: buttonSend
-            orientation: "horizontal"
+        Button:
+            id: buttonChangePassword
             size_hint: 1, 0.3
-
-            Button:
-                text: "Test param"
-                on_release: root.test_send_param()
-
-            Button:
-                text: "Validate"
-                on_release: root.validate_parameters()
+            text: "Change password"
+            on_release: root.validate_password()
