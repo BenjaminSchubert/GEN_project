@@ -100,16 +100,19 @@ def register_manager():
 @app.route("/account/parameters", methods=["POST"])
 @jwt_required()
 def change_account_parameters():
-    print("received: ", request.get_json())
-
     received = request.get_json()
+
+    print(received)
+    print(type(received))
+    print(request.get_json()["color"])
+
     if "color" in received:
         current_identity.color = received["color"]
 
-    if "username" in request.json:
-        current_identity.color = received["username"]
+    if "name" in request.json:
+        current_identity.name = received["name"]
 
-    print(current_identity)
+    print(current_identity.color, " ", current_identity.username)
 
     return "", 200
 

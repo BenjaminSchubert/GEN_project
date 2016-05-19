@@ -20,16 +20,14 @@ class ParametersScreen(AutoLoadableScreen):
 
         self.buttonChangeParameters.disabled = True
 
-        if self.newUserName.text == "":
-            self.manager.warn("New user name can't be emtpy", title="Error")
-        else:
-            parameters = {
-                "userName": self.newUserName.text,
-                "ballColor": self.newBallColor.color
-            }
+        parameters = {
+            "color": self.newBallColor.hex_color
+        }
 
-            self.manager.client.post_account_info(parameters)
+        if self.newUserName.text != "":
+            parameters["name"] = self.newUserName.text
 
+        self.manager.client.post_account_info(**parameters)
         self.buttonChangeParameters.disabled = False
 
     def validate_password(self):
@@ -50,8 +48,8 @@ class ParametersScreen(AutoLoadableScreen):
             self.manager.warn("New password doesn't match the confirmation", title="Error")
         else:
             password = {
-                "oldPassword": self.oldPassword.text,
-                "newPassword": self.newPassword.text
+                "old_password": self.oldPassword.text,
+                "new_password": self.newPassword.text
             }
 
             self.manager.client.post_account_info(password)

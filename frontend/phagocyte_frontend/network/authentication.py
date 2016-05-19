@@ -118,7 +118,7 @@ class Client:
 
         :param kwargs: the data as dict to send as json
         """
-        self.post_dict_as_json(endpoint=PARAMETERS_PATH, kwargs=kwargs)
+        self.post_dict_as_json(endpoint=PARAMETERS_PATH, **kwargs)
 
     def get_games(self):
         """
