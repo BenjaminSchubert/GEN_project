@@ -79,6 +79,11 @@ class World(Widget):
         self.add_widget(food)
         food.set_position(x, y)
 
+    def remove_food(self, x, y):
+        f = self.food.pop((x, y), None)
+        if f:
+            self.remove_widget(f)
+
 
 class GameInstance(Widget):
     """
@@ -155,7 +160,8 @@ class GameInstance(Widget):
         if new is not None:
             self.world.add_food(new["x"], new["y"], new["size"])
 
-        # FIXME : remove old food
+        for entry in old:
+            self.world.remove_food(entry["x"], entry["y"])
 
     def check_food(self, food):
         for entry in food:

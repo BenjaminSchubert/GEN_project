@@ -75,7 +75,7 @@ class NetworkGameClient(DatagramProtocol):
         elif event_type == Event.STATE:
             self.game.update_state(data["updates"])
         elif event_type == Event.FOOD:
-            self.game.update_food(data.get("new"), data.get("delete"))
+            self.game.update_food(data.get("new"), data.get("old", []))
         elif event_type == Event.FOOD_REMINDER:
             self.game.check_food(data["food"])
         elif event_type == Event.ERROR:
