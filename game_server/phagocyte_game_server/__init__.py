@@ -107,7 +107,7 @@ class GameObject:
         self.y = random.randint(self.radius, max_y - self.radius)
 
     def collides_with(self, obj: 'GameObject'):
-        return self.radius ** 2 > (obj.x - self.x) ** 2 * (obj.y - self.y) ** 2
+        return self.radius ** 2 > (obj.x - self.x) ** 2 + (obj.y - self.y) ** 2
 
 
 class Player(GameObject):
