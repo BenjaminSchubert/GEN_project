@@ -75,13 +75,17 @@ class Client:
         self.post_json(json.dumps(kwargs), endpoint)
 
     def get_json_as_dict(self, endpoint):
+        """
+        Gets the data as dict from the server at the endpoint (the server should return a json for this endpoint).
+
+        :param: endpoint: the relative path where to GET ("/auth", for example)
+        """
         headers = {}
 
         if self.is_logged_in():
             headers["authorization"] = "JWT " + self.token
 
         r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
-        print(r)
 
         return r.json()
 
@@ -132,6 +136,9 @@ class Client:
         self.post_dict_as_json(endpoint=PARAMETERS_PATH, **kwargs)
 
     def get_account_info(self):
+        """
+        Fetches the accounts info and returns them as a dict.
+        """
         return self.get_json_as_dict(PARAMETERS_PATH)
 
     def get_games(self):

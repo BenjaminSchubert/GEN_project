@@ -103,10 +103,12 @@ def register_manager():
 @app.route("/account/parameters", methods=["POST"])
 @jwt_required()
 def change_account_parameters():
-    received = json.loads(request.get_json())
+    """
+    Changes the account parameters.
 
-    print(received)
-    print(type(received))
+    :return: 200 OK
+    """
+    received = json.loads(request.get_json())
 
     if "color" in received:
         current_identity.color = received["color"]
@@ -122,13 +124,9 @@ def change_account_parameters():
 @app.route("/account/parameters", methods=["GET"])
 @jwt_required()
 def get_account_parameters():
+    """
+    Gets the accounts parameters.
+
+    :return: the account info as json.
+    """
     return jsonify(current_identity.as_dict)
-
-
-@app.route("/account/password", methods=["POST"])
-@jwt_required()
-def change_password():
-    print("received")
-    print(request.json)
-
-    return "", 200
