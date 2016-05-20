@@ -8,4 +8,6 @@ REGISTER_PATH = API_PATH + "/register"
 AUTH_PATH = API_PATH + "/auth"
 GAMES_PATH = API_PATH + "/games"
 ACCOUNT_PATH = API_PATH + "/account"
+PARAMETERS_PATH = ACCOUNT_PATH + "/parameters"
+PASSWORD_PATH = ACCOUNT_PATH + "/parameters"
 

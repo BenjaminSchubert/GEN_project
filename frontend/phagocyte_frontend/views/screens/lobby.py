@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+
 from kivy.adapters.dictadapter import DictAdapter
 from kivy.properties import Clock
 from kivy.uix.listview import ListItemButton
 
+from phagocyte_frontend import CreateGameScreen
 from phagocyte_frontend.views.screens import AutoLoadableScreen
 from phagocyte_frontend.views.screens.login import LoginScreen
 from phagocyte_frontend.views.screens.parameters import ParametersScreen
@@ -81,8 +83,7 @@ class LobbyScreen(AutoLoadableScreen):
         if not self.manager.client.is_logged_in():
             self.manager.warn("You need to be connected", title="Error")
         else:
-            # TODO implement
-            print("IL FAUT CREER UNE NOUVELLE PARTIE => 'CHANGER' D'ABORD DE FENETRE")
+            self.manager.current = CreateGameScreen.screen_name
 
     def user_creation_process(self):
         """

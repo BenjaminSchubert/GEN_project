@@ -10,7 +10,7 @@ import hashlib
 import requests
 
 from phagocyte_frontend.exceptions import CredentialsException
-from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, ACCOUNT_PATH, GAMES_PATH
+from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, PARAMETERS_PATH, GAMES_PATH
 
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
@@ -60,7 +60,34 @@ class Client:
             "content-type": "application/json"
         }
 
+        if self.is_logged_in():
+            headers["authorization"] = "JWT " + self.token
+
         return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=_json)
+
+    def post_dict_as_json(self, *, endpoint, **kwargs):
+        """
+        Sends a POST request to the server, with data as json.
+
+        :param endpoint: the relative path where to POST ("/auth", for example)
+        :param kwargs: the data as dict to send as json
+        """
+        self.post_json(json.dumps(kwargs), endpoint)
+
+    def get_json_as_dict(self, endpoint):
+        """
+        Gets the data as dict from the server at the endpoint (the server should return a json for this endpoint).
+
+        :param: endpoint: the relative path where to GET ("/auth", for example)
+        """
+        headers = {}
+
+        if self.is_logged_in():
+            headers["authorization"] = "JWT " + self.token
+
+        r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
+
+        return r.json()
 
     def register(self, username, password):
         """
@@ -100,22 +127,19 @@ class Client:
         """
         self.token = None
 
-    def post_dict_as_json(self, *, endpoint, **kwargs):
-        """
-        Sends a POST request to the server, with data as json.
-
-        :param endpoint: the relative path where to POST ("/auth", for example)
-        :param kwargs: the data as dict to send as json
-        """
-        self.post_json(json.dumps(kwargs), endpoint)
-
     def post_account_info(self, **kwargs):
         """
         Modifies account info.
 
         :param kwargs: the data as dict to send as json
         """
-        self.post_dict_as_json(endpoint=ACCOUNT_PATH, kwargs=kwargs)
+        self.post_dict_as_json(endpoint=PARAMETERS_PATH, **kwargs)
+
+    def get_account_info(self):
+        """
+        Fetches the accounts info and returns them as a dict.
+        """
+        return self.get_json_as_dict(PARAMETERS_PATH)
 
     def get_games(self):
         """

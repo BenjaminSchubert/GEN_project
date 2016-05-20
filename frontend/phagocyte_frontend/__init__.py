@@ -3,6 +3,7 @@
 from kivy.app import App
 
 from phagocyte_frontend.views.screens import PhagocyteScreenManager
+from phagocyte_frontend.views.screens.creation import CreateGameScreen
 from phagocyte_frontend.views.screens.game import GameScreen
 from phagocyte_frontend.views.screens.lobby import LobbyScreen
 from phagocyte_frontend.views.screens.login import LoginScreen
@@ -29,5 +30,6 @@ class Phagocyte(App):
         screen_manager.add_widget(RegisterScreen())
         screen_manager.add_widget(ParametersScreen())
         screen_manager.add_widget(GameScreen())
+        screen_manager.add_widget(CreateGameScreen())
 
         return screen_manager

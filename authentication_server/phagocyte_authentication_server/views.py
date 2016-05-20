@@ -4,12 +4,15 @@
 Various views for the Phagocyte authentication server
 """
 
+import json
+
 import uuid
 
 import jwt
 import requests
 import sqlalchemy.exc
 from flask import request, jsonify, make_response
+from flask_jwt import jwt_required, current_identity
 
 from phagocyte_authentication_server import app
 from phagocyte_authentication_server.auth import identity
@@ -52,11 +55,12 @@ def validate_token():
     Validates the token and send back the user's name and color
     """
     token = request.get_json()["token"]
+    print("lol")
     try:
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
         return (jsonify(error="signature expired"), 403)
-    return jsonify(user.to_json())
+    return jsonify(user.as_dict)
 
 
 @app.route("/games")
@@ -94,3 +98,35 @@ def register_manager():
         data["name"] = "Main"
         data["capacity"] = 200
     return jsonify(data)
+
+
+@app.route("/account/parameters", methods=["POST"])
+@jwt_required()
+def change_account_parameters():
+    """
+    Changes the account parameters.
+
+    :return: 200 OK
+    """
+    received = json.loads(request.get_json())
+
+    if "color" in received:
+        current_identity.color = received["color"]
+
+    if "name" in request.json:
+        current_identity.name = received["name"]
+
+    print(current_identity.color, " ", current_identity.username)
+
+    return "", 200
+
+
+@app.route("/account/parameters", methods=["GET"])
+@jwt_required()
+def get_account_parameters():
+    """
+    Gets the accounts parameters.
+
+    :return: the account info as json.
+    """
+    return jsonify(current_identity.as_dict)

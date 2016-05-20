@@ -1,10 +1,6 @@
 #:kivy 1.9.1
 
-<LoginScreen>:
-    # import username, password and loginButton
-    username: username
-    password: password
-    loginButton: loginButton
+<CreateGameScreen>:
 
     GridLayout:
         cols: 2
@@ -12,18 +8,21 @@
         spacing: 60
 
         Label:
-            text: "User name:"
+            text: "Map name:"
 
         TextInput:
-            id: username
             multiline: False
 
         Label:
-            text: "Password:"
+            text: "Map width:"
 
         TextInput:
-            id: password
-            password: True
+            multiline: False
+
+        Label:
+            text: "Map height:"
+
+        TextInput:
             multiline: False
 
         Button:
@@ -32,7 +31,6 @@
             on_release: root.manager.main_screen()
 
         Button:
-            id: loginButton
-            text: "Login"
+            text: "Validate"
             size_hint: 1, 0.3
-            on_release: root.user_login()
+            #on_release: root.validate_parameters()

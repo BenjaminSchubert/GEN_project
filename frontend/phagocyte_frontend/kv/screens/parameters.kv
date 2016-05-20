@@ -1,31 +1,50 @@
-#:kivy 1.8.0
+#:kivy 1.9.1
+
+#: import get_color_from_hex kivy.utils.get_color_from_hex
 
 <ParametersScreen>:
-    # import container, username and password
-    container: container
+    #import
+    newUserName: newUserName
+    newBallColor: newBallColor
+    oldPassword: oldPassword
+    newPassword: newPassword
+    newPasswordConfirmation: newPasswordConfirmation
+    buttonChangeParameters: buttonChangeParameters
+    buttonChangePassword: buttonChangePassword
 
     GridLayout:
-        id: container
         cols: 2
-        #padding: 10
-        #spacing: 5
+        spacing: 5
 
         Label:
             text: "New user name:"
 
         TextInput:
+            id: newUserName
             multiline: False
+            text: root.username
 
         Label:
             text: "New ball color:"
 
         ColorPicker:
-            size_hint: 1, 3
+            id: newBallColor
+            size_hint: 1, 4
+            color: get_color_from_hex(root.color)
+
+        BoxLayout:
+
+        Button:
+            id: buttonChangeParameters
+            size_hint: 1, 0.3
+            text: "Save"
+            on_release: root.validate_parameters()
 
         Label:
             text: "Old password:"
 
         TextInput:
+            id: oldPassword
             password: True
             multiline: False
 
@@ -33,6 +52,7 @@
             text: "New password:"
 
         TextInput:
+            id: newPassword
             password: True
             multiline: False
 
@@ -40,24 +60,17 @@
             text: "Confirm new password:"
 
         TextInput:
+            id: newPasswordConfirmation
             password: True
             multiline: False
 
-        BoxLayout:
-            padding: 30
-            spacing: 5
-            orientation: "horizontal"
+        Button:
+            size_hint: 1, 0.3
+            text: "Cancel"
+            on_release: root.manager.main_screen()
 
-            Button:
-                text: "Cancel"
-                on_release: root.manager.main_screen()
-
-        BoxLayout:
-            padding: 30
-            spacing: 5
-            orientation: "horizontal"
-
-            Button:
-                id: loginButton
-                text: "Validate"
-                on_release: root.validate_parameters()
+        Button:
+            id: buttonChangePassword
+            size_hint: 1, 0.3
+            text: "Change password"
+            on_release: root.validate_password()
