@@ -29,11 +29,10 @@ class Event(enum.IntEnum):
     ERROR = 0
     TOKEN = 1
     GAME_INFO = 2
-    UPDATE = 3
-    STATE = 4
-    FOOD = 5
-    FOOD_REMINDER = 6
-    DEATH = 7
+    STATE = 3
+    FOOD = 4
+    FOOD_REMINDER = 5
+    DEATH = 6
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -56,10 +55,8 @@ class NetworkGameClient(DatagramProtocol):
         """
         Establishes connection with game server and sends the token.
         """
-        print("Started protocol")
         self.transport.connect(self.host, self.port)
         self.send_token()
-        print("sent token")
 
     def datagramReceived(self, datagram, addr):
         """
@@ -71,8 +68,6 @@ class NetworkGameClient(DatagramProtocol):
         if event_type == Event.GAME_INFO:
             self.name = data["name"]
             self.game.start_game(self, data)
-        elif event_type == Event.UPDATE:
-            self.update_gui(data)
         elif event_type == Event.STATE:
             self.game.update_state(data["updates"])
         elif event_type == Event.FOOD:
@@ -87,16 +82,6 @@ class NetworkGameClient(DatagramProtocol):
             print("The datagram doesn't have any event: ", data)
         else:
             print("Unhandled event type : data is ", data)
-
-    def update_gui(self, data):
-        """
-        Updates the gui (game view).
-
-        :param data: the data received from server.
-        """
-        self.phagocyte.update(data["phagocyte"])
-        print("updating gui")
-        # TODO
 
     def send_token(self):
         """
