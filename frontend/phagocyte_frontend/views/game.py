@@ -90,7 +90,7 @@ class GameInstance(Widget):
     The instance of the game displayed by the game manager
     """
     REFRESH_RATE = 1 / 60
-    SCALE_RATIO = 8 # [1, infinity]
+    SCALE_RATIO = 8 # >= 1
     scale_ratio_util = None
     server = None
 
