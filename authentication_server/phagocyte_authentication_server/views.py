@@ -79,7 +79,7 @@ def register_server():
     :return: 200 OK
     """
     # FIXME : check that there are no name clashes
-    app.games.add_game(request.remote_addr, request.json["port"], request.json["name"], request.json["capacity"])
+    app.games.add_game(request.json["ip"], request.json["port"], request.json["name"], request.json["capacity"])
     return "", 200
 
 
