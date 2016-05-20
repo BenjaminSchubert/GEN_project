@@ -28,6 +28,7 @@ class ParametersScreen(AutoLoadableScreen):
             parameters["name"] = self.newUserName.text
 
         self.manager.client.post_account_info(**parameters)
+
         self.buttonChangeParameters.disabled = False
 
     def validate_password(self):
