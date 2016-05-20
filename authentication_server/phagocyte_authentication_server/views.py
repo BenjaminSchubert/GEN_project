@@ -40,9 +40,7 @@ def create_user():
     """
     Creates a new user with the data given in parameter
     """
-    print(request)
     data = request.get_json()
-    print(data, " ", type(data))
     user = User(username=data["username"], password=data["password"])
     try:
         db.session.add(user)
@@ -62,7 +60,7 @@ def validate_token():
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
         return (jsonify(error="signature expired"), 403)
-    return jsonify(user.to_json())
+    return jsonify(user.as_dict)
 
 
 @app.route("/games")
@@ -124,7 +122,7 @@ def change_account_parameters():
 @app.route("/account/parameters", methods=["GET"])
 @jwt_required()
 def get_account_parameters():
-    return current_identity.to_json(), 200
+    return jsonify(current_identity.as_dict)
 
 
 @app.route("/account/password", methods=["POST"])

@@ -77,7 +77,8 @@ class User(Base):
         self.salt = os.urandom(255)
         return self.hash_password(value)
 
-    def to_json(self):
+    @property
+    def as_dict(self):
         """
         Transforms the user to a json format
 
