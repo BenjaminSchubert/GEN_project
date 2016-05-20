@@ -4,6 +4,8 @@
 Various views for the Phagocyte authentication server
 """
 
+import json
+
 import uuid
 
 import jwt
@@ -38,7 +40,9 @@ def create_user():
     """
     Creates a new user with the data given in parameter
     """
+    print(request)
     data = request.get_json()
+    print(data, " ", type(data))
     user = User(username=data["username"], password=data["password"])
     try:
         db.session.add(user)
@@ -53,6 +57,7 @@ def validate_token():
     Validates the token and send back the user's name and color
     """
     token = request.get_json()["token"]
+    print("lol")
     try:
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
@@ -100,11 +105,10 @@ def register_manager():
 @app.route("/account/parameters", methods=["POST"])
 @jwt_required()
 def change_account_parameters():
-    received = request.get_json()
+    received = json.loads(request.get_json())
 
     print(received)
     print(type(received))
-    print(request.get_json()["color"])
 
     if "color" in received:
         current_identity.color = received["color"]
@@ -115,6 +119,12 @@ def change_account_parameters():
     print(current_identity.color, " ", current_identity.username)
 
     return "", 200
+
+
+@app.route("/account/parameters", methods=["GET"])
+@jwt_required()
+def get_account_parameters():
+    return current_identity.to_json(), 200
 
 
 @app.route("/account/password", methods=["POST"])

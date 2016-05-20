@@ -65,6 +65,29 @@ class Client:
 
         return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=_json)
 
+    def post_dict_as_json(self, *, endpoint, **kwargs):
+        """
+        Sends a POST request to the server, with data as json.
+
+        :param endpoint: the relative path where to POST ("/auth", for example)
+        :param kwargs: the data as dict to send as json
+        """
+        self.post_json(json.dumps(kwargs), endpoint)
+
+    def get_json(self, endpoint):
+        headers = {}
+
+        if self.is_logged_in():
+            headers["authorization"] = "JWT " + self.token
+
+        r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
+        print(r)
+
+        return r.json()
+
+    def get_json_as_dict(self, endpoint):
+        return json.loads(self.get_json(endpoint))
+
     def register(self, username, password):
         """
         Registers the user using his username and password.
@@ -103,15 +126,6 @@ class Client:
         """
         self.token = None
 
-    def post_dict_as_json(self, *, endpoint, **kwargs):
-        """
-        Sends a POST request to the server, with data as json.
-
-        :param endpoint: the relative path where to POST ("/auth", for example)
-        :param kwargs: the data as dict to send as json
-        """
-        self.post_json(json.dumps(kwargs), endpoint)
-
     def post_account_info(self, **kwargs):
         """
         Modifies account info.
@@ -119,6 +133,9 @@ class Client:
         :param kwargs: the data as dict to send as json
         """
         self.post_dict_as_json(endpoint=PARAMETERS_PATH, **kwargs)
+
+    def get_account_info(self):
+        return self.get_json_as_dict(PARAMETERS_PATH)
 
     def get_games(self):
         """

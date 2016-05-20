@@ -36,6 +36,12 @@
             text: "Change parameters"
             on_release: root.validate_parameters()
 
+        Button:
+            id: buttonChangeParameters
+            size_hint: 1, 0.3
+            text: "Get parameters"
+            on_release: root.test_get_parameters()
+
         Label:
             text: "Old password:"
 
