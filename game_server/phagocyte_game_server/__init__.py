@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 """
-Game server implementation
+Phagocyte's game handler
+
+This module defines the controller for the Phagocyte's game.
 """
 
 import json
@@ -11,6 +13,7 @@ import socket
 import sys
 import time
 import uuid
+from typing import Dict, Union, List, Set, Tuple
 
 import random
 import requests
@@ -25,7 +28,20 @@ from phagocyte_game_server.events import Event
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
-def create_logger(name, port, debug):
+address = Tuple[str, int]
+json_values = Union['json_object', str, bool, int, None]
+json_object = Union[List[json_values], Dict[str, json_values]]
+
+
+def create_logger(name: str, port: int, debug: bool) -> logging.Logger:
+    """
+    Setup a logger to use for the game server
+
+    :param name: name of the server
+    :param port: port on which the server listens
+    :param debug: whether to enable debugging or not
+    :return: a new logger instance configured for the game
+    """
     logger = logging.getLogger(name + ":" + str(port))
     handler = RainbowLoggingHandler(sys.stderr, color_process=("yellow", None, True))
 
@@ -44,11 +60,11 @@ class AuthenticationError(Exception):
 
     :param msg: information about the error
     """
-    def __init__(self, msg):
+    def __init__(self, msg: str):
         self.msg = msg
 
 
-def random_color():
+def random_color() -> str:
     """
     get a new random color in hexadecimal
 
@@ -57,7 +73,7 @@ def random_color():
     return "#%06x" % random.randint(0, 0xFFFFFF)
 
 
-def register(port, auth_host, auth_port, name, capacity):
+def register(port: int, auth_host: str, auth_port: int, name: int, capacity: int):
     """
     registers the game server against the authentication server
 
@@ -83,55 +99,85 @@ def register(port, auth_host, auth_port, name, capacity):
 
 
 class GameObject:
-    x = None
-    y = None
-    radius = None
-    size = None
+    """
+    Represents an object in the game
 
-    def __init__(self, radius, max_x, max_y):
+    :param radius: radius of the object
+    :param max_x: size of the x axis of the world
+    :param max_y: size of the y axis of the world
+    """
+    __slots__ = ["x", "y", "radius", "size"]
+
+    def __init__(self, radius: float, max_x: int, max_y: int):
+        self.x = None  # type: float
+        self.y = None  # type: float
+        self.radius = None  # type: float
+        self.size = None  # type: float
+
         self.update_radius(radius)
         self.set_random_position(max_x, max_y)
 
-    def to_json(self):
+    def to_json(self) -> json_object:
+        """ transforms the object to a dictionary to be sent on the wire """
         return {
             "size": self.size,
             "x": self.x,
             "y": self.y
         }
 
-    def update_radius(self, new_radius):
+    def update_radius(self, new_radius: float):
+        """
+        Updates the radius of the object. This should be used instead of directly updating the radius
+        as it also handles the update of the object's size
+
+        :param new_radius: new value for the radius
+        """
         self.radius = new_radius
         self.size = new_radius * 2
 
-    def set_random_position(self, max_x, max_y):
+    def set_random_position(self, max_x: int, max_y: int):
         """
-        Returns a random position
-
-        :return: tuple of X,Y position
+        sets a random position between max_x and max_y, taking into account
+        the radius of the object so that it doesn't get out of the screen
         """
         self.x = random.randint(self.radius, max_x - self.radius)
         self.y = random.randint(self.radius, max_y - self.radius)
 
-    def collides_with(self, obj: 'GameObject'):
+    def collides_with(self, obj: 'GameObject') -> bool:
+        """
+        determines whether an object has the center of the object given in parameter in its radius
+
+        :param obj: the object for which to check the center
+        :return: True if the object in parameter is in us, else False
+        """
         return self.radius ** 2 > (obj.x - self.x) ** 2 + (obj.y - self.y) ** 2
 
 
 class Player(GameObject):
-    def __init__(self, name, color, radius, max_x, max_y):
-        super().__init__(radius, max_x, max_y)
-        self.name = name
-        self.color = color
-        self.timestamp = time.time()
+    __slots__ = ["name", "color", "timestamp"]
 
-    def to_json(self):
+    def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
+        super().__init__(radius, max_x, max_y)
+        self.name = name  # type: str
+        self.color = color  # type: str
+        self.timestamp = time.time()  # type: int
+
+    def to_json(self) -> json_object:
+        """ transforms the object to a dictionary to be sent on the wire """
         return {
             "name": self.name,
             "color": self.color,
-            "position": (self.x, self.y),
+            "x": self.x,
+            "y": self.y,
             "size": self.size
         }
 
     def update_size(self, obj: 'GameObject'):
+        """
+        updates the size of the object with the size of the object in parameter
+
+        :param obj: object for which to take the size
+        """
         self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
 
 
@@ -139,38 +185,44 @@ class GameProtocol(DatagramProtocol):
     """
     Implementation of the Game protocol for Phagocytes
 
+    This class contains the whole logic of the game and decides what is
+    or not valid in the context of the game
+
     :param auth_host: host address of the authentication server
     :param auth_port: port of the authentication server
     :param capacity: max capacity of the server
+    :param logger: logger instance to use to report errors and other messages
     """
-    players = dict()
-    moves = dict()
-    deaths = set()
-    food = list()
-    food_notify_index = 0
-
-    max_x = 5000
-    max_y = 5000
-    default_radius = 50
-    max_speed = 400
-    eat_ratio = 1.5
-
-    last_time = time.time()
-
     death_message = json.dumps({"event": Event.DEATH}).encode("utf-8")
 
-    def __init__(self, auth_host, auth_port, capacity, logger):
-        self.auth_host = auth_host
-        self.auth_port = auth_port
-        self.max_capacity = capacity
-        self.logger = logger
-        self.url = "http://{}:{}".format(self.auth_host, self.auth_port)
+    def __init__(self, auth_host: str, auth_port: int, capacity: int, logger: logging.Logger):
+        self.players = dict()  # type: Dict[address, Player]
+        self.moves = dict()  # type: Dict[address, Tuple[int, int]]
+        self.deaths = set()  # type: Set[address]
+        self.food = [set() for _ in range(5)]  # type: List[Set[GameObject]]
+        self.food_notify_index = 0  # type: int
+
+        self.auth_host = auth_host  # type: str
+        self.auth_port = auth_port  # type: int
+        self.url = "http://{}:{}".format(self.auth_host, self.auth_port)  # type: str
+        self.max_capacity = capacity  # type: int
+
+        self.max_x = 5000  # type: int
+        self.max_y = 5000  # type: int
+        self.default_radius = 50  # type: int
+        self.max_speed = 400  # type: int
+        self.eat_ratio = 1.2  # type: float
+        self.new_food_ratio = 5  # type: int
+
+        self.last_time = time.time()  # type: int
+
+        self.logger = logger  # type: logging.Logger
 
         task.LoopingCall(self.handle_players).start(1 / 30)
         task.LoopingCall(self.handle_food).start(1 / 30)
         task.LoopingCall(self.handle_food_reminder).start(1 / 2)
 
-    def authenticate(self, token):
+    def authenticate(self, token: str) -> Tuple[str, str]:
         """
         tries to authenticate the user against the authentication server
 
@@ -184,44 +236,40 @@ class GameProtocol(DatagramProtocol):
 
         raise AuthenticationError(r.json())
 
-    def register(self, data, addr):
+    def register(self, data: json_object, addr: address):
         """
         register a new player on the game server
 
         :param data: data got from the client
         :param addr: client address
-        :return:  message to send to the user
         """
         if data.get("event") != Event.TOKEN:
             self.logger.warning("User from {addr} not registered tried to gain access".format(addr=addr))
-            return dict(event=Event.ERROR, error="Client not registered")
+            self.send_to(addr, dict(event=Event.ERROR, error="Client not registered"))
+            return
 
         elif data.get("token") is None:
             color = random_color()
             name = data.get("name", str(uuid.uuid4()))
-            log_name = "with name {name}".format(name=name) if name is not None else "with no name"
-            self.logger.debug("Registering new user {name}".format(name=log_name))
         else:
             try:
                 name, color = self.authenticate(data.get("token"))
             except AuthenticationError as e:
                 self.logger.warning("User from {addr} tried to register with invalid token".format(addr=addr))
-                e.msg["event"] = Event.ERROR
-                return e.msg
-            else:
-                self.logger.debug("Registered new user {name}".format(name=name))
+                self.send_to(addr, dict(event=Event, error=e.msg))
+                return
+
+        self.logger.debug("Registered new user {name}".format(name=name))
 
         client = Player(name, color, self.default_radius, self.max_x, self.max_y)
         self.players[addr] = client
         
-        data = dict(
+        self.send_to(addr, dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
-            position=(client.x, client.y), color=color, size=client.size
-        )
+            x=client.x, y=client.y, color=color, size=client.size
+        ))
 
-        return data
-
-    def datagramReceived(self, datagram, addr):
+    def datagramReceived(self, datagram: bytes, addr: address):
         """
         function called every time a new datagram is received.
         This will dispatch it to the correct handler
@@ -239,20 +287,38 @@ class GameProtocol(DatagramProtocol):
                     if data["event"] == Event.DEATH:
                         self.deaths.remove(addr)
                     else:
-                        self.transport.write(self.death_message, addr=addr)
+                        self.send_to(addr, self.death_message)
                 else:
-                    self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
+                    self.register(data, addr)
             elif data["event"] == Event.STATE:
                 self.moves[addr] = data["position"]
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
 
-    def send_all_players(self, data):
+    def send_to(self, addr: address, data: json_object):
+        """
+        Sends the given data to the user identified by the given address
+
+        :param addr: address to which to send the data
+        :param data: data to send
+        """
+        self.transport.write(json.dumps(data).encode("utf8"), addr)
+
+    def send_all_players(self, data: json_object):
+        """
+        Sends the given data to all users connected
+
+        :param data: data to send
+        """
+        json_data = json.dumps(data).encode("utf-8")
         for client in self.players.keys():
-            self.transport.write(data, addr=client)
+            self.transport.write(json_data, addr=client)
 
     def handle_players(self):
-        data = {}
+        """
+        checks moves from all the players and handle collisions between them
+        """
+        data = {}  # type: Dict[address, json_object]
 
         for addr, update in self.moves.items():
             if update is None:
@@ -293,9 +359,9 @@ class GameProtocol(DatagramProtocol):
             client.timestamp = timestamp
 
         if len(data):
-            self.send_all_players(json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8"))
+            self.send_all_players({"event": Event.STATE, "updates": list(data.values())})
 
-        deaths = set()
+        deaths = set()  # type: Set[address]
 
         for eater_addr, eater in self.players.items():
             for eaten_addr, eaten in self.players.items():
@@ -303,9 +369,11 @@ class GameProtocol(DatagramProtocol):
                     continue
 
                 if eaten.size > eater.size * self.eat_ratio:
+                    # the eaten is bigger than the eater, let's inverse roles
                     eater, eaten = eaten, eater
                     eater_addr, eaten_addr = eaten_addr, eater_addr
                 elif eater.size < eaten.size * self.eat_ratio:
+                    # eater is not big enough to eat the eaten, we go on
                     continue
 
                 if eater.collides_with(eaten):
@@ -318,38 +386,35 @@ class GameProtocol(DatagramProtocol):
             self.players.pop(death)
             self.transport.write(self.death_message, addr=death)
 
-        self.deaths |= deaths
+        self.deaths |= deaths  # add the users dead this turn to the list of dead
 
     def handle_food_reminder(self):
+        """
+        Reminds user periodically of the food that is in the world
+        """
         if len(self.food) == 0:
             return
 
-        self.send_all_players(json.dumps({
+        self.send_all_players({
             "event": Event.FOOD_REMINDER,
             "food": [food.to_json() for food in self.food[self.food_notify_index]]
-        }).encode("utf8"))
+        })
 
         self.food_notify_index = (self.food_notify_index + 1) % len(self.food)
 
     def handle_food(self):
-        event = {"event": Event.FOOD}
+        """
+        randomly adds new food and checks for collisions against all players
+        """
+        event = {"event": Event.FOOD}  # type: json_object
         deletions = []
 
-        if random.randrange(10) < 1:
+        if random.randrange(100) < self.new_food_ratio:
             for entry in self.food:
                 if len(entry) < 100:
-                    break
-            else:
-                if len(self.food) < 5:
-                    self.food.append(set())
-                    entry = self.food[-1]
-                else:
-                    entry = None
-
-            if entry is not None:
-                food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
-                entry.add(food)
-                event["new"] = food.to_json()
+                    food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
+                    entry.add(food)
+                    event["new"] = food.to_json()
 
         for player in self.players.values():
             for _list in self.food:
@@ -368,7 +433,7 @@ class GameProtocol(DatagramProtocol):
             event["old"] = deletions
 
         if len(event) > 1:
-            self.send_all_players(json.dumps(event).encode("utf-8"))
+            self.send_all_players(event)
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):

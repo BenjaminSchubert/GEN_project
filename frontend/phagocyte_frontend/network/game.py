@@ -75,6 +75,7 @@ class NetworkGameClient(DatagramProtocol):
         elif event_type == Event.FOOD_REMINDER:
             self.game.check_food(data["food"])
         elif event_type == Event.DEATH:
+            self.send_dict(event=Event.DEATH)
             self.game.death()
         elif event_type == Event.ERROR:
             print("Error: ", data)  # FIXME

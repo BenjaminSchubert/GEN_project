@@ -70,8 +70,10 @@ class Food(Widget, BoundedMixin):
 
 
 class World(Widget):
-    players = {}
-    food = {}
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.players = {}
+        self.food = {}
 
     def add_food(self, x, y, size):
         food = Food(size=(size, size))
@@ -122,7 +124,7 @@ class GameInstance(Widget):
 
         self.world.size = (data["max_x"], data["max_y"])
 
-        self.world.main_player.set_position(*data["position"])
+        self.world.main_player.set_position(data["x"], data["y"])
         self.world.main_player.set_color(data["color"])
 
         self.world.main_player.set_size(data["size"])
@@ -145,8 +147,8 @@ class GameInstance(Widget):
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
                 p.set_position(
-                    state["position"][0] - p.size[0] / 2,
-                    state["position"][1] - p.size[1] / 2
+                    state["x"] - p.size[0] / 2,
+                    state["y"] - p.size[1] / 2
                 )
                 p.set_size(state["size"])
 
@@ -154,7 +156,7 @@ class GameInstance(Widget):
                 p = Player()
                 self.world.add_widget(p)
                 p.set_size(state["size"])
-                p.set_position(*state["position"])
+                p.set_position(state["x"], state["y"])
                 p.set_color(state["color"])
                 self.world.players[state["name"]] = p
 
