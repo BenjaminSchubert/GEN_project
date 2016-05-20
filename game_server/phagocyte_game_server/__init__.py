@@ -7,6 +7,7 @@ Game server implementation
 import json
 import json.decoder
 import logging
+import socket
 import sys
 import time
 import uuid
@@ -66,9 +67,14 @@ def register(port, auth_host, auth_port, name, capacity):
     :param name: name of the game server
     :param capacity: max capacity of the game server
     """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("www.google.com", 80))
+    ip_addr = s.getsockname()
+    s.close()
+
     r = requests.post(
         "http://{}:{}/games/server".format(auth_host, auth_port),
-        json={"port": port, "name": name, "capacity": capacity}
+        json={"port": port, "name": name, "capacity": capacity, "ip": ip_addr[0]}
     )
 
     if r.status_code != requests.codes.ok:
