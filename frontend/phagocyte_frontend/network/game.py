@@ -31,6 +31,9 @@ class Event(enum.IntEnum):
     GAME_INFO = 2
     UPDATE = 3
     STATE = 4
+    FOOD = 5
+    FOOD_REMINDER = 6
+    DEATH = 7
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -62,7 +65,6 @@ class NetworkGameClient(DatagramProtocol):
         """
         Executes various actions based on the type of the message.
         """
-
         data = json.loads(datagram.decode("utf-8"))
         event_type = data.get("event", None)
 
@@ -73,6 +75,12 @@ class NetworkGameClient(DatagramProtocol):
             self.update_gui(data)
         elif event_type == Event.STATE:
             self.game.update_state(data["updates"])
+        elif event_type == Event.FOOD:
+            self.game.update_food(data.get("new"), data.get("old", []))
+        elif event_type == Event.FOOD_REMINDER:
+            self.game.check_food(data["food"])
+        elif event_type == Event.DEATH:
+            self.game.death()
         elif event_type == Event.ERROR:
             print("Error: ", data)  # FIXME
         elif event_type is None:

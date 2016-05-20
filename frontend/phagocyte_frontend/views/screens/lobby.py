@@ -64,9 +64,6 @@ class LobbyScreen(AutoLoadableScreen):
         if the game list differs from the new one, display it
         """
         self.game_list.data = self.manager.client.get_games()
-        if not self.game_list.selection:
-            print(self.game_list.check_for_empty_selection())
-            print(dir(self.game_list))
 
     def user_login_process(self):
         """

@@ -76,22 +76,57 @@ def register(port, auth_host, auth_port, name, capacity):
         exit(2)
 
 
-class Client:
-    def __init__(self, name, color, position_x, position_y):
+class GameObject:
+    x = None
+    y = None
+    radius = None
+    size = None
+
+    def __init__(self, radius, max_x, max_y):
+        self.update_radius(radius)
+        self.set_random_position(max_x, max_y)
+
+    def to_json(self):
+        return {
+            "size": self.size,
+            "x": self.x,
+            "y": self.y
+        }
+
+    def update_radius(self, new_radius):
+        self.radius = new_radius
+        self.size = new_radius * 2
+
+    def set_random_position(self, max_x, max_y):
+        """
+        Returns a random position
+
+        :return: tuple of X,Y position
+        """
+        self.x = random.randint(self.radius, max_x - self.radius)
+        self.y = random.randint(self.radius, max_y - self.radius)
+
+    def collides_with(self, obj: 'GameObject'):
+        return self.radius ** 2 > (obj.x - self.x) ** 2 + (obj.y - self.y) ** 2
+
+
+class Player(GameObject):
+    def __init__(self, name, color, radius, max_x, max_y):
+        super().__init__(radius, max_x, max_y)
         self.name = name
         self.color = color
-        self.position_x = position_x
-        self.position_y = position_y
-        self.radius = 50
         self.timestamp = time.time()
 
     def to_json(self):
         return {
             "name": self.name,
             "color": self.color,
-            "position": (self.position_x, self.position_y),
-            "radius": self.radius,
+            "position": (self.x, self.y),
+            "size": self.size
         }
+
+    def update_size(self, obj: 'GameObject'):
+        self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
 
 
 class GameProtocol(DatagramProtocol):
@@ -102,12 +137,21 @@ class GameProtocol(DatagramProtocol):
     :param auth_port: port of the authentication server
     :param capacity: max capacity of the server
     """
-    clients = dict()
+    players = dict()
     moves = dict()
-    max_x = 2000
-    max_y = 2000
+    deaths = set()
+    food = list()
+    food_notify_index = 0
+
+    max_x = 5000
+    max_y = 5000
+    default_radius = 50
     max_speed = 400
+    eat_ratio = 1.5
+
     last_time = time.time()
+
+    death_message = json.dumps({"event": Event.DEATH}).encode("utf-8")
 
     def __init__(self, auth_host, auth_port, capacity, logger):
         self.auth_host = auth_host
@@ -116,15 +160,9 @@ class GameProtocol(DatagramProtocol):
         self.logger = logger
         self.url = "http://{}:{}".format(self.auth_host, self.auth_port)
 
-        task.LoopingCall(self.send_players).start(1 / 24)
-
-    def random_position(self):
-        """
-        Returns a random position
-
-        :return: tuple of X,Y position
-        """
-        return [random.randint(0, self.max_x), random.randint(0, self.max_y)]
+        task.LoopingCall(self.handle_players).start(1 / 30)
+        task.LoopingCall(self.handle_food).start(1 / 30)
+        task.LoopingCall(self.handle_food_reminder).start(1 / 2)
 
     def authenticate(self, token):
         """
@@ -167,12 +205,12 @@ class GameProtocol(DatagramProtocol):
             else:
                 self.logger.debug("Registered new user {name}".format(name=name))
 
-        client = Client(name, color, *self.random_position())
-        self.clients[addr] = client
+        client = Player(name, color, self.default_radius, self.max_x, self.max_y)
+        self.players[addr] = client
         
         data = dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
-            position=(client.position_x, client.position_y), color=color
+            position=(client.x, client.y), color=color, size=client.size
         )
 
         return data
@@ -190,14 +228,24 @@ class GameProtocol(DatagramProtocol):
         except json.decoder.JSONDecodeError:
             self.logger.warning("Invalid json received : '{json}'".format(json=datagram.decode("utf-8")))
         else:
-            if self.clients.get(addr) is None:
-                self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
+            if self.players.get(addr) is None:
+                if addr in self.deaths:
+                    if data["event"] == Event.DEATH:
+                        self.deaths.remove(addr)
+                    else:
+                        self.transport.write(self.death_message, addr=addr)
+                else:
+                    self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
             elif data["event"] == Event.STATE:
                 self.moves[addr] = data["position"]
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
 
-    def send_players(self):
+    def send_all_players(self, data):
+        for client in self.players.keys():
+            self.transport.write(data, addr=client)
+
+    def handle_players(self):
         data = {}
 
         for addr, update in self.moves.items():
@@ -205,32 +253,32 @@ class GameProtocol(DatagramProtocol):
                 continue
 
             timestamp = time.time()
-            client = self.clients[addr]
+            client = self.players[addr]
 
             factor_x = factor_y = 0
 
-            delta_x = update[0] - client.position_x
-            delta_y = update[1] - client.position_y
+            delta_x = update[0] - client.x
+            delta_y = update[1] - client.y
             speed_x = abs(delta_x / (timestamp - client.timestamp))
             speed_y = abs(delta_y / (timestamp - client.timestamp))
 
             if speed_x > self.max_speed:
                 factor_x = delta_x * self.max_speed / speed_x
-                client.position_x = min(self.max_x - client.radius, max(
-                    client.radius, client.position_x + factor_x
+                client.x = min(self.max_x - client.radius, max(
+                    client.radius, client.x + factor_x
                 ))
             else:
-                client.position_x = min(self.max_x - client.radius, max(client.radius, update[0]))
+                client.x = min(self.max_x - client.radius, max(client.radius, update[0]))
 
             if speed_y > self.max_speed:
                 factor_y = delta_y * self.max_speed / speed_y
-                client.position_y = min(self.max_y - client.radius, max(
-                    client.radius, client.position_y + factor_y
+                client.y = min(self.max_y - client.radius, max(
+                    client.radius, client.y + factor_y
                 ))
             else:
-                client.position_y = min(self.max_y - client.radius, max(client.radius, update[1]))
+                client.y = min(self.max_y - client.radius, max(client.radius, update[1]))
 
-            data[addr] = self.clients[addr].to_json()
+            data[addr] = self.players[addr].to_json()
 
             if factor_x or factor_y:
                 data[addr]["dirty"] = (factor_x - delta_x, factor_y - delta_y)
@@ -239,10 +287,81 @@ class GameProtocol(DatagramProtocol):
             client.timestamp = timestamp
 
         if len(data):
-            values = json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8")
+            self.send_all_players(json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8"))
 
-            for client in self.clients.keys():
-                self.transport.write(values, addr=client)
+        deaths = set()
+
+        for eater_addr, eater in self.players.items():
+            for eaten_addr, eaten in self.players.items():
+                if eaten_addr in deaths or eater_addr in deaths:
+                    continue
+
+                if eaten.size > eater.size * self.eat_ratio:
+                    eater, eaten = eaten, eater
+                    eater_addr, eaten_addr = eaten_addr, eater_addr
+                elif eater.size < eaten.size * self.eat_ratio:
+                    continue
+
+                if eater.collides_with(eaten):
+                    eater.update_size(eaten)
+                    deaths.add(eaten_addr)
+
+                    # FIXME : notify auth server for scores and so on
+
+        for death in deaths:
+            self.players.pop(death)
+            self.transport.write(self.death_message, addr=death)
+
+        self.deaths |= deaths
+
+    def handle_food_reminder(self):
+        if len(self.food) == 0:
+            return
+
+        self.send_all_players(json.dumps({
+            "event": Event.FOOD_REMINDER,
+            "food": [food.to_json() for food in self.food[self.food_notify_index]]
+        }).encode("utf8"))
+
+        self.food_notify_index = (self.food_notify_index + 1) % len(self.food)
+
+    def handle_food(self):
+        event = {"event": Event.FOOD}
+        deletions = []
+        entry = None
+
+        if random.randrange(10) < 1:
+            for entry in self.food:
+                if len(entry) < 100:
+                    break
+            else:
+                if len(self.food) < 5:
+                    self.food.append(set())
+                    entry = self.food[-1]
+
+            if entry is not None:
+                food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
+                entry.add(food)
+                event["new"] = food.to_json()
+
+        for player in self.players.values():
+            for _list in self.food:
+                to_remove = []
+
+                for food in _list:
+                    if player.collides_with(food):
+                        player.update_size(food)
+                        deletions.append(food.to_json())
+                        to_remove.append(food)
+
+                for remove in to_remove:
+                    _list.remove(remove)
+
+        if len(deletions):
+            event["old"] = deletions
+
+        if len(event) > 1:
+            self.send_all_players(json.dumps(event).encode("utf-8"))
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):

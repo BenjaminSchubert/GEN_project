@@ -68,3 +68,34 @@
                     size: self.size
             World:
                 id: world
+
+
+<DeathPopup>:
+    title: "DEATH"
+    size_hint: (None, None)
+    size: (350, 200)
+    auto_dismiss: False
+
+    restart_button: restart_button
+    main_menu_button: main_menu_button
+
+    BoxLayout:
+        orientation: "vertical"
+
+        Label:
+            text: "You just died, sorry !"
+
+        Button:
+            id: main_menu_button
+
+            text: "Main Menu"
+            size_hint: (0.4, 0.4)
+            pos_hint: {"x": 0}
+
+        Button:
+            id: restart_button
+
+            text: "Restart"
+            size_hint: (0.4, 0.4)
+            pos_hint: {"x": 0.6}
+

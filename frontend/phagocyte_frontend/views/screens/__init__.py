@@ -14,10 +14,7 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
 def noop(*_):
-    """
-    no operations
-    """
-    pass
+    """ simple function that does nothing """
 
 
 class AutoLoadableScreen(Screen):
