@@ -328,18 +328,21 @@ class GameProtocol(DatagramProtocol):
     def handle_food(self):
         event = {"event": Event.FOOD}
         deletions = []
+        entry = None
 
         if random.randrange(10) < 1:
             for entry in self.food:
                 if len(entry) < 100:
                     break
             else:
-                self.food.append(set())
-                entry = self.food[-1]
+                if len(self.food) < 5:
+                    self.food.append(set())
+                    entry = self.food[-1]
 
-            food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
-            entry.add(food)
-            event["new"] = food.to_json()
+            if entry is not None:
+                food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
+                entry.add(food)
+                event["new"] = food.to_json()
 
         for player in self.players.values():
             for _list in self.food:
