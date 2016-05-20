@@ -90,7 +90,8 @@ class GameInstance(Widget):
     The instance of the game displayed by the game manager
     """
     REFRESH_RATE = 1 / 60
-    SCALE_RATIO = 1 / 2
+    SCALE_RATIO = 8 # [1, infinity]
+    scale_ratio_util = None
     server = None
 
     def follow_main_player(self, dt):
@@ -101,8 +102,7 @@ class GameInstance(Widget):
         """
         self.world.main_player.move(dt)
 
-        # FIXME : this could be done better
-        self.map.scale = self.SCALE_RATIO
+        self.map.scale = self.SCALE_RATIO / (self.world.main_player.width + self.scale_ratio_util) ** .5
 
         x, y = self.camera.convert_distance_to_scroll(
             self.world.main_player.center_x * self.map.scale - Window.width / 2,
@@ -126,6 +126,7 @@ class GameInstance(Widget):
         self.world.main_player.set_color(data["color"])
 
         self.world.main_player.set_size(data["size"])
+        self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
         self.start_timers()
 
