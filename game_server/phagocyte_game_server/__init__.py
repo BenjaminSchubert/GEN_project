@@ -334,7 +334,6 @@ class GameProtocol(DatagramProtocol):
     def handle_food(self):
         event = {"event": Event.FOOD}
         deletions = []
-        entry = None
 
         if random.randrange(10) < 1:
             for entry in self.food:
@@ -344,6 +343,8 @@ class GameProtocol(DatagramProtocol):
                 if len(self.food) < 5:
                     self.food.append(set())
                     entry = self.food[-1]
+                else:
+                    entry = None
 
             if entry is not None:
                 food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
