@@ -62,4 +62,4 @@ class ParametersScreen(AutoLoadableScreen):
 
             self.manager.client.post_account_info(password)
 
-        self.buttonSend.disabled = False
+        self.buttonChangePassword.disabled = False
