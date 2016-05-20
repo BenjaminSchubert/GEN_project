@@ -154,7 +154,16 @@ class GameInstance(Widget):
                 self.world.add_widget(p)
                 p.set_size(state["size"])
                 p.set_position(*state["position"])
+                p.set_color(state["color"])
                 self.world.players[state["name"]] = p
+
+        names = set(state["name"] for state in states)
+        keys = set(self.world.players.keys())
+        keys -= names
+
+        for key in keys:
+            to_remove = self.world.players.pop(key)
+            self.world.remove_widget(to_remove)
 
     def update_food(self, new, old):
         if new is not None:
@@ -167,3 +176,8 @@ class GameInstance(Widget):
         for entry in food:
             if (entry["x"], entry["y"]) not in self.world.food.keys():
                 self.world.add_food(entry["x"], entry["y"], entry["size"])
+
+    def death(self):
+        Clock.unschedule(self.follow_main_player)
+        Clock.unschedule(self.send_moves)
+        self.parent.player_died()

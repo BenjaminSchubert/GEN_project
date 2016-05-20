@@ -139,6 +139,7 @@ class GameProtocol(DatagramProtocol):
     """
     players = dict()
     moves = dict()
+    deaths = set()
     food = list()
     food_notify_index = 0
 
@@ -146,8 +147,11 @@ class GameProtocol(DatagramProtocol):
     max_y = 5000
     default_radius = 50
     max_speed = 400
+    eat_ratio = 1.5
 
     last_time = time.time()
+
+    death_message = json.dumps({"event": Event.DEATH}).encode("utf-8")
 
     def __init__(self, auth_host, auth_port, capacity, logger):
         self.auth_host = auth_host
@@ -225,7 +229,13 @@ class GameProtocol(DatagramProtocol):
             self.logger.warning("Invalid json received : '{json}'".format(json=datagram.decode("utf-8")))
         else:
             if self.players.get(addr) is None:
-                self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
+                if addr in self.deaths:
+                    if data["event"] == Event.DEATH:
+                        self.deaths.remove(addr)
+                    else:
+                        self.transport.write(self.death_message, addr=addr)
+                else:
+                    self.transport.write(json.dumps(self.register(data, addr)).encode("utf8"), addr)
             elif data["event"] == Event.STATE:
                 self.moves[addr] = data["position"]
             else:
@@ -278,6 +288,31 @@ class GameProtocol(DatagramProtocol):
 
         if len(data):
             self.send_all_players(json.dumps({"event": Event.STATE, "updates": list(data.values())}).encode("utf-8"))
+
+        deaths = set()
+
+        for eater_addr, eater in self.players.items():
+            for eaten_addr, eaten in self.players.items():
+                if eaten_addr in deaths or eater_addr in deaths:
+                    continue
+
+                if eaten.size > eater.size * self.eat_ratio:
+                    eater, eaten = eaten, eater
+                    eater_addr, eaten_addr = eaten_addr, eater_addr
+                elif eater.size < eaten.size * self.eat_ratio:
+                    continue
+
+                if eater.collides_with(eaten):
+                    eater.update_size(eaten)
+                    deaths.add(eaten_addr)
+
+                    # FIXME : notify auth server for scores and so on
+
+        for death in deaths:
+            self.players.pop(death)
+            self.transport.write(self.death_message, addr=death)
+
+        self.deaths |= deaths
 
     def handle_food_reminder(self):
         if len(self.food) == 0:

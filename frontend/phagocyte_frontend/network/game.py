@@ -33,6 +33,7 @@ class Event(enum.IntEnum):
     STATE = 4
     FOOD = 5
     FOOD_REMINDER = 6
+    DEATH = 7
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -78,6 +79,8 @@ class NetworkGameClient(DatagramProtocol):
             self.game.update_food(data.get("new"), data.get("old", []))
         elif event_type == Event.FOOD_REMINDER:
             self.game.check_food(data["food"])
+        elif event_type == Event.DEATH:
+            self.game.death()
         elif event_type == Event.ERROR:
             print("Error: ", data)  # FIXME
         elif event_type is None:
