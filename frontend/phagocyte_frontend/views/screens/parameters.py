@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from kivy.properties import StringProperty
 
 from phagocyte_frontend.views.screens import AutoLoadableScreen
 
@@ -11,6 +11,13 @@ class ParametersScreen(AutoLoadableScreen):
     The player parameters screen
     """
     screen_name = "parameters"
+    username = StringProperty("")
+    color = StringProperty("#000000")
+
+    def on_enter(self, *args):
+        infos = self.manager.client.get_account_info()
+        self.username = infos["username"]
+        self.color = infos["color"]
 
     def validate_parameters(self):
         """

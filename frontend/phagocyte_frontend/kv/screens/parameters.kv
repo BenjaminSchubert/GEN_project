@@ -1,5 +1,7 @@
 #:kivy 1.9.1
 
+#: import get_color_from_hex kivy.utils.get_color_from_hex
+
 <ParametersScreen>:
     #import
     newUserName: newUserName
@@ -20,6 +22,7 @@
         TextInput:
             id: newUserName
             multiline: False
+            text: root.username
 
         Label:
             text: "New ball color:"
@@ -27,6 +30,7 @@
         ColorPicker:
             id: newBallColor
             size_hint: 1, 4
+            color: get_color_from_hex(root.color)
 
         BoxLayout:
 
