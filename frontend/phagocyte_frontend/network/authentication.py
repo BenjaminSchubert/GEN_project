@@ -74,7 +74,7 @@ class Client:
         """
         self.post_json(json.dumps(kwargs), endpoint)
 
-    def get_json(self, endpoint):
+    def get_json_as_dict(self, endpoint):
         headers = {}
 
         if self.is_logged_in():
@@ -84,9 +84,6 @@ class Client:
         print(r)
 
         return r.json()
-
-    def get_json_as_dict(self, endpoint):
-        return json.loads(self.get_json(endpoint))
 
     def register(self, username, password):
         """
