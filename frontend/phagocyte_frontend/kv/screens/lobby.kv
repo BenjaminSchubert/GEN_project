@@ -24,6 +24,7 @@
                 text_size: self.width, None
                 halign: "center"
                 valign: "middle"
+                disabled: not len(root.game_list.data)
                 on_release: root.play()
 
         BoxLayout:
