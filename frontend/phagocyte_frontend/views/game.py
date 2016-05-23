@@ -45,15 +45,20 @@ class Player(Widget, BoundedMixin):
 
 
 class MainPlayer(Player):
-    MAX_SPEED = 10
+    initial_size = None
+    max_speed = None
+
+    def set_size(self, size):
+        super().set_size(size)
+        self.max_speed = 50 * self.initial_size / size**0.5
 
     def move(self, dt):
-        def get_speed(pos, center, max_speed=self.MAX_SPEED):
+        def get_speed(pos, center, max_speed=self.max_speed):
             ds = 200 * dt
             if pos < center:
-                return max(-max_speed, (pos - center) / ds)
+                return max(-max_speed * dt, (pos - center) / ds)
             else:
-                return min((pos - center) / ds, max_speed)
+                return min((pos - center) / ds, max_speed * dt)
 
         m_x, m_y = Window.mouse_pos
 
@@ -70,8 +75,10 @@ class Food(Widget, BoundedMixin):
 
 
 class World(Widget):
-    players = {}
-    food = {}
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.players = {}
+        self.food = {}
 
     def add_food(self, x, y, size):
         food = Food(size=(size, size))
@@ -122,9 +129,10 @@ class GameInstance(Widget):
 
         self.world.size = (data["max_x"], data["max_y"])
 
-        self.world.main_player.set_position(*data["position"])
+        self.world.main_player.set_position(data["x"], data["y"])
         self.world.main_player.set_color(data["color"])
 
+        self.world.main_player.initial_size = data["size"]
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
@@ -145,8 +153,8 @@ class GameInstance(Widget):
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
                 p.set_position(
-                    state["position"][0] - p.size[0] / 2,
-                    state["position"][1] - p.size[1] / 2
+                    state["x"] - p.size[0] / 2,
+                    state["y"] - p.size[1] / 2
                 )
                 p.set_size(state["size"])
 
@@ -154,7 +162,7 @@ class GameInstance(Widget):
                 p = Player()
                 self.world.add_widget(p)
                 p.set_size(state["size"])
-                p.set_position(*state["position"])
+                p.set_position(state["x"], state["y"])
                 p.set_color(state["color"])
                 self.world.players[state["name"]] = p
 

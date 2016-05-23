@@ -3,3 +3,4 @@ sqlalchemy
 flask-script
 flask-jwt
 requests
+typings
