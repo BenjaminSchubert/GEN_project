@@ -336,7 +336,6 @@ class GameProtocol(DatagramProtocol):
             delta_y = update[1] - client.y
             speed_x = abs(delta_x / (timestamp - client.timestamp))
             speed_y = abs(delta_y / (timestamp - client.timestamp))
-            print(update[0] - client.x, client.max_speed * (timestamp - client.timestamp))
 
             if speed_x > client.max_speed:
                 factor_x = delta_x * client.max_speed / speed_x
