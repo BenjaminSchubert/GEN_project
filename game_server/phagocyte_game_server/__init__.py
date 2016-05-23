@@ -154,13 +154,15 @@ class GameObject:
 
 
 class Player(GameObject):
-    __slots__ = ["name", "color", "timestamp"]
+    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed"]
 
     def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
         super().__init__(radius, max_x, max_y)
+        self.initial_size = self.size  # type: int
         self.name = name  # type: str
         self.color = color  # type: str
         self.timestamp = time.time()  # type: int
+        self.max_speed = 50 * self.initial_size / self.size ** 0.5  # type: float
 
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
@@ -179,6 +181,7 @@ class Player(GameObject):
         :param obj: object for which to take the size
         """
         self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
+        self.max_speed = 50 * self.initial_size / self.size ** 0.5
 
 
 class GameProtocol(DatagramProtocol):
@@ -333,17 +336,18 @@ class GameProtocol(DatagramProtocol):
             delta_y = update[1] - client.y
             speed_x = abs(delta_x / (timestamp - client.timestamp))
             speed_y = abs(delta_y / (timestamp - client.timestamp))
+            print(update[0] - client.x, client.max_speed * (timestamp - client.timestamp))
 
-            if speed_x > self.max_speed:
-                factor_x = delta_x * self.max_speed / speed_x
+            if speed_x > client.max_speed:
+                factor_x = delta_x * client.max_speed / speed_x
                 client.x = min(self.max_x - client.radius, max(
                     client.radius, client.x + factor_x
                 ))
             else:
                 client.x = min(self.max_x - client.radius, max(client.radius, update[0]))
 
-            if speed_y > self.max_speed:
-                factor_y = delta_y * self.max_speed / speed_y
+            if speed_y > client.max_speed:
+                factor_y = delta_y * client.max_speed / speed_y
                 client.y = min(self.max_y - client.radius, max(
                     client.radius, client.y + factor_y
                 ))

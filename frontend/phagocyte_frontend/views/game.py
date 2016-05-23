@@ -45,15 +45,20 @@ class Player(Widget, BoundedMixin):
 
 
 class MainPlayer(Player):
-    MAX_SPEED = 10
+    initial_size = None
+    max_speed = None
+
+    def set_size(self, size):
+        super().set_size(size)
+        self.max_speed = 50 * self.initial_size / size**0.5
 
     def move(self, dt):
-        def get_speed(pos, center, max_speed=self.MAX_SPEED):
+        def get_speed(pos, center, max_speed=self.max_speed):
             ds = 200 * dt
             if pos < center:
-                return max(-max_speed, (pos - center) / ds)
+                return max(-max_speed * dt, (pos - center) / ds)
             else:
-                return min((pos - center) / ds, max_speed)
+                return min((pos - center) / ds, max_speed * dt)
 
         m_x, m_y = Window.mouse_pos
 
@@ -127,6 +132,7 @@ class GameInstance(Widget):
         self.world.main_player.set_position(data["x"], data["y"])
         self.world.main_player.set_color(data["color"])
 
+        self.world.main_player.initial_size = data["size"]
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
