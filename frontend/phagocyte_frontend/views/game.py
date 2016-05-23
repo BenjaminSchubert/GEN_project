@@ -101,6 +101,10 @@ class GameInstance(Widget):
     scale_ratio_util = None
     server = None
 
+    def __init__(self):
+        super().__init__()
+        Window.bind(on_resize=self.redraw)
+
     def follow_main_player(self, dt):
         """
         Makes the camera follow the player
@@ -190,3 +194,7 @@ class GameInstance(Widget):
         Clock.unschedule(self.follow_main_player)
         Clock.unschedule(self.send_moves)
         self.parent.player_died()
+
+    def redraw(self, window, width, height):
+        for i in self.world.food.values():
+            i.set_position(i.position_x, i.position_y)
