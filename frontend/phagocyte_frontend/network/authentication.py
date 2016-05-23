@@ -34,7 +34,7 @@ class Client:
         """
         Creates the base url for the server.
         """
-        return "http://" + self.host + ":" + str(self.port)
+        return "http://{host}:{port}".format(host=self.host, port=self.port)
 
     @staticmethod
     def create_credentials_data(username, password):
