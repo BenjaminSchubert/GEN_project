@@ -101,14 +101,16 @@ class GameInstance(Widget):
     scale_ratio_util = None
     server = None
 
-    def follow_main_player(self, dt):
+    def move_main_player(self, dt):
+        self.world.main_player.move(dt)
+        self.follow_main_player()
+
+    def follow_main_player(self):
         """
         Makes the camera follow the player
 
         :param dt: date time of the schedule_interval
         """
-        self.world.main_player.move(dt)
-
         self.map.scale = self.SCALE_RATIO / (self.world.main_player.width + self.scale_ratio_util) ** .5
 
         x, y = self.camera.convert_distance_to_scroll(
@@ -136,10 +138,12 @@ class GameInstance(Widget):
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
+        Window.bind(on_resize=self.redraw)
+
         self.start_timers()
 
     def start_timers(self):
-        Clock.schedule_interval(self.follow_main_player, self.REFRESH_RATE)
+        Clock.schedule_interval(self.move_main_player, self.REFRESH_RATE)
         Clock.schedule_interval(self.send_moves, self.REFRESH_RATE)
 
     def update_state(self, states):
@@ -190,3 +194,9 @@ class GameInstance(Widget):
         Clock.unschedule(self.follow_main_player)
         Clock.unschedule(self.send_moves)
         self.parent.player_died()
+
+    def redraw(self, *args):
+        self.follow_main_player()
+
+        for i in self.world.food.values():
+            i.set_position(i.position_x, i.position_y)
