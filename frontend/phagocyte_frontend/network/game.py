@@ -33,6 +33,7 @@ class Event(enum.IntEnum):
     FOOD = 4
     FOOD_REMINDER = 5
     DEATH = 6
+    BULLETS = 7
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -74,6 +75,8 @@ class NetworkGameClient(DatagramProtocol):
             self.game.update_food(data.get("new"), data.get("old", []))
         elif event_type == Event.FOOD_REMINDER:
             self.game.check_food(data["food"])
+        elif event_type == Event.BULLETS:
+            self.game.check_bullets(data["bullets"])
         elif event_type == Event.DEATH:
             self.send_dict(event=Event.DEATH)
             self.game.death()
@@ -95,6 +98,9 @@ class NetworkGameClient(DatagramProtocol):
         Sends the state of the phagocyte to the server.
         """
         self.send_dict(event=Event.STATE, position=position)
+
+    def send_bullet(self, angle):
+        self.send_dict(event=Event.BULLETS, angle=angle)
 
     def send_dict(self, **kwargs):
         """

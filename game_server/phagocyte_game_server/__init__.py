@@ -13,8 +13,9 @@ import socket
 import sys
 import time
 import uuid
-from typing import Dict, Union, List, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
+import collections
 import random
 import requests
 from rainbow_logging_handler import RainbowLoggingHandler
@@ -23,14 +24,11 @@ from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
 from phagocyte_game_server.events import Event
+from phagocyte_game_server.game_objects import RandomPositionedGameObject, Bullet, Player
+from phagocyte_game_server.types import address, json_object
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
-
-
-address = Tuple[str, int]
-json_values = Union['json_object', str, bool, int, None]
-json_object = Union[List[json_values], Dict[str, json_values]]
 
 
 def create_logger(name: str, port: int, debug: bool) -> logging.Logger:
@@ -60,6 +58,7 @@ class AuthenticationError(Exception):
 
     :param msg: information about the error
     """
+
     def __init__(self, msg: str):
         self.msg = msg
 
@@ -98,92 +97,6 @@ def register(port: int, auth_host: str, auth_port: int, name: int, capacity: int
         exit(2)
 
 
-class GameObject:
-    """
-    Represents an object in the game
-
-    :param radius: radius of the object
-    :param max_x: size of the x axis of the world
-    :param max_y: size of the y axis of the world
-    """
-    __slots__ = ["x", "y", "radius", "size"]
-
-    def __init__(self, radius: float, max_x: int, max_y: int):
-        self.x = None  # type: float
-        self.y = None  # type: float
-        self.radius = None  # type: float
-        self.size = None  # type: float
-
-        self.update_radius(radius)
-        self.set_random_position(max_x, max_y)
-
-    def to_json(self) -> json_object:
-        """ transforms the object to a dictionary to be sent on the wire """
-        return {
-            "size": self.size,
-            "x": self.x,
-            "y": self.y
-        }
-
-    def update_radius(self, new_radius: float):
-        """
-        Updates the radius of the object. This should be used instead of directly updating the radius
-        as it also handles the update of the object's size
-
-        :param new_radius: new value for the radius
-        """
-        self.radius = new_radius
-        self.size = new_radius * 2
-
-    def set_random_position(self, max_x: int, max_y: int):
-        """
-        sets a random position between max_x and max_y, taking into account
-        the radius of the object so that it doesn't get out of the screen
-        """
-        self.x = random.randint(self.radius, max_x - self.radius)
-        self.y = random.randint(self.radius, max_y - self.radius)
-
-    def collides_with(self, obj: 'GameObject') -> bool:
-        """
-        determines whether an object has the center of the object given in parameter in its radius
-
-        :param obj: the object for which to check the center
-        :return: True if the object in parameter is in us, else False
-        """
-        return self.radius ** 2 > (obj.x - self.x) ** 2 + (obj.y - self.y) ** 2
-
-
-class Player(GameObject):
-    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed"]
-
-    def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
-        super().__init__(radius, max_x, max_y)
-        self.initial_size = self.size  # type: int
-        self.name = name  # type: str
-        self.color = color  # type: str
-        self.timestamp = time.time()  # type: int
-        self.max_speed = 50 * self.initial_size / self.size ** 0.5  # type: float
-
-    def to_json(self) -> json_object:
-        """ transforms the object to a dictionary to be sent on the wire """
-        return {
-            "name": self.name,
-            "color": self.color,
-            "x": self.x,
-            "y": self.y,
-            "size": self.size
-        }
-
-    def update_size(self, obj: 'GameObject'):
-        """
-        updates the size of the object with the size of the object in parameter
-
-        :param obj: object for which to take the size
-        """
-        self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
-        self.max_speed = 50 * self.initial_size / self.size ** 0.5
-
-
 class GameProtocol(DatagramProtocol):
     """
     Implementation of the Game protocol for Phagocytes
@@ -202,8 +115,14 @@ class GameProtocol(DatagramProtocol):
         self.players = dict()  # type: Dict[address, Player]
         self.moves = dict()  # type: Dict[address, Tuple[int, int]]
         self.deaths = set()  # type: Set[address]
-        self.food = [set() for _ in range(5)]  # type: List[Set[GameObject]]
+        self.food = [set() for _ in range(5)]  # type: List[Set[RandomPositionedGameObject]]
+        self.bullets = collections.deque()  # type: collections.deque[Bullet]
+        self.new_bullets = dict()  # type: Dict[address, float]
+
         self.food_notify_index = 0  # type: int
+        self.bullet_notify_index = 0  # type: int
+        self.new_bullet_id = 0  # type: int
+        self.last_bullet_update = time.time()  # type: int
 
         self.auth_host = auth_host  # type: str
         self.auth_port = auth_port  # type: int
@@ -217,6 +136,8 @@ class GameProtocol(DatagramProtocol):
         self.eat_ratio = 1.2  # type: float
         self.new_food_ratio = 5  # type: int
 
+        self.bullet_speed = 100  # type: int
+
         self.last_time = time.time()  # type: int
 
         self.logger = logger  # type: logging.Logger
@@ -224,6 +145,8 @@ class GameProtocol(DatagramProtocol):
         task.LoopingCall(self.handle_players).start(1 / 30)
         task.LoopingCall(self.handle_food).start(1 / 30)
         task.LoopingCall(self.handle_food_reminder).start(1 / 2)
+        task.LoopingCall(self.handle_new_bullets).start(1 / 3)
+        task.LoopingCall(self.handle_bullets).start(1 / 30)
 
     def authenticate(self, token: str) -> Tuple[str, str]:
         """
@@ -266,7 +189,7 @@ class GameProtocol(DatagramProtocol):
 
         client = Player(name, color, self.default_radius, self.max_x, self.max_y)
         self.players[addr] = client
-        
+
         self.send_to(addr, dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
             x=client.x, y=client.y, color=color, size=client.size
@@ -290,11 +213,13 @@ class GameProtocol(DatagramProtocol):
                     if data["event"] == Event.DEATH:
                         self.deaths.remove(addr)
                     else:
-                        self.send_to(addr, self.death_message)
+                        self.transport.write(addr, self.death_message)
                 else:
                     self.register(data, addr)
             elif data["event"] == Event.STATE:
                 self.moves[addr] = data["position"]
+            elif data["event"] == Event.BULLETS:
+                self.new_bullets[addr] = data["angle"]
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
 
@@ -316,6 +241,42 @@ class GameProtocol(DatagramProtocol):
         json_data = json.dumps(data).encode("utf-8")
         for client in self.players.keys():
             self.transport.write(json_data, addr=client)
+
+    def handle_new_bullets(self):
+        """
+        handles the addition of new bullets
+        """
+        for addr, angle in self.new_bullets.items():
+            self.bullets.append(Bullet(angle, self.players[addr], self.bullet_speed))
+
+        self.new_bullets = dict()  # type: Dict[address, float]
+
+    def handle_bullets(self):
+        """
+        handles new bullets, checks for collisions and updates results
+        """
+        step = 50
+        new_time = time.time()
+        dt = new_time - self.last_bullet_update
+
+        for i in range(0, len(self.bullets), step):
+            data_to_send = []
+            max_boundary = min(step, len(self.bullets) - step * i)
+
+            for j in range(max_boundary):
+                bullet = self.bullets.popleft()
+                bullet.x = min(self.max_x - bullet.radius, max(bullet.radius, bullet.x + bullet.speed_x * dt))
+                bullet.y = min(self.max_y - bullet.radius, max(bullet.radius, bullet.y + bullet.speed_y * dt))
+
+                if not (bullet.x == self.max_x - bullet.radius or bullet.x == bullet.radius or
+                        bullet.y == self.max_y - bullet.radius or bullet.y == bullet.radius):
+                    self.bullets.append(bullet)
+
+                data_to_send.append(bullet.to_json())
+
+            self.send_all_players({"event": Event.BULLETS, "bullets": data_to_send})
+
+        self.last_bullet_update = new_time
 
     def handle_players(self):
         """
@@ -395,13 +356,11 @@ class GameProtocol(DatagramProtocol):
         """
         Reminds user periodically of the food that is in the world
         """
-        if len(self.food) == 0:
-            return
-
-        self.send_all_players({
-            "event": Event.FOOD_REMINDER,
-            "food": [food.to_json() for food in self.food[self.food_notify_index]]
-        })
+        if len(self.food[self.food_notify_index]) != 0:
+            self.send_all_players({
+                "event": Event.FOOD_REMINDER,
+                "food": [food.to_json() for food in self.food[self.food_notify_index]]
+            })
 
         self.food_notify_index = (self.food_notify_index + 1) % len(self.food)
 
@@ -415,7 +374,7 @@ class GameProtocol(DatagramProtocol):
         if random.randrange(100) < self.new_food_ratio:
             for entry in self.food:
                 if len(entry) < 100:
-                    food = GameObject(random.randint(5, 25), self.max_x, self.max_y)
+                    food = RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y)
                     entry.add(food)
                     event["new"] = food.to_json()
 
