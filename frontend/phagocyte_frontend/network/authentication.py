@@ -9,6 +9,8 @@ import json
 import hashlib
 import requests
 
+from kivy.logger import Logger
+
 from phagocyte_frontend.exceptions import CredentialsException
 from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, PARAMETERS_PATH, GAMES_PATH
 
@@ -46,7 +48,9 @@ class Client:
         """
         return {
             "username": username,
-            "password": hashlib.sha512((hashlib.sha512(password.encode("utf-8")).hexdigest() + username).encode("utf-8")).hexdigest()
+            "password": hashlib.sha512(
+                (hashlib.sha512(password.encode("utf-8")).hexdigest() + username).encode("utf-8")
+            ).hexdigest()
         }
 
     def post_json(self, _json, endpoint):
@@ -99,7 +103,7 @@ class Client:
         r = self.post_json(self.create_credentials_data(username, password), REGISTER_PATH)
 
         if r.status_code == requests.codes.conflict:
-            raise CredentialsException(r.json().get("error", "register error: got " + str(r.json())))
+            raise CredentialsException("The user already exists")
 
     def login(self, username, password):
         """
@@ -111,9 +115,12 @@ class Client:
         r = self.post_json(self.create_credentials_data(username, password), AUTH_PATH)
 
         if r.status_code < 400:
-            self.token = r.json()["access_token"]
+            try:
+                self.token = r.json()["access_token"]
+            except ValueError:
+                Logger.error("Malformed json")
         elif r.status_code == requests.codes.unauthorized:
-            raise CredentialsException("bad credentials")
+            raise CredentialsException("Bad credentials")
 
     def is_logged_in(self):
         """
