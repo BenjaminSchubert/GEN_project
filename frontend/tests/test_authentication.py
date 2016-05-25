@@ -39,6 +39,13 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertRaises(CredentialsException, self.client.login, "username", "password")
 
+    @responses.activate
+    def test_login_malformed_json_no_crash(self):
+        responses.add(responses.POST, self.client.get_base_url() + AUTH_PATH,
+                      body='{', status=200, content_type="application/json")
+
+        self.client.login("username", "password")
+
     def test_is_logged_in(self):
         self.client.token = "test"
         assert self.client.is_logged_in()
