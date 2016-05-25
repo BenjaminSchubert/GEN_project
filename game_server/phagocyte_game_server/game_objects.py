@@ -110,7 +110,7 @@ class Player(RandomPositionedGameObject):
         self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
         self.max_speed = 50 * self.initial_size / self.size ** 0.5
 
-    def collides_with(self, obj: 'GameObject') -> bool:
+    def collides_with(self, obj: GameObject) -> bool:
         """
         determines whether an object has the center of the object given in parameter in its radius
 
@@ -125,16 +125,20 @@ class Bullet(GameObject):
     Represents a bullet in game
     """
     __slots__ = ["uid", "color", "speed_x", "speed_y"]
-    id_counter = itertools.count()
+    id_counter = itertools.count()  # type: itertools.count
 
-    def __init__(self, angle: float, player: Player, bullet_speed: float):
-        super().__init__(20)  # FIXME : adapt size dynamically
-        self.x = player.x
-        self.y = player.y
-        self.color = player.color
-        self.speed_x = sin(angle) * bullet_speed
-        self.speed_y = cos(angle) * bullet_speed
-        self.uid = next(self.id_counter)
+    def __init__(self, angle: float, player: Player):
+        size = player.size / 100
+        player.size -= size
+
+        super().__init__(size)
+
+        self.x = player.x  # type: int
+        self.y = player.y  # type: int
+        self.color = player.color  # type: str
+        self.speed_x = 2 * sin(angle) * player.max_speed  # type: float
+        self.speed_y = 2 * cos(angle) * player.max_speed  # type: float
+        self.uid = next(self.id_counter)  # type: int
 
     def to_json(self):
         """ transforms the object to a dictionary to be sent on the wire """

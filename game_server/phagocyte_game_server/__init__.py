@@ -136,8 +136,6 @@ class GameProtocol(DatagramProtocol):
         self.eat_ratio = 1.2  # type: float
         self.new_food_ratio = 5  # type: int
 
-        self.bullet_speed = 100  # type: int
-
         self.last_time = time.time()  # type: int
 
         self.logger = logger  # type: logging.Logger
@@ -247,7 +245,9 @@ class GameProtocol(DatagramProtocol):
         handles the addition of new bullets
         """
         for addr, angle in self.new_bullets.items():
-            self.bullets.append(Bullet(angle, self.players[addr], self.bullet_speed))
+            player = self.players[addr]
+            if player.size > player.initial_size:
+                self.bullets.append(Bullet(angle, player))
 
         self.new_bullets = dict()  # type: Dict[address, float]
 
