@@ -281,6 +281,7 @@ class GameProtocol(DatagramProtocol):
                             if player.size >= player.initial_size:
                                 lost_size = player.size / 3
                                 player.size = max(player.initial_size, player.size - lost_size)
+                                player.radius = player.size / 2
                                 self.throw_food(int(lost_size), player.x, player.y, player.radius)
 
                         deleted_bullets.append(bullet.uid)
@@ -297,23 +298,18 @@ class GameProtocol(DatagramProtocol):
         self.last_bullet_update = new_time
 
     def throw_food(self, size_to_disptach, player_x, player_y, player_radius):
-        new_food = []
-
         while size_to_disptach > 10:
             size = random.randint(10, size_to_disptach)
             size_to_disptach -= size
             radius = size / 2
             f = GameObject(radius)
             f.x = max(radius, (min(self.max_x - radius, random.randint(
-                int(player_x - 3 * player_radius), int(3 * player_radius + player_x)
+                int(player_x - 5 * player_radius), int(5 * player_radius + player_x)
             ))))
             f.y = max(radius, (min(self.max_y - radius, random.randint(
-                int(player_y - 3 * player_radius), int(3 * player_radius + player_y)
+                int(player_y - 5 * player_radius), int(5 * player_radius + player_y)
             ))))
-            new_food.append(f)
-
-        self.send_all_players({"event": Event.FOOD_REMINDER, "food": [f.to_json() for f in new_food]})
-        self.food.extend(new_food)
+            self.food.appendleft(f)
 
     def handle_players(self):
         """
