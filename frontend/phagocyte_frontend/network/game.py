@@ -31,9 +31,8 @@ class Event(enum.IntEnum):
     GAME_INFO = 2
     STATE = 3
     FOOD = 4
-    FOOD_REMINDER = 5
-    DEATH = 6
-    BULLETS = 7
+    DEATH = 5
+    BULLETS = 6
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -72,9 +71,7 @@ class NetworkGameClient(DatagramProtocol):
         elif event_type == Event.STATE:
             self.game.update_state(data["updates"])
         elif event_type == Event.FOOD:
-            self.game.update_food(data.get("new"), data.get("old", []))
-        elif event_type == Event.FOOD_REMINDER:
-            self.game.check_food(data["food"])
+            self.game.update_food(data.get("food", []), data.get("deleted", []))
         elif event_type == Event.BULLETS:
             self.game.check_bullets(data["bullets"], data["deleted"])
         elif event_type == Event.DEATH:

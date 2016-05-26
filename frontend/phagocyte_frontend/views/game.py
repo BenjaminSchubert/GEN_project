@@ -220,17 +220,15 @@ class GameInstance(Widget):
             to_remove = self.world.players.pop(key)
             self.world.remove_widget(to_remove)
 
-    def update_food(self, new, old):
-        if new is not None:
-            self.world.add_food(new["x"], new["y"], new["size"])
-
-        for entry in old:
+    def update_food(self, new, deleted):
+        for entry in new:
+            try:
+                if (entry["x"], entry["y"]) not in self.world.food.keys():
+                    self.world.add_food(entry["x"], entry["y"], entry["size"])
+            except:
+                print(entry)
+        for entry in deleted:
             self.world.remove_food(entry["x"], entry["y"])
-
-    def check_food(self, food):
-        for entry in food:
-            if (entry["x"], entry["y"]) not in self.world.food.keys():
-                self.world.add_food(entry["x"], entry["y"], entry["size"])
 
     def move_bullets(self, dt):
         to_remove = []

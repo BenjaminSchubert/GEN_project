@@ -13,7 +13,7 @@ import socket
 import sys
 import time
 import uuid
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Set, Tuple
 
 import collections
 import random
@@ -115,7 +115,7 @@ class GameProtocol(DatagramProtocol):
         self.players = dict()  # type: Dict[address, Player]
         self.moves = dict()  # type: Dict[address, Tuple[int, int]]
         self.deaths = set()  # type: Set[address]
-        self.food = [set() for _ in range(5)]  # type: List[Set[RandomPositionedGameObject]]
+        self.food = collections.deque()  # type: collections.deque[RandomPositionedGameObject]
         self.bullets = collections.deque()  # type: collections.deque[Bullet]
         self.new_bullets = dict()  # type: Dict[address, float]
 
@@ -143,7 +143,6 @@ class GameProtocol(DatagramProtocol):
 
         task.LoopingCall(self.handle_players).start(1 / 30)
         task.LoopingCall(self.handle_food).start(1 / 30)
-        task.LoopingCall(self.handle_food_reminder).start(1 / 2)
         task.LoopingCall(self.handle_new_bullets).start(1 / 3)
         task.LoopingCall(self.handle_bullets).start(1 / 30)
 
@@ -314,7 +313,7 @@ class GameProtocol(DatagramProtocol):
             new_food.append(f)
 
         self.send_all_players({"event": Event.FOOD_REMINDER, "food": [f.to_json() for f in new_food]})
-        self.food[0] |= set(new_food)
+        self.food.extend(new_food)
 
     def handle_players(self):
         """
@@ -390,50 +389,28 @@ class GameProtocol(DatagramProtocol):
 
         self.deaths |= deaths  # add the users dead this turn to the list of dead
 
-    def handle_food_reminder(self):
-        """
-        Reminds user periodically of the food that is in the world
-        """
-        if len(self.food[self.food_notify_index]) != 0:
-            self.send_all_players({
-                "event": Event.FOOD_REMINDER,
-                "food": [food.to_json() for food in self.food[self.food_notify_index]]
-            })
-
-        self.food_notify_index = (self.food_notify_index + 1) % len(self.food)
-
     def handle_food(self):
         """
         randomly adds new food and checks for collisions against all players
         """
-        event = {"event": Event.FOOD}  # type: json_object
         deletions = []
+        food_to_send = []
 
         if random.randrange(100) < self.new_food_ratio:
-            for entry in self.food:
-                if len(entry) < 100:
-                    food = RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y)
-                    entry.add(food)
-                    event["new"] = food.to_json()
+            self.food.appendleft(RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y))
 
-        for player in self.players.values():
-            for _list in self.food:
-                to_remove = []
+        for i in range(min(len(self.food), 70)):
+            food = self.food.popleft()
+            for player in self.players.values():
+                if player.collides_with(food):
+                    player.update_size(food)
+                    deletions.append(food.to_json())
+                    break
+            else:
+                self.food.append(food)
+                food_to_send.append(food.to_json())
 
-                for food in _list:
-                    if player.collides_with(food):
-                        player.update_size(food)
-                        deletions.append(food.to_json())
-                        to_remove.append(food)
-
-                for remove in to_remove:
-                    _list.remove(remove)
-
-        if len(deletions):
-            event["old"] = deletions
-
-        if len(event) > 1:
-            self.send_all_players(event)
+        self.send_all_players({"event": Event.FOOD, "food": food_to_send, "deleted": deletions})
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):
