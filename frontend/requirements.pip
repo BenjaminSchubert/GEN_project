@@ -1,4 +1,6 @@
 twisted
+responses
+requests
 cython
 kivy
 pyenchant
