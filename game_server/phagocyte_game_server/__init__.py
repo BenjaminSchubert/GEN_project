@@ -13,6 +13,7 @@ import socket
 import sys
 import time
 import uuid
+from math import ceil
 from typing import Dict, Set, Tuple
 
 import collections
@@ -274,7 +275,7 @@ class GameProtocol(DatagramProtocol):
                 for player in self.players.values():
                     if player != bullet.player and player.collides_with(bullet):
                         has_hit = True
-                        player.hit_count += 1
+                        player.hit_count += ceil((bullet.size / 10)**.5)
                         if player.hit_count >= self.max_hit_count:
                             player.hit_count = 0
 

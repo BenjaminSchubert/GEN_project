@@ -30,6 +30,9 @@ class BoundedMixin:
     def add_position(self, x, y):
         self.set_position(x + self.position_x, y + self.position_y)
 
+    def set_size(self, size):
+        self.size = size, size
+
     def set_color(self, color):
         r, g, b, a = get_color_from_hex(color)
         for i in self.canvas.get_group(None):
@@ -42,8 +45,10 @@ class BoundedMixin:
 
 
 class Player(Widget, BoundedMixin):
-    def set_size(self, size):
-        self.size = size, size
+    """
+
+    """
+
 
 
 class MainPlayer(Player):
@@ -107,10 +112,11 @@ class World(Widget):
         self.add_widget(food)
         food.set_position(x, y)
 
-    def add_bullet(self, uid, x, y, speed_x, speed_y, color):
+    def add_bullet(self, uid, x, y, speed_x, speed_y, color, size):
         if self.bullets.get(uid) is None:
             self.bullets[uid] = Bullet(uid, speed_x, speed_y)
             self.bullets[uid].set_color(color)
+            self.bullets[uid].set_size(size)
             self.add_widget(self.bullets[uid])
         self.bullets[uid].set_position(x, y)
 

@@ -132,7 +132,7 @@ class Bullet(GameObject):
         size = player.size / 100
         player.size -= size
 
-        super().__init__(size)
+        super().__init__(size * 10)
 
         self.x = player.x  # type: int
         self.y = player.y  # type: int
@@ -151,4 +151,5 @@ class Bullet(GameObject):
             "y": self.y,
             "speed_x": self.speed_x,
             "speed_y": self.speed_y,
+            "size": self.size
         }
