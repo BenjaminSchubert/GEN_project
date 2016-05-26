@@ -18,5 +18,5 @@ class Event(enum.IntEnum):
     GAME_INFO = 2
     STATE = 3
     FOOD = 4
-    FOOD_REMINDER = 5
-    DEATH = 6
+    DEATH = 5
+    BULLETS = 6

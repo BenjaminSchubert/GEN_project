@@ -1,3 +1,5 @@
+from math import atan2
+
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics.context_instructions import Color
@@ -28,8 +30,6 @@ class BoundedMixin:
     def add_position(self, x, y):
         self.set_position(x + self.position_x, y + self.position_y)
 
-
-class Player(Widget, BoundedMixin):
     def set_size(self, size):
         self.size = size, size
 
@@ -44,9 +44,17 @@ class Player(Widget, BoundedMixin):
                 break
 
 
+class Player(Widget, BoundedMixin):
+    """
+
+    """
+
+
+
 class MainPlayer(Player):
     initial_size = None
     max_speed = None
+    shooting = False
 
     def set_size(self, size):
         super().set_size(size)
@@ -67,6 +75,12 @@ class MainPlayer(Player):
 
         self.add_position(x, y)
 
+    def start_shooting(self, *args):
+        self.shooting = True
+
+    def stop_shooting(self, *args):
+        self.shooting = False
+
 
 class Food(Widget, BoundedMixin):
     """
@@ -74,11 +88,23 @@ class Food(Widget, BoundedMixin):
     """
 
 
+class Bullet(Widget, BoundedMixin):
+    """
+    A bullet thrown by a player
+    """
+    def __init__(self, uid, speed_x, speed_y, **kwargs):
+        super().__init__(**kwargs)
+        self._id = uid
+        self.speed_x = speed_x
+        self.speed_y = speed_y
+
+
 class World(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.players = {}
         self.food = {}
+        self.bullets = {}
 
     def add_food(self, x, y, size):
         food = Food(size=(size, size))
@@ -86,10 +112,23 @@ class World(Widget):
         self.add_widget(food)
         food.set_position(x, y)
 
+    def add_bullet(self, uid, x, y, speed_x, speed_y, color, size):
+        if self.bullets.get(uid) is None:
+            self.bullets[uid] = Bullet(uid, speed_x, speed_y)
+            self.bullets[uid].set_color(color)
+            self.bullets[uid].set_size(size)
+            self.add_widget(self.bullets[uid])
+        self.bullets[uid].set_position(x, y)
+
     def remove_food(self, x, y):
         f = self.food.pop((x, y), None)
         if f:
             self.remove_widget(f)
+
+    def remove_bullet(self, id):
+        b = self.bullets.pop(id, None)
+        if b:
+            self.remove_widget(b)
 
 
 class GameInstance(Widget):
@@ -108,8 +147,6 @@ class GameInstance(Widget):
     def follow_main_player(self):
         """
         Makes the camera follow the player
-
-        :param dt: date time of the schedule_interval
         """
         self.map.scale = self.SCALE_RATIO / (self.world.main_player.width + self.scale_ratio_util) ** .5
 
@@ -126,6 +163,11 @@ class GameInstance(Widget):
             self.world.main_player.center_y - Window.height / 2
         ))
 
+    def send_bullets(self, dt):
+        if self.world.main_player.shooting:
+            m_x, m_y = Window.mouse_pos
+            self.server.send_bullet(atan2(m_x - Window.width / 2, m_y - Window.height / 2))
+
     def start_game(self, server, data):
         self.server = server
 
@@ -138,13 +180,19 @@ class GameInstance(Widget):
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
-        Window.bind(on_resize=self.redraw)
+        Window.bind(
+            on_resize=self.redraw,
+            on_mouse_down=self.world.main_player.start_shooting,
+            on_mouse_up=self.world.main_player.stop_shooting
+        )
 
         self.start_timers()
 
     def start_timers(self):
         Clock.schedule_interval(self.move_main_player, self.REFRESH_RATE)
         Clock.schedule_interval(self.send_moves, self.REFRESH_RATE)
+        Clock.schedule_interval(self.send_bullets, self.REFRESH_RATE)
+        Clock.schedule_interval(self.move_bullets, self.REFRESH_RATE)
 
     def update_state(self, states):
         for state in states:
@@ -178,17 +226,31 @@ class GameInstance(Widget):
             to_remove = self.world.players.pop(key)
             self.world.remove_widget(to_remove)
 
-    def update_food(self, new, old):
-        if new is not None:
-            self.world.add_food(new["x"], new["y"], new["size"])
-
-        for entry in old:
+    def update_food(self, new, deleted):
+        for entry in new:
+            try:
+                if (entry["x"], entry["y"]) not in self.world.food.keys():
+                    self.world.add_food(entry["x"], entry["y"], entry["size"])
+            except:
+                print(entry)
+        for entry in deleted:
             self.world.remove_food(entry["x"], entry["y"])
 
-    def check_food(self, food):
-        for entry in food:
-            if (entry["x"], entry["y"]) not in self.world.food.keys():
-                self.world.add_food(entry["x"], entry["y"], entry["size"])
+    def move_bullets(self, dt):
+        to_remove = []
+
+        world_size_x = self.world.size[0]
+        world_size_y = self.world.size[1]
+
+        for bullet in self.world.bullets.values():
+            bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
+            if (bullet.position_x == 0 or bullet.position_y == 0 or
+                bullet.position_x + bullet.size[0] == world_size_x or
+                    bullet.position_y + bullet.size[1] == world_size_y):
+                to_remove.append(bullet._id)
+
+        for bid in to_remove:
+            self.world.remove_bullet(bid)
 
     def death(self):
         Clock.unschedule(self.follow_main_player)
@@ -200,3 +262,10 @@ class GameInstance(Widget):
 
         for i in self.world.food.values():
             i.set_position(i.position_x, i.position_y)
+
+    def check_bullets(self, bullets, deleted):
+        for bullet in bullets:
+            self.world.add_bullet(**bullet)
+
+        for bullet in deleted:
+            self.world.remove_bullet(bullet)
