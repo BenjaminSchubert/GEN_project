@@ -81,7 +81,7 @@ class Player(RandomPositionedGameObject):
     :param max_x: maximum width of the map
     :param max_y: maximum height of the map
     """
-    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed"]
+    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed", "hit_count"]
 
     def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
         super().__init__(radius, max_x, max_y)
@@ -90,6 +90,7 @@ class Player(RandomPositionedGameObject):
         self.color = color  # type: str
         self.timestamp = time.time()  # type: int
         self.max_speed = 50 * self.initial_size / self.size ** 0.5  # type: float
+        self.hit_count = 0
 
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
@@ -124,7 +125,7 @@ class Bullet(GameObject):
     """
     Represents a bullet in game
     """
-    __slots__ = ["uid", "color", "speed_x", "speed_y"]
+    __slots__ = ["uid", "color", "speed_x", "speed_y", "player"]
     id_counter = itertools.count()  # type: itertools.count
 
     def __init__(self, angle: float, player: Player):
@@ -139,6 +140,7 @@ class Bullet(GameObject):
         self.speed_x = 2 * sin(angle) * player.max_speed  # type: float
         self.speed_y = 2 * cos(angle) * player.max_speed  # type: float
         self.uid = next(self.id_counter)  # type: int
+        self.player = player
 
     def to_json(self):
         """ transforms the object to a dictionary to be sent on the wire """

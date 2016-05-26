@@ -259,6 +259,9 @@ class GameInstance(Widget):
         for i in self.world.food.values():
             i.set_position(i.position_x, i.position_y)
 
-    def check_bullets(self, bullets):
+    def check_bullets(self, bullets, deleted):
         for bullet in bullets:
             self.world.add_bullet(**bullet)
+
+        for bullet in deleted:
+            self.world.remove_bullet(bullet)

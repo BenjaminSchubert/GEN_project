@@ -24,7 +24,7 @@ from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
 from phagocyte_game_server.events import Event
-from phagocyte_game_server.game_objects import RandomPositionedGameObject, Bullet, Player
+from phagocyte_game_server.game_objects import RandomPositionedGameObject, Bullet, Player, GameObject
 from phagocyte_game_server.types import address, json_object
 
 
@@ -135,6 +135,7 @@ class GameProtocol(DatagramProtocol):
         self.max_speed = 400  # type: int
         self.eat_ratio = 1.2  # type: float
         self.new_food_ratio = 5  # type: int
+        self.max_hit_count = 10  # type: int
 
         self.last_time = time.time()  # type: int
 
@@ -211,7 +212,7 @@ class GameProtocol(DatagramProtocol):
                     if data["event"] == Event.DEATH:
                         self.deaths.remove(addr)
                     else:
-                        self.transport.write(addr, self.death_message)
+                        self.transport.write(self.death_message, addr)
                 else:
                     self.register(data, addr)
             elif data["event"] == Event.STATE:
@@ -261,22 +262,59 @@ class GameProtocol(DatagramProtocol):
 
         for i in range(0, len(self.bullets), step):
             data_to_send = []
+            deleted_bullets = []
             max_boundary = min(step, len(self.bullets) - step * i)
 
             for j in range(max_boundary):
+                has_hit = False
+
                 bullet = self.bullets.popleft()
                 bullet.x = min(self.max_x - bullet.radius, max(bullet.radius, bullet.x + bullet.speed_x * dt))
                 bullet.y = min(self.max_y - bullet.radius, max(bullet.radius, bullet.y + bullet.speed_y * dt))
 
-                if not (bullet.x == self.max_x - bullet.radius or bullet.x == bullet.radius or
-                        bullet.y == self.max_y - bullet.radius or bullet.y == bullet.radius):
+                for player in self.players.values():
+                    if player != bullet.player and player.collides_with(bullet):
+                        has_hit = True
+                        player.hit_count += 1
+                        if player.hit_count >= self.max_hit_count:
+                            player.hit_count = 0
+
+                            if player.size >= player.initial_size:
+                                lost_size = player.size / 3
+                                player.size = max(player.initial_size, player.size - lost_size)
+                                self.throw_food(int(lost_size), player.x, player.y, player.radius)
+
+                        deleted_bullets.append(bullet.uid)
+                        break
+
+                if not has_hit and not (bullet.x == self.max_x - bullet.radius or bullet.x == bullet.radius or
+                                        bullet.y == self.max_y - bullet.radius or bullet.y == bullet.radius):
                     self.bullets.append(bullet)
 
                 data_to_send.append(bullet.to_json())
 
-            self.send_all_players({"event": Event.BULLETS, "bullets": data_to_send})
+            self.send_all_players({"event": Event.BULLETS, "bullets": data_to_send, "deleted": deleted_bullets})
 
         self.last_bullet_update = new_time
+
+    def throw_food(self, size_to_disptach, player_x, player_y, player_radius):
+        new_food = []
+
+        while size_to_disptach > 10:
+            size = random.randint(10, size_to_disptach)
+            size_to_disptach -= size
+            radius = size / 2
+            f = GameObject(radius)
+            f.x = max(radius, (min(self.max_x - radius, random.randint(
+                int(player_x - 3 * player_radius), int(3 * player_radius + player_x)
+            ))))
+            f.y = max(radius, (min(self.max_y - radius, random.randint(
+                int(player_y - 3 * player_radius), int(3 * player_radius + player_y)
+            ))))
+            new_food.append(f)
+
+        self.send_all_players({"event": Event.FOOD_REMINDER, "food": [f.to_json() for f in new_food]})
+        self.food[0] |= set(new_food)
 
     def handle_players(self):
         """
