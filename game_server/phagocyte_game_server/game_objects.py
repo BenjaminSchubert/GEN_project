@@ -9,7 +9,7 @@ import time
 
 from math import sin, cos
 
-from phagocyte_game_server.types import json_object
+from phagocyte_game_server.custom_types import json_object
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"

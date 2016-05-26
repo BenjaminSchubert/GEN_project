@@ -26,7 +26,7 @@ from twisted.internet.protocol import DatagramProtocol
 
 from phagocyte_game_server.events import Event
 from phagocyte_game_server.game_objects import RandomPositionedGameObject, Bullet, Player, GameObject
-from phagocyte_game_server.types import address, json_object
+from phagocyte_game_server.custom_types import address, json_object
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
