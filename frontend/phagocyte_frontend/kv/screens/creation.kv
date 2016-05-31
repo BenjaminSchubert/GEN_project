@@ -1,14 +1,16 @@
 #:kivy 1.9.1
 
 <CreateGameScreen>:
-
     GridLayout:
         cols: 2
         padding: 20
-        spacing: 60
+        spacing: 30
+
+        row_default_height: 35
+        row_force_default: True
 
         Label:
-            text: "Map name:"
+            text: "Game name:"
 
         TextInput:
             multiline: False
@@ -25,6 +27,36 @@
         TextInput:
             multiline: False
 
+        Label:
+            text: "Min phagocyte radius:"
+
+        TextInput:
+            multiline: False
+
+        Label:
+            text: "Max phagocyte speed:"
+
+        TextInput:
+            multiline: False
+
+        Label:
+            text: "Eat ratio:"
+
+        TextInput:
+            multiline: False
+
+        Label:
+            text: "Food production rate:"
+
+        TextInput:
+            multiline: False
+
+        Label:
+            text: "Max hit count:"
+
+        TextInput:
+            multiline: False
+
         Button:
             text: "Cancel"
             size_hint: 1, 0.3
@@ -33,4 +65,4 @@
         Button:
             text: "Validate"
             size_hint: 1, 0.3
-            #on_release: root.validate_parameters()
+            on_release: root.game_creation()

@@ -15,4 +15,3 @@ class CreateGameScreen(AutoLoadableScreen):
         creation of a new game
         """
         # TODO implement this part
-

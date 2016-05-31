@@ -145,8 +145,10 @@ class GameProtocol(DatagramProtocol):
         self.default_radius = 50  # type: int
         self.max_speed = 700  # type: int
         self.eat_ratio = 1.2  # type: float
-        self.new_food_ratio = 5  # type: int
+
+        self.food_production_rate = 5  # type: int
         self.new_bonuses_ratio = 3  # type: int
+
         self.max_hit_count = 10  # type: int
         self.bonus_time = 10  # type: int
         self.win_size = 1000  # type: int
@@ -449,7 +451,7 @@ class GameProtocol(DatagramProtocol):
         deletions = []  # type: json_object
         food_to_send = []  # type: json_object
 
-        if random.randrange(100) < self.new_food_ratio and len(self.food) < 50 + 50 * len(self.players)**1.1:
+        if random.randrange(100) < self.food_production_rate and len(self.food) < 50 + 50 * len(self.players)**1.1:
             self.food.appendleft(RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y))
 
         for i in range(min(len(self.food), 70)):
