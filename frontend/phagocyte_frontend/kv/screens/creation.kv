@@ -1,6 +1,16 @@
 #:kivy 1.9.1
 
 <CreateGameScreen>:
+
+    game_name: game_name
+    map_width: map_width
+    map_height: map_height
+    min_radius: min_radius
+    max_speed: max_speed
+    eat_ratio: eat_ratio
+    food_production_rate: food_production_rate
+    max_hit_count: max_hit_count
+
     GridLayout:
         cols: 2
         padding: 20
@@ -13,56 +23,71 @@
             text: "Game name:"
 
         TextInput:
+            id: game_name
             multiline: False
 
         Label:
             text: "Map width:"
 
         TextInput:
+            id: map_width
             multiline: False
-            input_filter: 'int'
+            input_filter: "int"
+            hint_text: root.DEFAULT_MAP_WIDTH
 
         Label:
             text: "Map height:"
 
         TextInput:
+            id: map_height
             multiline: False
-            input_filter: 'int'
+            input_filter: "int"
+            hint_text: root.DEFAULT_MAP_HEIGHT
 
         Label:
             text: "Min phagocyte radius:"
 
         TextInput:
+            id: min_radius
             multiline: False
-            input_filter: 'int'
+            input_filter: "int"
+            hint_text: root.DEFAULT_MIN_RADIUS
 
         Label:
             text: "Max phagocyte speed:"
 
         TextInput:
+            id: max_speed
             multiline: False
-            input_filter: 'int'
+            input_filter: "int"
+            hint_text: root.DEFAULT_MAX_SPEED
 
         Label:
             text: "Eat ratio:"
 
         TextInput:
+            id: eat_ratio
             multiline: False
             input_filter: 'float'
+            hint_text: root.DEFAULT_EAT_RATIO
 
         Label:
             text: "Food production rate:"
 
         TextInput:
+            id: food_production_rate
             multiline: False
-            input_filter: 'int'
+            input_filter: "int"
+            hint_text: root.DEFAULT_MAP_WIDTH
 
         Label:
             text: "Max hit count:"
 
         TextInput:
+            id: max_hit_count
             multiline: False
-            input_filter: 'int'
+            input_filter: "int"
+            hint_text: root.DEFAULT_MAX_HIT_COUNT
 
         Button:
             text: "Cancel"

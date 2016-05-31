@@ -42,8 +42,6 @@ class ParametersScreen(AutoLoadableScreen):
         """
         modification password user account for the specified user
         """
-        print(self.newUserName.text)
-
         self.buttonChangePassword.disabled = True
 
         if self.oldPassword.text == "":
@@ -60,6 +58,6 @@ class ParametersScreen(AutoLoadableScreen):
                 "new_password": self.newPassword.text
             }
 
-            self.manager.client.post_account_info(password)
+            self.manager.client.post_account_info(**password)
 
         self.buttonChangePassword.disabled = False

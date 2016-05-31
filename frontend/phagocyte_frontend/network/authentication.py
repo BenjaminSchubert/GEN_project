@@ -154,3 +154,12 @@ class Client:
         """
         r = requests.get(self.get_base_url() + GAMES_PATH)
         return r.json()
+
+    def create_game(self, **kwargs):
+        """
+        Creates a game.
+
+        :param kwargs: the game info as dict to send as json.
+        """
+        print(kwargs)
+        self.post_dict_as_json(endpoint=GAMES_PATH, **kwargs)
