@@ -161,5 +161,4 @@ class Client:
 
         :param kwargs: the game info as dict to send as json.
         """
-        print(kwargs)
         self.post_dict_as_json(endpoint=GAMES_PATH, **kwargs)

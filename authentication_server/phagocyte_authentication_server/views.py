@@ -63,12 +63,21 @@ def validate_token():
     return jsonify(user.as_dict)
 
 
-@app.route("/games")
+@app.route("/games", methods=["GET"])
 def games():
     """
     Get the list of all games available
     """
     return jsonify(app.games.games)
+
+
+@app.route("/games", methods=["POST"])
+def create_game():
+    """ Creates a new game """
+    # TODO input validation: if not valid, return related status code + json with error
+
+    # TODO game creation
+    return "", 200
 
 
 @app.route("/games/server", methods=["POST"])
