@@ -162,6 +162,7 @@ class MainPlayer(Player):
         super().set_size(size)
         self.set_max_speed()
         print(size)
+        # TODO : à tester
         GameInstance.health_bar.value = (self.size[0] - self.initial_size / GameInstance.MAX_SIZE - self.initial_size) * 100
 
     def set_max_speed(self):
@@ -276,7 +277,7 @@ class GameInstance(Widget):
     """
     REFRESH_RATE = 1 / 60
     SCALE_RATIO = 8  # >= 1
-    # TODO : test
+    # TODO : à tester
     MAX_SIZE = 1000
     PADDING_BAR_WIDTH = 120
     PADDING_BAR_HEIGHT = 80
@@ -324,7 +325,7 @@ class GameInstance(Widget):
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
-        # TODO : test
+        # TODO : à tester
         self.add_widget(self.health_bar)
         self.health_bar.max = self.MAX_SIZE
         self.health_bar.pos = Window.width - self.PADDING_BAR_WIDTH, Window.height - self.PADDING_BAR_HEIGHT
