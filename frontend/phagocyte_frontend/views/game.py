@@ -60,36 +60,31 @@ class Player(Widget, BoundedMixin):
     """
 
     """
-    is_shielded = False
+    bonus = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.shield = Shield()
-        self.is_shielded = False
 
     def set_bonus(self, bonus: int):
         if bonus == BonusTypes.SHIELD:
-            for child in self.children:
-                if child == self.shield:
-                    self.is_shielded = True
-            if not self.is_shielded:
-                self.add_widget(self.shield)
-                self.is_shielded = True
+            if self.bonus != bonus:
+                for child in self.children:
+                    if child == self.shield:
+                        self.bonus = BonusTypes.SHIELD
 
-        elif bonus == BonusTypes.SPEEDUP:
-            self.bonus_speedup = 1.5
+                if self.bonus != BonusTypes.SHIELD:
+                    self.add_widget(self.shield)
+
+                self.bonus = BonusTypes.SHIELD
 
         elif bonus is None:
-            self.bonus_speedup = 1
-
             for child in self.children:
                 if child == self.shield:
-                    self.is_shielded = True
-            if self.is_shielded:
+                    self.bonus = BonusTypes.SHIELD
+            if bonus == BonusTypes.SHIELD:
                 self.remove_widget(self.shield)
-                self.is_shielded = False
-
-        self.set_max_speed()
+                self.bonus = None
 
     def set_position(self, x, y):
         super().set_position(x, y)
@@ -148,6 +143,13 @@ class MainPlayer(Player):
 
     def set_bonus(self, bonus: int):
         super().set_bonus(bonus)
+
+        if bonus == BonusTypes.SPEEDUP:
+            self.bonus_speedup = 1.5
+        else:
+            self.bonus_speedup = 1
+
+        self.set_max_speed()
 
 
 class Food(Widget, BoundedMixin):
