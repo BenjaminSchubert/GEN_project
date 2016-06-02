@@ -74,14 +74,15 @@ class Player(Widget, BoundedMixin):
                     self.is_shielded = True
             if not self.is_shielded:
                 self.add_widget(self.shield)
+                self.is_shielded = True
 
-    def remove_bonus(self, bonus: int):
-        if bonus == BonusTypes.SHIELD:
+        if bonus is None:
             for child in self.children:
                 if child == self.shield:
                     self.is_shielded = True
             if self.is_shielded:
                 self.remove_widget(self.shield)
+                self.is_shielded = False
 
     def set_position(self, x, y):
         super().set_position(x, y)
