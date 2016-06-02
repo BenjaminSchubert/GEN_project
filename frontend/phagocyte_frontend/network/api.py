@@ -10,4 +10,3 @@ GAMES_PATH = API_PATH + "/games"
 ACCOUNT_PATH = API_PATH + "/account"
 PARAMETERS_PATH = ACCOUNT_PATH + "/parameters"
 PASSWORD_PATH = ACCOUNT_PATH + "/parameters"
-

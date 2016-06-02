@@ -20,3 +20,4 @@ class Event(enum.IntEnum):
     FOOD = 4
     DEATH = 5
     BULLETS = 6
+    BONUS = 7

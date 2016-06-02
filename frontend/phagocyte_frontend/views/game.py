@@ -1,3 +1,4 @@
+import enum
 from math import atan2
 
 from kivy.clock import Clock
@@ -5,6 +6,17 @@ from kivy.core.window import Window
 from kivy.graphics.context_instructions import Color
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
+
+
+@enum.unique
+class BonusTypes(enum.IntEnum):
+    """
+    Represents each bonus types a user can obtain
+    """
+    SHIELD = 0
+    POWERUP = 1
+    GROWTH = 2
+    SPEEDUP = 3
 
 
 class BoundedMixin:
@@ -48,17 +60,25 @@ class Player(Widget, BoundedMixin):
     """
 
     """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
+    def set_bonus(self, bonus: int):
+        pass
 
 
 class MainPlayer(Player):
     initial_size = None
     max_speed = None
     shooting = False
+    bonus_speedup = 1
 
     def set_size(self, size):
         super().set_size(size)
-        self.max_speed = 50 * self.initial_size / size**0.5
+        self.set_max_speed()
+
+    def set_max_speed(self):
+        self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0]**0.5
 
     def move(self, dt):
         def get_speed(pos, center, max_speed=self.max_speed):
@@ -81,10 +101,24 @@ class MainPlayer(Player):
     def stop_shooting(self, *args):
         self.shooting = False
 
+    def set_bonus(self, bonus: int):
+        if bonus == BonusTypes.SPEEDUP:
+            self.bonus_speedup = 1.5
+        else:
+            self.bonus_speedup = 1
+
+        self.set_max_speed()
+
 
 class Food(Widget, BoundedMixin):
     """
     The food let the player grow
+    """
+
+
+class Bonus(Widget, BoundedMixin):
+    """
+    A bonus a user can pick
     """
 
 
@@ -105,6 +139,7 @@ class World(Widget):
         self.players = {}
         self.food = {}
         self.bullets = {}
+        self.bonuses = {}
 
     def add_food(self, x, y, size):
         food = Food(size=(size, size))
@@ -119,6 +154,17 @@ class World(Widget):
             self.bullets[uid].set_size(size)
             self.add_widget(self.bullets[uid])
         self.bullets[uid].set_position(x, y)
+
+    def add_bonus(self, x, y, size):
+        bonus = Bonus(size=(size, size))
+        self.add_widget(bonus)
+        self.bonuses[(x, y)] = bonus
+        bonus.set_position(x, y)
+
+    def remove_bonus(self, x, y):
+        b = self.bonuses.pop((x, y), None)
+        if b:
+            self.remove_widget(b)
 
     def remove_food(self, x, y):
         f = self.food.pop((x, y), None)
@@ -136,7 +182,7 @@ class GameInstance(Widget):
     The instance of the game displayed by the game manager
     """
     REFRESH_RATE = 1 / 60
-    SCALE_RATIO = 8 # >= 1
+    SCALE_RATIO = 8  # >= 1
     scale_ratio_util = None
     server = None
 
@@ -201,6 +247,7 @@ class GameInstance(Widget):
                     self.world.main_player.correction_x += state["dirty"][0]
                     self.world.main_player.correction_y += state["dirty"][1]
                 self.world.main_player.set_size(state["size"])
+                self.world.main_player.set_bonus(state.get("bonus", None))
 
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
@@ -209,6 +256,7 @@ class GameInstance(Widget):
                     state["y"] - p.size[1] / 2
                 )
                 p.set_size(state["size"])
+                p.set_bonus(state.get("bonus", None))
 
             else:
                 p = Player()
@@ -228,13 +276,19 @@ class GameInstance(Widget):
 
     def update_food(self, new, deleted):
         for entry in new:
-            try:
-                if (entry["x"], entry["y"]) not in self.world.food.keys():
-                    self.world.add_food(entry["x"], entry["y"], entry["size"])
-            except:
-                print(entry)
+            if (entry["x"], entry["y"]) not in self.world.food.keys():
+                self.world.add_food(entry["x"], entry["y"], entry["size"])
+
         for entry in deleted:
             self.world.remove_food(entry["x"], entry["y"])
+
+    def update_bonus(self, new, deleted):
+        for entry in new:
+            if (entry["x"], entry["y"]) not in self.world.bonuses.keys():
+                self.world.add_bonus(entry["x"], entry["y"], entry["size"])
+
+        for entry in deleted:
+            self.world.remove_bonus(entry["x"], entry["y"])
 
     def move_bullets(self, dt):
         to_remove = []

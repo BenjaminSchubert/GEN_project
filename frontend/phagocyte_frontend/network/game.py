@@ -25,6 +25,7 @@ __author__ = "Basile Vu <basile.vu@gmail.com>"
 REACTOR = reactor
 
 
+@enum.unique
 class Event(enum.IntEnum):
     ERROR = 0
     TOKEN = 1
@@ -33,6 +34,7 @@ class Event(enum.IntEnum):
     FOOD = 4
     DEATH = 5
     BULLETS = 6
+    BONUS = 7
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -74,6 +76,8 @@ class NetworkGameClient(DatagramProtocol):
             self.game.update_food(data.get("food", []), data.get("deleted", []))
         elif event_type == Event.BULLETS:
             self.game.check_bullets(data["bullets"], data["deleted"])
+        elif event_type == Event.BONUS:
+            self.game.update_bonus(data.get("bonus", []), data.get("deleted", []))
         elif event_type == Event.DEATH:
             self.send_dict(event=Event.DEATH)
             self.game.death()
