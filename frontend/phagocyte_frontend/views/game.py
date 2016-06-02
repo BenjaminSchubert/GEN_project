@@ -76,13 +76,20 @@ class Player(Widget, BoundedMixin):
                 self.add_widget(self.shield)
                 self.is_shielded = True
 
-        if bonus is None:
+        elif bonus == BonusTypes.SPEEDUP:
+            self.bonus_speedup = 1.5
+
+        elif bonus is None:
+            self.bonus_speedup = 1
+
             for child in self.children:
                 if child == self.shield:
                     self.is_shielded = True
             if self.is_shielded:
                 self.remove_widget(self.shield)
                 self.is_shielded = False
+
+        self.set_max_speed()
 
     def set_position(self, x, y):
         super().set_position(x, y)
@@ -339,8 +346,8 @@ class GameInstance(Widget):
         for bullet in self.world.bullets.values():
             bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
             if (bullet.position_x == 0 or bullet.position_y == 0 or
-                            bullet.position_x + bullet.size[0] == world_size_x or
-                            bullet.position_y + bullet.size[1] == world_size_y):
+                bullet.position_x + bullet.size[0] == world_size_x or
+                bullet.position_y + bullet.size[1] == world_size_y):
                 to_remove.append(bullet._id)
 
         for bid in to_remove:
