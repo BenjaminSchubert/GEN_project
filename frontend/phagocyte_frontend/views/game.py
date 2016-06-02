@@ -158,6 +158,12 @@ class MainPlayer(Player):
 
         return True
 
+    def release_keyboard(self):
+        """
+        We the player died, we must release the keyboard
+        """
+        self._keyboard.release()
+
     def set_size(self, size):
         super().set_size(size)
         self.set_max_speed()
@@ -276,13 +282,16 @@ class GameInstance(Widget):
     """
     REFRESH_RATE = 1 / 60
     SCALE_RATIO = 8  # >= 1
-    # TODO : à tester
     MAX_SIZE = 1000
-    PADDING_BAR_WIDTH = 120
-    PADDING_BAR_HEIGHT = 80
     scale_ratio_util = None
     server = None
     health_bar = HealthBar()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_widget(self.health_bar)
+        self.health_bar.max = self.MAX_SIZE
+        self.health_bar.pos = Window.width - 120, Window.height - 80
 
     def move_main_player(self, dt):
         self.world.main_player.move(dt)
@@ -323,11 +332,6 @@ class GameInstance(Widget):
         self.world.main_player.initial_size = data["size"]
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
-
-        # TODO : à tester
-        self.add_widget(self.health_bar)
-        self.health_bar.max = self.MAX_SIZE
-        self.health_bar.pos = Window.width - self.PADDING_BAR_WIDTH, Window.height - self.PADDING_BAR_HEIGHT
 
         Window.bind(
             on_resize=self.redraw,
@@ -412,6 +416,8 @@ class GameInstance(Widget):
     def death(self):
         Clock.unschedule(self.follow_main_player)
         Clock.unschedule(self.send_moves)
+        self.world.main_player.release_keyboard()
+        self.remove_widget(self.health_bar)
         self.parent.player_died()
 
     def redraw(self, *args):
