@@ -3,6 +3,7 @@
 """
 This module contains class representing each type of in game objects
 """
+import enum
 import itertools
 import random
 import time
@@ -13,6 +14,16 @@ from phagocyte_game_server.custom_types import json_object
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
+
+
+class BonusTypes(enum.IntEnum):
+    """
+    Represents each bonus types a user can obtain
+    """
+    SHIELD = 0
+    POWERUP = 1
+    GROWTH = 2
+    SPEEDUP = 3
 
 
 class GameObject:
@@ -81,7 +92,7 @@ class Player(RandomPositionedGameObject):
     :param max_x: maximum width of the map
     :param max_y: maximum height of the map
     """
-    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed", "hit_count"]
+    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback"]
 
     def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
         super().__init__(radius, max_x, max_y)
@@ -91,6 +102,8 @@ class Player(RandomPositionedGameObject):
         self.timestamp = time.time()  # type: int
         self.max_speed = 50 * self.initial_size / self.size ** 0.5  # type: float
         self.hit_count = 0
+        self.bonus = None
+        self.bonus_callback = None
 
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
@@ -99,7 +112,8 @@ class Player(RandomPositionedGameObject):
             "color": self.color,
             "x": self.x,
             "y": self.y,
-            "size": self.size
+            "size": self.size,
+            "bonus": self.bonus
         }
 
     def update_size(self, obj: GameObject):
@@ -108,7 +122,11 @@ class Player(RandomPositionedGameObject):
 
         :param obj: object for which to take the size
         """
-        self.update_radius((self.radius ** 2 + obj.radius ** 2) ** 0.5)
+        gain = obj.radius ** 2
+        if self.bonus == BonusTypes.GROWTH:
+            gain *= 1.5
+
+        self.update_radius((self.radius ** 2 + gain) ** 0.5)
         self.max_speed = 50 * self.initial_size / self.size ** 0.5
 
     def collides_with(self, obj: GameObject) -> bool:
@@ -132,6 +150,9 @@ class Bullet(GameObject):
         size = player.size / 100
         player.size -= size
 
+        if player.bonus == BonusTypes.POWERUP:
+            size *= 2
+
         super().__init__(size * 10)
 
         self.x = player.x  # type: int
@@ -153,3 +174,16 @@ class Bullet(GameObject):
             "speed_y": self.speed_y,
             "size": self.size
         }
+
+
+class Bonus(RandomPositionedGameObject):
+    """
+    Bonus object a user can take
+    """
+    __slots__ = ["bonus"]
+
+    bonus_number = len(list(BonusTypes))  # type: int
+
+    def __init__(self, max_x: int, max_y: int):
+        super().__init__(15, max_x, max_y)
+        self.bonus = random.randrange(self.bonus_number)  # type: int

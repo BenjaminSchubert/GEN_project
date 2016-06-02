@@ -25,7 +25,7 @@ from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
 from phagocyte_game_server.events import Event
-from phagocyte_game_server.game_objects import RandomPositionedGameObject, Bullet, Player, GameObject
+from phagocyte_game_server.game_objects import Bonus, BonusTypes, RandomPositionedGameObject, Bullet, Player, GameObject
 from phagocyte_game_server.custom_types import address, json_object
 
 
@@ -73,6 +73,12 @@ def random_color() -> str:
     return "#%06x" % random.randint(0, 0xFFFFFF)
 
 
+def bonus_timeout(player: Player) -> None:
+    """ sets the given bonus to None """
+    player.bonus = None
+    player.bonus_callback = None
+
+
 def register(port: int, auth_host: str, auth_port: int, name: int, capacity: int):
     """
     registers the game server against the authentication server
@@ -118,6 +124,8 @@ class GameProtocol(DatagramProtocol):
         self.deaths = set()  # type: Set[address]
         self.food = collections.deque()  # type: collections.deque[RandomPositionedGameObject]
         self.bullets = collections.deque()  # type: collections.deque[Bullet]
+        self.bonuses = collections.deque()  # type: collections.deque[Bonus]
+
         self.new_bullets = dict()  # type: Dict[address, float]
 
         self.food_notify_index = 0  # type: int
@@ -136,7 +144,9 @@ class GameProtocol(DatagramProtocol):
         self.max_speed = 400  # type: int
         self.eat_ratio = 1.2  # type: float
         self.new_food_ratio = 5  # type: int
+        self.new_bonuses_ratio = 3  # type: int
         self.max_hit_count = 10  # type: int
+        self.bonus_time = 10  # type: int
 
         self.last_time = time.time()  # type: int
 
@@ -146,6 +156,7 @@ class GameProtocol(DatagramProtocol):
         task.LoopingCall(self.handle_food).start(1 / 30)
         task.LoopingCall(self.handle_new_bullets).start(1 / 3)
         task.LoopingCall(self.handle_bullets).start(1 / 30)
+        task.LoopingCall(self.handle_bonuses).start(1 / 30)
 
     def authenticate(self, token: str) -> Tuple[str, str]:
         """
@@ -275,6 +286,10 @@ class GameProtocol(DatagramProtocol):
                 for player in self.players.values():
                     if player != bullet.player and player.collides_with(bullet):
                         has_hit = True
+
+                        if player.bonus == BonusTypes.SHIELD:
+                            break
+
                         player.hit_count += ceil((bullet.size / 10)**.5)
                         if player.hit_count >= self.max_hit_count:
                             player.hit_count = 0
@@ -332,16 +347,18 @@ class GameProtocol(DatagramProtocol):
             speed_x = abs(delta_x / (timestamp - client.timestamp))
             speed_y = abs(delta_y / (timestamp - client.timestamp))
 
-            if speed_x > client.max_speed:
-                factor_x = delta_x * client.max_speed / speed_x
+            max_speed = client.max_speed * 1.5 if client.bonus == BonusTypes.SPEEDUP else client.max_speed
+
+            if speed_x > max_speed:
+                factor_x = delta_x * max_speed / speed_x
                 client.x = min(self.max_x - client.radius, max(
                     client.radius, client.x + factor_x
                 ))
             else:
                 client.x = min(self.max_x - client.radius, max(client.radius, update[0]))
 
-            if speed_y > client.max_speed:
-                factor_y = delta_y * client.max_speed / speed_y
+            if speed_y > max_speed:
+                factor_y = delta_y * max_speed / speed_y
                 client.y = min(self.max_y - client.radius, max(
                     client.radius, client.y + factor_y
                 ))
@@ -390,8 +407,8 @@ class GameProtocol(DatagramProtocol):
         """
         randomly adds new food and checks for collisions against all players
         """
-        deletions = []
-        food_to_send = []
+        deletions = []  # type: json_object
+        food_to_send = []  # type: json_object
 
         if random.randrange(100) < self.new_food_ratio:
             self.food.appendleft(RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y))
@@ -408,6 +425,33 @@ class GameProtocol(DatagramProtocol):
                 food_to_send.append(food.to_json())
 
         self.send_all_players({"event": Event.FOOD, "food": food_to_send, "deleted": deletions})
+
+    def handle_bonuses(self):
+        """
+        randomly adds new bonuses in the game and checks for collisions against all players
+        """
+        deletions = []  # type: json_object
+        bonuses_to_send = []  # type: json_object
+
+        if random.randrange(1000) < self.new_bonuses_ratio:
+            self.bonuses.append(Bonus(self.max_x, self.max_y))
+
+        for i in range(min(len(self.bonuses), 70)):
+            bonus = self.bonuses.popleft()
+            for player in self.players.values():
+                if player.collides_with(bonus):
+                    if player.bonus_callback is not None:
+                        player.bonus_callback.cancel()
+
+                    player.bonus = bonus.bonus
+                    player.bonus_callback = reactor.callLater(10, bonus_timeout, player)
+                    deletions.append(bonus.to_json())
+                    break
+            else:
+                self.bonuses.append(bonus)
+                bonuses_to_send.append(bonus.to_json())
+
+        self.send_all_players({"event": Event.BONUS, "bonus": bonuses_to_send, "deleted": deletions})
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):
