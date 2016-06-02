@@ -60,11 +60,42 @@ class Player(Widget, BoundedMixin):
     """
 
     """
+    bonus = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.shield = Shield()
 
     def set_bonus(self, bonus: int):
-        pass
+        if self.bonus == bonus:
+            return
+        elif self.bonus == BonusTypes.SHIELD:
+            self.remove_widget(self.shield)
+
+        if bonus == BonusTypes.SHIELD:
+            self.add_widget(self.shield)
+
+        self.bonus = bonus
+
+    def set_position(self, x, y):
+        super().set_position(x, y)
+        self.shield.center = self.center
+
+    def set_size(self, size):
+        super().set_size(size)
+        self.shield.width = self.width * 1.3
+        self.shield.height = self.height * 1.3
+
+    def set_color(self, color):
+        super().set_color(color)
+        r, g, b, a = get_color_from_hex(color)
+        for i in self.shield.canvas.get_group(None):
+            if type(i) is Color:
+                i.r = r
+                i.g = g
+                i.b = b
+                i.a = a*0.6
+                break
 
 
 class MainPlayer(Player):
@@ -131,7 +162,7 @@ class MainPlayer(Player):
         self.set_max_speed()
 
     def set_max_speed(self):
-        self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0]**0.5
+        self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0] ** 0.5
 
     def move(self, dt):
         self.add_position(
@@ -146,6 +177,8 @@ class MainPlayer(Player):
         self.shooting = False
 
     def set_bonus(self, bonus: int):
+        super().set_bonus(bonus)
+
         if bonus == BonusTypes.SPEEDUP:
             self.bonus_speedup = 1.5
         else:
@@ -166,10 +199,17 @@ class Bonus(Widget, BoundedMixin):
     """
 
 
+class Shield(Widget):
+    """
+    The bonus shield
+    """
+
+
 class Bullet(Widget, BoundedMixin):
     """
     A bullet thrown by a player
     """
+
     def __init__(self, uid, speed_x, speed_y, **kwargs):
         super().__init__(**kwargs)
         self._id = uid
@@ -344,7 +384,7 @@ class GameInstance(Widget):
             bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
             if (bullet.position_x == 0 or bullet.position_y == 0 or
                 bullet.position_x + bullet.size[0] == world_size_x or
-                    bullet.position_y + bullet.size[1] == world_size_y):
+                bullet.position_y + bullet.size[1] == world_size_y):
                 to_remove.append(bullet._id)
 
         for bid in to_remove:
