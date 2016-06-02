@@ -4,6 +4,7 @@ from math import atan2
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics.context_instructions import Color
+from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
@@ -160,6 +161,8 @@ class MainPlayer(Player):
     def set_size(self, size):
         super().set_size(size)
         self.set_max_speed()
+        print(size)
+        GameInstance.health_bar.value = (self.size[0] - self.initial_size / GameInstance.MAX_SIZE - self.initial_size) * 100
 
     def set_max_speed(self):
         self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0] ** 0.5
@@ -217,6 +220,12 @@ class Bullet(Widget, BoundedMixin):
         self.speed_y = speed_y
 
 
+class HealthBar(ProgressBar):
+    """
+    A bar that represents the health of the player
+    """
+
+
 class World(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -267,8 +276,13 @@ class GameInstance(Widget):
     """
     REFRESH_RATE = 1 / 60
     SCALE_RATIO = 8  # >= 1
+    # TODO : test
+    MAX_SIZE = 1000
+    PADDING_BAR_WIDTH = 120
+    PADDING_BAR_HEIGHT = 80
     scale_ratio_util = None
     server = None
+    health_bar = HealthBar()
 
     def move_main_player(self, dt):
         self.world.main_player.move(dt)
@@ -309,6 +323,11 @@ class GameInstance(Widget):
         self.world.main_player.initial_size = data["size"]
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
+
+        # TODO : test
+        self.add_widget(self.health_bar)
+        self.health_bar.max = self.MAX_SIZE
+        self.health_bar.pos = Window.width - self.PADDING_BAR_WIDTH, Window.height - self.PADDING_BAR_HEIGHT
 
         Window.bind(
             on_resize=self.redraw,
