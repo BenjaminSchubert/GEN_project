@@ -67,22 +67,17 @@ class Player(Widget, BoundedMixin):
         self.shield = Shield()
 
     def set_bonus(self, bonus: int):
-        if bonus == BonusTypes.SHIELD:
-            if self.bonus != bonus:
-                for child in self.children:
-                    if child == self.shield:
-                        self.bonus = BonusTypes.SHIELD
-
-                if self.bonus != BonusTypes.SHIELD:
-                    self.add_widget(self.shield)
-
-                self.bonus = BonusTypes.SHIELD
-
-        elif bonus is None:
+        if bonus == BonusTypes.SHIELD and self.bonus != bonus:
             for child in self.children:
                 if child == self.shield:
                     self.bonus = BonusTypes.SHIELD
-            if bonus == BonusTypes.SHIELD:
+
+            if self.bonus != BonusTypes.SHIELD:
+                self.add_widget(self.shield)
+                self.bonus = BonusTypes.SHIELD
+
+        elif bonus is None:
+            if self.bonus == BonusTypes.SHIELD:
                 self.remove_widget(self.shield)
                 self.bonus = None
 
