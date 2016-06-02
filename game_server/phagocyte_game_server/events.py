@@ -21,3 +21,4 @@ class Event(enum.IntEnum):
     DEATH = 5
     BULLETS = 6
     BONUS = 7
+    HOOK = 8

@@ -35,6 +35,7 @@ class Event(enum.IntEnum):
     DEATH = 5
     BULLETS = 6
     BONUS = 7
+    HOOK = 8
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -101,7 +102,20 @@ class NetworkGameClient(DatagramProtocol):
         self.send_dict(event=Event.STATE, position=position)
 
     def send_bullet(self, angle):
+        """
+        send that the user wants to fire a bullet with the given angle
+
+        :param angle: angle at which the bullet was fired
+        """
         self.send_dict(event=Event.BULLETS, angle=angle)
+
+    def send_hook(self, angle):
+        """
+        send that the user wants to launch its hook with the given angle
+
+        :param angle: angle at which the hook is thrown
+        """
+        self.send_dict(event=Event.HOOK, angle=angle)
 
     def send_dict(self, **kwargs):
         """

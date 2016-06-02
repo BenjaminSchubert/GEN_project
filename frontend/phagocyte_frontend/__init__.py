@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+from kivy.config import Config
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+
+
 from kivy.app import App
 
 from phagocyte_frontend.views.screens import PhagocyteScreenManager
