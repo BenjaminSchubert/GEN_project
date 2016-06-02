@@ -74,7 +74,6 @@ class Player(Widget, BoundedMixin):
 
         if bonus == BonusTypes.SHIELD:
             self.add_widget(self.shield)
-            self.bonus = BonusTypes.SHIELD
 
         self.bonus = bonus
 
