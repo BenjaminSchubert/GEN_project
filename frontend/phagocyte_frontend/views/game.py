@@ -72,6 +72,59 @@ class MainPlayer(Player):
     max_speed = None
     shooting = False
     bonus_speedup = 1
+    speed_x = speed_y = 0
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+
+    def _keyboard_closed(self):
+        """
+        Unbind the keyboard from the system
+        """
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, *args):
+        """
+        Event called when a key is pressed
+
+        :param keyboard: the keyboard interface
+        :param keycode: the keycode of the pressed key
+        :param args: eventual additional args
+        :return: True to accept the key
+        """
+        if keycode[1] == "up" or keycode[1] == "w":
+            self.speed_x = 1
+        elif keycode[1] == "down" or keycode[1] == "s":
+            self.speed_x = -1
+        elif keycode[1] == "left" or keycode[1] == "a":
+            self.speed_y = -1
+        elif keycode[1] == "right" or keycode[1] == "d":
+            self.speed_y = 1
+
+        return True
+
+    def _on_keyboard_up(self, keyboard, keycode, *args):
+        """
+        Event called when a key is released
+
+        :param keyboard: the keyboard interface
+        :param keycode: the keycode of the released key
+        :param args: eventual additional args
+        :return: True to accept the key
+        """
+        if keycode[1] == "up" or keycode[1] == "w":
+            self.speed_x = 0
+        elif keycode[1] == "down" or keycode[1] == "s":
+            self.speed_x = 0
+        elif keycode[1] == "left" or keycode[1] == "a":
+            self.speed_y = 0
+        elif keycode[1] == "right" or keycode[1] == "d":
+            self.speed_y = 0
+
+        return True
 
     def set_size(self, size):
         super().set_size(size)
@@ -81,19 +134,10 @@ class MainPlayer(Player):
         self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0]**0.5
 
     def move(self, dt):
-        def get_speed(pos, center, max_speed=self.max_speed):
-            ds = 200 * dt
-            if pos < center:
-                return max(-max_speed * dt, (pos - center) / ds)
-            else:
-                return min((pos - center) / ds, max_speed * dt)
-
-        m_x, m_y = Window.mouse_pos
-
-        x = get_speed(m_x, Window.width / 2)
-        y = get_speed(m_y, Window.height / 2)
-
-        self.add_position(x, y)
+        self.add_position(
+            self.max_speed * self.speed_y * dt,
+            self.max_speed * self.speed_x * dt
+        )
 
     def start_shooting(self, *args):
         self.shooting = True
