@@ -71,16 +71,12 @@ class Player(Widget, BoundedMixin):
             return
         elif self.bonus == BonusTypes.SHIELD:
             self.remove_widget(self.shield)
-            self.bonus = None
 
         if bonus == BonusTypes.SHIELD:
-            for child in self.children:
-                if child == self.shield:
-                    self.bonus = BonusTypes.SHIELD
+            self.add_widget(self.shield)
+            self.bonus = BonusTypes.SHIELD
 
-            if self.bonus != BonusTypes.SHIELD:
-                self.add_widget(self.shield)
-                self.bonus = BonusTypes.SHIELD
+        self.bonus = bonus
 
     def set_position(self, x, y):
         super().set_position(x, y)
