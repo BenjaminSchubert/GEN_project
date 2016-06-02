@@ -95,7 +95,7 @@ class Player(Widget, BoundedMixin):
                 i.r = r
                 i.g = g
                 i.b = b
-                i.a = a*0.6
+                i.a = a * 0.6
                 break
 
 
@@ -161,9 +161,8 @@ class MainPlayer(Player):
     def set_size(self, size):
         super().set_size(size)
         self.set_max_speed()
-        print(size)
-        # TODO : à tester
-        GameInstance.health_bar.value = (self.size[0] - self.initial_size / GameInstance.MAX_SIZE - self.initial_size) * 100
+        GameInstance.health_bar.value = (
+                                        (size - self.initial_size) / (GameInstance.MAX_SIZE - self.initial_size)) * 1000
 
     def set_max_speed(self):
         self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0] ** 0.5
@@ -403,8 +402,8 @@ class GameInstance(Widget):
         for bullet in self.world.bullets.values():
             bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
             if (bullet.position_x == 0 or bullet.position_y == 0 or
-                bullet.position_x + bullet.size[0] == world_size_x or
-                bullet.position_y + bullet.size[1] == world_size_y):
+                            bullet.position_x + bullet.size[0] == world_size_x or
+                            bullet.position_y + bullet.size[1] == world_size_y):
                 to_remove.append(bullet._id)
 
         for bid in to_remove:
