@@ -81,6 +81,7 @@
     camera: camera
     map: map
     root: root
+    health_bar: health_bar
 
     size: root.size
 
@@ -106,6 +107,13 @@
                     size: self.size
             World:
                 id: world
+
+    ProgressBar:
+        id: health_bar
+
+        value: (self.parent.world.main_player.size[0] - self.parent.world.main_player.initial_size) / (self.parent.MAX_SIZE - self.parent.world.main_player.initial_size) * 100
+
+        pos: self.parent.width - 120, self.parent.height - 80
 
 
 <DeathPopup>:

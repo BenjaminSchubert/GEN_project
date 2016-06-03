@@ -263,8 +263,8 @@ class GameProtocol(DatagramProtocol):
         handles the addition of new bullets
         """
         for addr, angle in self.new_bullets.items():
-            player = self.players[addr]
-            if player.size > player.initial_size:
+            player = self.players.get(addr)
+            if player is not None and player.size > player.initial_size:
                 self.bullets.append(Bullet(angle, player))
 
         self.new_bullets = dict()  # type: Dict[address, float]
