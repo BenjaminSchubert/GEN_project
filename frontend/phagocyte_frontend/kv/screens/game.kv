@@ -110,10 +110,9 @@
 
     ProgressBar:
         id: health_bar
-
         value: (self.parent.world.main_player.size[0] - self.parent.world.main_player.initial_size) / (self.parent.MAX_SIZE - self.parent.world.main_player.initial_size) * 100
-
-        pos: self.parent.width - 120, self.parent.height - 80
+        pos: self.parent.width - game_object.width/4 - 50, self.parent.height - 80
+        width: game_object.width/4
 
 
 <DeathPopup>:

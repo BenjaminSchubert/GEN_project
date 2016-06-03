@@ -5,7 +5,6 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics.context_instructions import Color
 from kivy.properties import NumericProperty
-from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
@@ -249,12 +248,6 @@ class Bullet(Widget, BoundedMixin):
         self.speed_y = speed_y
 
 
-class HealthBar(ProgressBar):
-    """
-    A bar that represents the health of the player
-    """
-
-
 class World(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -420,9 +413,9 @@ class GameInstance(Widget):
         for bullet in self.world.bullets.values():
             bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
             if (
-                    bullet.position_x == 0 or bullet.position_y == 0 or
-                    bullet.position_x + bullet.size[0] == world_size_x or
-                    bullet.position_y + bullet.size[1] == world_size_y
+                bullet.position_x == 0 or bullet.position_y == 0 or
+                bullet.position_x + bullet.size[0] == world_size_x or
+                bullet.position_y + bullet.size[1] == world_size_y
             ):
                 to_remove.append(bullet._id)
 
