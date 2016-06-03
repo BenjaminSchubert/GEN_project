@@ -5,6 +5,7 @@ This module contains class representing each type of in game objects
 """
 import enum
 import itertools
+
 import random
 import time
 
@@ -29,14 +30,24 @@ class BonusTypes(enum.IntEnum):
 class GameObject:
     """
     Represents an object in the game
+    """
+    __slots__ = ["x", "y"]
+
+    def __init__(self):
+        self.x = None  # type: float
+        self.y = None  # type: float
+
+
+class RoundGameObject(GameObject):
+    """
+    Represents an object in the game
 
     :param radius: radius of the object
     """
-    __slots__ = ["x", "y", "radius", "size"]
+    __slots__ = ["radius", "size"]
 
     def __init__(self, radius: float):
-        self.x = None  # type: float
-        self.y = None  # type: float
+        super().__init__()
         self.radius = None  # type: float
         self.size = None  # type: float
 
@@ -61,7 +72,7 @@ class GameObject:
         self.size = new_radius * 2
 
 
-class RandomPositionedGameObject(GameObject):
+class RandomPositionedGameObject(RoundGameObject):
     """
     Represents an object in the game that gets placed randomly
 
@@ -92,7 +103,10 @@ class Player(RandomPositionedGameObject):
     :param max_x: maximum width of the map
     :param max_y: maximum height of the map
     """
-    __slots__ = ["name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback"]
+    __slots__ = [
+        "name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback",
+        "hook", "grabbed_x", "grabbed_y"
+    ]
 
     def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
         super().__init__(radius, max_x, max_y)
@@ -101,9 +115,12 @@ class Player(RandomPositionedGameObject):
         self.color = color  # type: str
         self.timestamp = time.time()  # type: int
         self.max_speed = 50 * self.initial_size / self.size ** 0.5  # type: float
-        self.hit_count = 0
-        self.bonus = None
-        self.bonus_callback = None
+        self.hit_count = 0  # type: int
+        self.bonus = None  # type: Bonus
+        self.bonus_callback = None  # type: callable
+        self.hook = None  # type: GrabHook
+        self.grabbed_x = 0  # type: float
+        self.grabbed_y = 0  # type: float
 
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
@@ -113,10 +130,11 @@ class Player(RandomPositionedGameObject):
             "x": self.x,
             "y": self.y,
             "size": self.size,
-            "bonus": self.bonus
+            "bonus": self.bonus,
+            "hook": self.hook.to_json() if self.hook is not None else self.hook
         }
 
-    def update_size(self, obj: GameObject):
+    def update_size(self, obj: RoundGameObject):
         """
         updates the size of the object with the size of the object in parameter
 
@@ -139,7 +157,7 @@ class Player(RandomPositionedGameObject):
         return self.radius ** 2 > (obj.x - self.x) ** 2 + (obj.y - self.y) ** 2
 
 
-class Bullet(GameObject):
+class Bullet(RoundGameObject):
     """
     Represents a bullet in game
     """
@@ -187,3 +205,26 @@ class Bonus(RandomPositionedGameObject):
     def __init__(self, max_x: int, max_y: int):
         super().__init__(15, max_x, max_y)
         self.bonus = random.randrange(self.bonus_number)  # type: int
+
+
+class GrabHook(GameObject):
+    """
+    Object representing the hook a player can throw to grab another player to him
+    """
+    __slots__ = ["ratio_x", "ratio_y", "hooked_player", "moves"]
+
+    def __init__(self, player: Player, angle: float):
+        super().__init__()
+        self.x = player.x  # type: float
+        self.y = player.y  # type: float
+        self.ratio_x = sin(angle)  # type: float
+        self.ratio_y = cos(angle)  # type: float
+        self.hooked_player = None  # type: Player
+        self.moves = 0  # type: int
+
+    def to_json(self):
+        """ transforms the object to a dictionary to be sent on the wire """
+        return {
+            "x": self.x,
+            "y": self.y,
+        }

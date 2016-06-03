@@ -25,7 +25,8 @@ from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
 from phagocyte_game_server.events import Event
-from phagocyte_game_server.game_objects import Bonus, BonusTypes, RandomPositionedGameObject, Bullet, Player, GameObject
+from phagocyte_game_server.game_objects import Bonus, BonusTypes, RandomPositionedGameObject, Bullet, Player,\
+    RoundGameObject, GrabHook
 from phagocyte_game_server.custom_types import address, json_object
 
 
@@ -141,7 +142,7 @@ class GameProtocol(DatagramProtocol):
         self.max_x = 5000  # type: int
         self.max_y = 5000  # type: int
         self.default_radius = 50  # type: int
-        self.max_speed = 400  # type: int
+        self.max_speed = 700  # type: int
         self.eat_ratio = 1.2  # type: float
         self.new_food_ratio = 5  # type: int
         self.new_bonuses_ratio = 3  # type: int
@@ -157,6 +158,7 @@ class GameProtocol(DatagramProtocol):
         task.LoopingCall(self.handle_new_bullets).start(1 / 3)
         task.LoopingCall(self.handle_bullets).start(1 / 30)
         task.LoopingCall(self.handle_bonuses).start(1 / 30)
+        task.LoopingCall(self.handle_hooks).start(1 / 30)
 
     def authenticate(self, token: str) -> Tuple[str, str]:
         """
@@ -230,6 +232,10 @@ class GameProtocol(DatagramProtocol):
                 self.moves[addr] = data["position"]
             elif data["event"] == Event.BULLETS:
                 self.new_bullets[addr] = data["angle"]
+            elif data["event"] == Event.HOOK:
+                player = self.players[addr]
+                if player.hook is None:
+                    player.hook = GrabHook(player, data["angle"])
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
 
@@ -318,7 +324,7 @@ class GameProtocol(DatagramProtocol):
             size = random.randint(10, size_to_disptach)
             size_to_disptach -= size
             radius = size / 2
-            f = GameObject(radius)
+            f = RoundGameObject(radius)
             f.x = max(radius, (min(self.max_x - radius, random.randint(
                 int(player_x - 5 * player_radius), int(5 * player_radius + player_x)
             ))))
@@ -338,40 +344,41 @@ class GameProtocol(DatagramProtocol):
                 continue
 
             timestamp = time.time()
-            client = self.players[addr]
+            player = self.players[addr]
 
             factor_x = factor_y = 0
 
-            delta_x = update[0] - client.x
-            delta_y = update[1] - client.y
-            speed_x = abs(delta_x / (timestamp - client.timestamp))
-            speed_y = abs(delta_y / (timestamp - client.timestamp))
+            delta_x = update[0] - player.x
+            delta_y = update[1] - player.y
+            speed_x = abs(delta_x / (timestamp - player.timestamp))
+            speed_y = abs(delta_y / (timestamp - player.timestamp))
 
-            max_speed = client.max_speed * 1.5 if client.bonus == BonusTypes.SPEEDUP else client.max_speed
+            max_speed = player.max_speed * 1.5 if player.bonus == BonusTypes.SPEEDUP else player.max_speed
 
             if speed_x > max_speed:
                 factor_x = delta_x * max_speed / speed_x
-                client.x = min(self.max_x - client.radius, max(
-                    client.radius, client.x + factor_x
+                player.x = min(self.max_x - player.radius, max(
+                    player.radius, player.x + factor_x
                 ))
             else:
-                client.x = min(self.max_x - client.radius, max(client.radius, update[0]))
+                player.x = min(self.max_x - player.radius, max(player.radius, update[0]))
 
             if speed_y > max_speed:
                 factor_y = delta_y * max_speed / speed_y
-                client.y = min(self.max_y - client.radius, max(
-                    client.radius, client.y + factor_y
+                player.y = min(self.max_y - player.radius, max(
+                    player.radius, player.y + factor_y
                 ))
             else:
-                client.y = min(self.max_y - client.radius, max(client.radius, update[1]))
+                player.y = min(self.max_y - player.radius, max(player.radius, update[1]))
 
             data[addr] = self.players[addr].to_json()
 
-            if factor_x or factor_y:
-                data[addr]["dirty"] = (factor_x - delta_x, factor_y - delta_y)
+            if factor_x or factor_y or player.grabbed_x or player.grabbed_y:
+                data[addr]["dirty"] = (factor_x + player.grabbed_x - delta_x, factor_y + player.grabbed_y - delta_y)
+                player.grabbed_x = player.grabbed_y = 0
 
             self.moves[addr] = None
-            client.timestamp = timestamp
+            player.timestamp = timestamp
 
         if len(data):
             self.send_all_players({"event": Event.STATE, "updates": list(data.values())})
@@ -452,6 +459,72 @@ class GameProtocol(DatagramProtocol):
                 bonuses_to_send.append(bonus.to_json())
 
         self.send_all_players({"event": Event.BONUS, "bonus": bonuses_to_send, "deleted": deletions})
+
+    def handle_hooks(self):
+        """
+        handles the movements and throwing of grab hooks
+        """
+        for player1 in self.players.values():
+            hook = player1.hook
+            if hook is None:
+                continue
+            elif hook.hooked_player is None:
+                # we need to find if a player is hit by the hook
+                for player2 in self.players.values():
+                    if player2 == player1:
+                        continue
+
+                    if player2.collides_with(hook):
+                        hook.hooked_player = player2
+                        hook.moves = 0
+                        break
+
+                else:
+                    hook.x = max(0, min(self.max_x, hook.x + 2 * player1.max_speed * hook.ratio_x * (1 / 30)))
+                    hook.y = max(0, min(self.max_y, hook.y + 2 * player1.max_speed * hook.ratio_y * (1 / 30)))
+
+                    if hook.moves >= 30:
+                        player1.hook = None
+                    else:
+                        hook.moves += 1
+
+            else:
+                # we need to move the players closer from each other
+                player2 = hook.hooked_player
+
+                move_ratio1 = player1.size / (player1.size + player2.size)
+                move_ratio2 = 1 - move_ratio1
+
+                total_movement = (player1.max_speed + player2.max_speed) / 30
+
+                x_delta = player1.x - player2.x
+                y_delta = player1.y - player2.y
+
+                x_ratio = abs(x_delta) / (abs(x_delta) + abs(y_delta))
+                y_ratio = 1 - x_ratio
+
+                if x_delta > 0:
+                    movement_x = min(total_movement * x_ratio, x_delta)
+                else:
+                    movement_x = max(-total_movement * x_ratio, x_delta)
+
+                if y_delta > 0:
+                    movement_y = min(total_movement * y_ratio, y_delta)
+                else:
+                    movement_y = max(-total_movement * y_ratio, y_delta)
+
+                player1.grabbed_x -= movement_x * move_ratio1
+                player1.grabbed_y -= movement_y * move_ratio1
+
+                player2.grabbed_x += movement_x * move_ratio2
+                player2.grabbed_y += movement_y * move_ratio2
+
+                hook.moves += 1
+                if hook.moves >= 15:
+                    player1.hook = None
+                else:
+                    hook.x = player2.x
+                    hook.y = player2.y
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):

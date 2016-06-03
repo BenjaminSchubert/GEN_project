@@ -61,11 +61,12 @@ class Player(Widget, BoundedMixin):
     """
 
     """
-    bonus = None
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.shield = Shield()
+        self.hook_graphic = Hook()
+        self.bonus = None
+        self.hook = None
 
     def set_bonus(self, bonus: int):
         if self.bonus == bonus:
@@ -78,9 +79,32 @@ class Player(Widget, BoundedMixin):
 
         self.bonus = bonus
 
+    def set_hook(self, hook):
+        if hook is None and self.hook is None:
+            return
+
+        elif hook is None:
+            self.remove_widget(self.hook)
+            self.hook = None
+
+        elif self.hook is None:
+            self.hook = Hook()
+            self.hook.points = [
+                self.center_x, self.center_y,
+                Window.size[0] / 2 + hook["x"], Window.size[1] / 2 + hook["y"]
+            ]
+            self.add_widget(self.hook)
+
+        else:
+            self.hook.points[2] = hook["x"] + Window.size[0] / 2
+            self.hook.points[3] = hook["y"] + Window.size[1] / 2
+
     def set_position(self, x, y):
         super().set_position(x, y)
         self.shield.center = self.center
+        if self.hook:
+            self.hook.points[0] = self.center_x
+            self.hook.points[1] = self.center_y
 
     def set_size(self, size):
         super().set_size(size)
@@ -179,12 +203,6 @@ class MainPlayer(Player):
             self.max_speed * self.speed_x * dt
         )
 
-    def start_shooting(self, *args):
-        self.shooting = True
-
-    def stop_shooting(self, *args):
-        self.shooting = False
-
     def set_bonus(self, bonus: int):
         super().set_bonus(bonus)
 
@@ -211,6 +229,12 @@ class Bonus(Widget, BoundedMixin):
 class Shield(Widget):
     """
     The bonus shield
+    """
+
+
+class Hook(Widget):
+    """
+    the hook a user can use to grab another user
     """
 
 
@@ -333,11 +357,7 @@ class GameInstance(Widget):
         self.world.main_player.set_size(data["size"])
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
 
-        Window.bind(
-            on_resize=self.redraw,
-            on_mouse_down=self.world.main_player.start_shooting,
-            on_mouse_up=self.world.main_player.stop_shooting
-        )
+        Window.bind(on_resize=self.redraw, on_mouse_down=self._on_mouse_down, on_mouse_up=self._on_mouse_up)
 
         self.start_timers()
 
@@ -354,7 +374,8 @@ class GameInstance(Widget):
                     self.world.main_player.correction_x += state["dirty"][0]
                     self.world.main_player.correction_y += state["dirty"][1]
                 self.world.main_player.set_size(state["size"])
-                self.world.main_player.set_bonus(state.get("bonus", None))
+                self.world.main_player.set_bonus(state["bonus"])
+                self.world.main_player.set_hook(state["hook"])
 
             elif state["name"] in self.world.players.keys():
                 p = self.world.players[state["name"]]
@@ -364,6 +385,7 @@ class GameInstance(Widget):
                 )
                 p.set_size(state["size"])
                 p.set_bonus(state.get("bonus", None))
+                p.set_hook(state["hook"])
 
             else:
                 p = Player()
@@ -405,9 +427,11 @@ class GameInstance(Widget):
 
         for bullet in self.world.bullets.values():
             bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
-            if (bullet.position_x == 0 or bullet.position_y == 0 or
-                            bullet.position_x + bullet.size[0] == world_size_x or
-                            bullet.position_y + bullet.size[1] == world_size_y):
+            if (
+                    bullet.position_x == 0 or bullet.position_y == 0 or
+                    bullet.position_x + bullet.size[0] == world_size_x or
+                    bullet.position_y + bullet.size[1] == world_size_y
+            ):
                 to_remove.append(bullet._id)
 
         for bid in to_remove:
@@ -432,3 +456,13 @@ class GameInstance(Widget):
 
         for bullet in deleted:
             self.world.remove_bullet(bullet)
+
+    def _on_mouse_down(self, window, x, y, button, modifiers):
+        if button == "left":
+            self.world.main_player.shooting = True
+        elif button == "right":
+            self.server.send_hook(atan2(x - Window.size[0] / 2, Window.size[1] / 2 - y))
+
+    def _on_mouse_up(self, window, x, y, button, modifiers):
+        if button == "left":
+            self.world.main_player.shooting = False
