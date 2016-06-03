@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+from configparser import ConfigParser
 import os
 
 from abc import ABCMeta
@@ -32,8 +33,14 @@ class AutoLoadableScreen(Screen):
 
 
 class PhagocyteScreenManager(ScreenManager):
-    client = Client("127.0.0.1", 8000)  # FIXME : add this to some configuration file
+
     info_popup = InfoPopup()
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.config_parser = ConfigParser()
+        self.config_parser.read("config.cfg")
+        self.client = Client(self.config_parser.get("Server", "host"), self.config_parser.get("Server", "port"))
 
     def main_screen(self, *args, **kwargs):
         """
