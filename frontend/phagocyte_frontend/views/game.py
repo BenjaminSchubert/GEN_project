@@ -4,6 +4,7 @@ from math import atan2
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics.context_instructions import Color
+from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
@@ -94,7 +95,7 @@ class Player(Widget, BoundedMixin):
                 i.r = r
                 i.g = g
                 i.b = b
-                i.a = a*0.6
+                i.a = a * 0.6
                 break
 
 
@@ -157,9 +158,17 @@ class MainPlayer(Player):
 
         return True
 
+    def release_keyboard(self):
+        """
+        We the player died, we must release the keyboard
+        """
+        self._keyboard.release()
+
     def set_size(self, size):
         super().set_size(size)
         self.set_max_speed()
+        GameInstance.health_bar.value = (
+                                        (size - self.initial_size) / (GameInstance.MAX_SIZE - self.initial_size)) * 1000
 
     def set_max_speed(self):
         self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0] ** 0.5
@@ -217,6 +226,12 @@ class Bullet(Widget, BoundedMixin):
         self.speed_y = speed_y
 
 
+class HealthBar(ProgressBar):
+    """
+    A bar that represents the health of the player
+    """
+
+
 class World(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -267,8 +282,16 @@ class GameInstance(Widget):
     """
     REFRESH_RATE = 1 / 60
     SCALE_RATIO = 8  # >= 1
+    MAX_SIZE = 1000
     scale_ratio_util = None
     server = None
+    health_bar = HealthBar()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_widget(self.health_bar)
+        self.health_bar.max = self.MAX_SIZE
+        self.health_bar.pos = Window.width - 120, Window.height - 80
 
     def move_main_player(self, dt):
         self.world.main_player.move(dt)
@@ -383,8 +406,8 @@ class GameInstance(Widget):
         for bullet in self.world.bullets.values():
             bullet.add_position(bullet.speed_x * dt, bullet.speed_y * dt)
             if (bullet.position_x == 0 or bullet.position_y == 0 or
-                bullet.position_x + bullet.size[0] == world_size_x or
-                bullet.position_y + bullet.size[1] == world_size_y):
+                            bullet.position_x + bullet.size[0] == world_size_x or
+                            bullet.position_y + bullet.size[1] == world_size_y):
                 to_remove.append(bullet._id)
 
         for bid in to_remove:
@@ -393,6 +416,8 @@ class GameInstance(Widget):
     def death(self):
         Clock.unschedule(self.follow_main_player)
         Clock.unschedule(self.send_moves)
+        self.world.main_player.release_keyboard()
+        self.remove_widget(self.health_bar)
         self.parent.player_died()
 
     def redraw(self, *args):
