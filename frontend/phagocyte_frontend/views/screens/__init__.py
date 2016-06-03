@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 
-from configparser import ConfigParser
+from configparser import ConfigParser, Error
 import os
 
 from abc import ABCMeta
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from phagocyte_frontend.network.authentication import Client
@@ -39,7 +40,18 @@ class PhagocyteScreenManager(ScreenManager):
     def __init__(self, **kw):
         super().__init__(**kw)
         self.config_parser = ConfigParser()
-        self.config_parser.read("config.cfg")
+
+        files_read = 0
+        try:
+            files_read = self.config_parser.read("config.cfg")
+        except Error as e:
+            Logger.error(str(e))
+            exit(1) # FIXME : popup and then quit
+
+        if len(files_read) == 0:
+            Logger.error("Cannot read config file")
+            exit(1) # FIXME : popup and then quit
+
         self.client = Client(self.config_parser.get("Server", "host"), self.config_parser.get("Server", "port"))
 
     def main_screen(self, *args, **kwargs):

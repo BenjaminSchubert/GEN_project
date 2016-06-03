@@ -2,8 +2,10 @@
 
 
 from kivy.adapters.dictadapter import DictAdapter
+from kivy.logger import Logger
 from kivy.properties import Clock
 from kivy.uix.listview import ListItemButton
+from requests import exceptions
 
 from phagocyte_frontend import CreateGameScreen
 from phagocyte_frontend.views.screens import AutoLoadableScreen
@@ -62,10 +64,13 @@ class LobbyScreen(AutoLoadableScreen):
         Clock.schedule_interval(self.update_game_list, 5)
 
     def update_game_list(self, _):
-        """
-        if the game list differs from the new one, display it
-        """
-        self.game_list.data = self.manager.client.get_games()
+        """ Updates the game list. """
+        try:
+            self.game_list.data = self.manager.client.get_games()
+        except exceptions.ConnectionError:
+            # FIXME do not use a popover but an error log in gui instead
+            self.manager.warn("Cannot connect to server", title="Error")
+            Logger.error("Cannot connect to server")
 
     def user_login_process(self):
         """
