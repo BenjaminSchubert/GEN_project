@@ -53,7 +53,6 @@ class Player(BoundedMixin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.shield = Shield(self)
-        self.hook_graphic = Hook()
         self.bonus = None
         self.hook = None
 
@@ -78,22 +77,12 @@ class Player(BoundedMixin):
             self.hook = None
 
         elif self.hook is None:
-            self.hook = Hook()
-            self.hook.points = [
-                self.center_x, self.center_y,
-                Window.size[0] / 2 + hook["x"], Window.size[1] / 2 + hook["y"]
-            ]
+            self.hook = Hook(self)
             self.add_widget(self.hook)
 
         else:
-            self.hook.points[2] = hook["x"] + Window.size[0] / 2
-            self.hook.points[3] = hook["y"] + Window.size[1] / 2
-
-    def set_position(self, x, y):
-        super().set_position(x, y)
-        if self.hook:
-            self.hook.points[0] = self.center_x
-            self.hook.points[1] = self.center_y
+            self.hook.end_x = hook["x"] + Window.size[0] / 2
+            self.hook.end_y = hook["y"] + Window.size[1] / 2
 
 
 class MainPlayer(Player):
@@ -221,6 +210,12 @@ class Hook(Widget):
     """
     the hook a user can use to grab another user
     """
+    def __init__(self, player, **kwargs):
+        self.player = player
+        self.end_x = self.player.center_x
+        self.end_y = self.player.center_y
+
+        super().__init__(**kwargs)
 
 
 class Bullet(BoundedMixin):

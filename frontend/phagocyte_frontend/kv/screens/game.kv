@@ -43,11 +43,9 @@
 
 
 <Hook>:
-    points: []
-
     canvas:
         Line:
-            points: self.points
+            points: self.player.center_x, self.player.center_y, self.end_x, self.end_y
             width: 10
             cap: 'round'
 
