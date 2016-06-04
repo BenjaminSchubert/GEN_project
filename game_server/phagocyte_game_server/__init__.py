@@ -196,12 +196,24 @@ class GameProtocol(DatagramProtocol):
                 name, color = self.authenticate(data.get("token"))
             except AuthenticationError as e:
                 self.logger.warning("User from {addr} tried to register with invalid token".format(addr=addr))
-                self.send_to(addr, dict(event=Event, error=e.msg))
+                self.send_to(addr, dict(event=Event.ERROR, error=e.msg))
                 return
 
-        self.logger.debug("Registered new user {name}".format(name=name))
+        for player in self.players.values():
+            if player.name == name:
+                if time.time() - player.timestamp < 15:
+                    self.logger.warning("User from {addr} tried to connect as a user already playing".format(addr=addr))
+                    self.send_to(addr, dict(
+                        event=Event.ERROR, error="Another user is already connected with the same username"))
+                    return
 
-        client = Player(name, color, self.default_radius, self.max_x, self.max_y)
+                else:
+                    client = player
+                    self.logger.warning("User {name} was reconnected".format(name=name))
+                    break
+        else:
+            self.logger.debug("Registered new user {name}".format(name=name))
+            client = Player(name, color, self.default_radius, self.max_x, self.max_y)
 
         self.send_to(addr, dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
