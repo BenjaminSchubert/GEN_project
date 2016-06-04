@@ -19,7 +19,7 @@ class BonusTypes(enum.IntEnum):
     SPEEDUP = 3
 
 
-class BoundedMixin(Widget):
+class BoundedWidget(Widget):
     """
     Limit the player to the edge of the map
     """
@@ -42,11 +42,8 @@ class BoundedMixin(Widget):
     def set_size(self, size):
         self.size = size, size
 
-    def set_color(self, color):
-        self.color = get_color_from_hex(color)
 
-
-class Player(BoundedMixin):
+class Player(BoundedWidget):
     """
 
     """
@@ -86,17 +83,19 @@ class Player(BoundedMixin):
 
 
 class MainPlayer(Player):
-    initial_size = NumericProperty(0)
-    max_speed = None
+    max_speed = 0
     shooting = False
-    bonus_speedup = 1
     speed_x = speed_y = 0
-
-    correction_x = 0
-    correction_y = 0
+    bonus_speedup = NumericProperty(1)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.initial_size = 0
+        self.correction_x = 0
+        self.correction_y = 0
+
+        self.bind(size=self.set_max_speed, bonus_speedup=self.set_max_speed)
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
 
@@ -159,11 +158,7 @@ class MainPlayer(Player):
 
         super().set_position(x + self.correction_x, y + self.correction_y)
 
-    def set_size(self, size):
-        super().set_size(size)
-        self.set_max_speed()
-
-    def set_max_speed(self):
+    def set_max_speed(self, instance, attribute):
         self.max_speed = self.bonus_speedup * 50 * self.initial_size / self.size[0] ** 0.5
 
     def move(self, dt):
@@ -180,17 +175,15 @@ class MainPlayer(Player):
         else:
             self.bonus_speedup = 1
 
-        self.set_max_speed()
 
-
-class Food(BoundedMixin):
+class Food(BoundedWidget):
     """
     The food let the player grow
     """
     color = [0, 1, 0, 1]
 
 
-class Bonus(BoundedMixin):
+class Bonus(BoundedWidget):
     """
     A bonus a user can pick
     """
@@ -218,7 +211,7 @@ class Hook(Widget):
         super().__init__(**kwargs)
 
 
-class Bullet(BoundedMixin):
+class Bullet(BoundedWidget):
     """
     A bullet thrown by a player
     """
@@ -247,7 +240,7 @@ class World(Widget):
     def add_bullet(self, uid, x, y, speed_x, speed_y, color, size):
         if self.bullets.get(uid) is None:
             self.bullets[uid] = Bullet(uid, speed_x, speed_y)
-            self.bullets[uid].set_color(color)
+            self.bullets[uid].color = get_color_from_hex(color)
             self.bullets[uid].set_size(size)
             self.add_widget(self.bullets[uid])
         self.bullets[uid].set_position(x, y)
@@ -318,7 +311,7 @@ class GameInstance(Widget):
         self.world.size = (data["max_x"], data["max_y"])
 
         self.world.main_player.set_position(data["x"], data["y"])
-        self.world.main_player.set_color(data["color"])
+        self.world.main_player.color = get_color_from_hex(data["color"])
 
         self.world.main_player.initial_size = data["size"]
         self.world.main_player.set_size(data["size"])
@@ -359,7 +352,7 @@ class GameInstance(Widget):
                 self.world.add_widget(p)
                 p.set_size(state["size"])
                 p.set_position(state["x"], state["y"])
-                p.set_color(state["color"])
+                p.color = get_color_from_hex(state["color"])
                 self.world.players[state["name"]] = p
 
         names = set(state["name"] for state in states)
