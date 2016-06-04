@@ -63,7 +63,7 @@ class Player(BoundedMixin):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.shield = Shield()
+        self.shield = Shield(self)
         self.hook_graphic = Hook()
         self.bonus = None
         self.hook = None
@@ -76,6 +76,7 @@ class Player(BoundedMixin):
 
         if bonus == BonusTypes.SHIELD:
             self.add_widget(self.shield)
+            self.shield.center = self.center
 
         self.bonus = bonus
 
@@ -101,15 +102,9 @@ class Player(BoundedMixin):
 
     def set_position(self, x, y):
         super().set_position(x, y)
-        self.shield.center = self.center
         if self.hook:
             self.hook.points[0] = self.center_x
             self.hook.points[1] = self.center_y
-
-    def set_size(self, size):
-        super().set_size(size)
-        self.shield.width = self.width * 1.3
-        self.shield.height = self.height * 1.3
 
     def set_color(self, color):
         super().set_color(color)
@@ -228,6 +223,9 @@ class Shield(Widget):
     """
     The bonus shield
     """
+    def __init__(self, player, **kwargs):
+        self.player = player
+        super().__init__(**kwargs)
 
 
 class Hook(Widget):

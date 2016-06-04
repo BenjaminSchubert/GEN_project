@@ -30,7 +30,9 @@
             size: self.size
 
 <Shield>:
-    size: 500, 500
+    size: self.player.width * 1.3, self.player.height * 1.3
+    center: self.player.center
+
     canvas:
         Color:
             rgb: 0, 0, 0
