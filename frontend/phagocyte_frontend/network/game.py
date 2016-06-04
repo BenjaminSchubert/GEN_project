@@ -36,6 +36,7 @@ class Event(enum.IntEnum):
     BULLETS = 6
     BONUS = 7
     HOOK = 8
+    ALIVE = 9
 
 
 class NetworkGameClient(DatagramProtocol):
@@ -82,6 +83,8 @@ class NetworkGameClient(DatagramProtocol):
         elif event_type == Event.DEATH:
             self.send_dict(event=Event.DEATH)
             self.game.death()
+        elif event_type == Event.ALIVE:
+            self.game.handle_alives(data.get("alives"))
         elif event_type == Event.ERROR:
             print("Error: ", data)  # FIXME
         elif event_type is None:

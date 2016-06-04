@@ -105,7 +105,7 @@ class Player(RandomPositionedGameObject):
     """
     __slots__ = [
         "name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback",
-        "hook", "grabbed_x", "grabbed_y"
+        "hook", "grabbed_x", "grabbed_y", "timestamp"
     ]
 
     def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
@@ -121,6 +121,7 @@ class Player(RandomPositionedGameObject):
         self.hook = None  # type: GrabHook
         self.grabbed_x = 0  # type: float
         self.grabbed_y = 0  # type: float
+        self.timestamp = time.time()
 
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """

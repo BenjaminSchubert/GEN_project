@@ -1,6 +1,7 @@
 import enum
 from math import atan2
 
+import time
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.properties import NumericProperty, ListProperty
@@ -51,6 +52,7 @@ class Player(BoundedWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.shield = Shield(self)
+        self.timestamp = time.time()
         self.bonus = None
         self.hook = None
 
@@ -412,3 +414,31 @@ class GameInstance(Widget):
     def _on_mouse_up(self, window, x, y, button, modifiers):
         if button == "left":
             self.world.main_player.shooting = False
+
+    def handle_alives(self, alives):
+        now = time.time()
+        to_remove = []
+
+        for alive in alives:
+            if alive["name"] == self.server.name:
+                continue
+
+            player = self.world.players.get(alive["name"], None)
+
+            if player is not None:
+                player.timestamp = now
+            else:
+                p = Player()
+                p.color = get_color_from_hex(alive["color"])
+                self.world.add_widget(p)
+                self.world.players[alive["name"]] = p
+                p.set_position(alive["x"] - p.size[0] / 2, alive["y"] - p.size[1] / 2)
+                p.update(alive["size"], alive["bonus"], alive["hook"])
+
+        for name, player in self.world.players.items():
+            if now - player.timestamp > 5:
+                to_remove.append((name, player))
+
+        for player in to_remove:
+            self.world.players.pop(player[0])
+            self.world.remove_widget(player[1])
