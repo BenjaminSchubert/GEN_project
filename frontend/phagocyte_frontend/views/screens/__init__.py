@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 
+from configparser import ConfigParser, Error
 import os
 
 from abc import ABCMeta
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from phagocyte_frontend.network.authentication import Client
@@ -32,8 +34,24 @@ class AutoLoadableScreen(Screen):
 
 
 class PhagocyteScreenManager(ScreenManager):
-    client = Client("127.0.0.1", 8000)  # FIXME : add this to some configuration file
+
     info_popup = InfoPopup()
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.config_parser = ConfigParser()
+
+        try:
+            files_read = self.config_parser.read("config.cfg")
+        except Error as e:
+            Logger.error(str(e))
+            raise SystemExit(1) # FIXME : popup and then quit
+
+        if len(files_read) == 0:
+            Logger.error("Cannot read config file")
+            raise SystemExit(1) # FIXME : popup and then quit
+
+        self.client = Client(self.config_parser.get("Server", "host"), self.config_parser.get("Server", "port"))
 
     def main_screen(self, *args, **kwargs):
         """
