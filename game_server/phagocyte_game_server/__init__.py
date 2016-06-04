@@ -15,6 +15,7 @@ import time
 import uuid
 from math import ceil
 from typing import Dict, Set, Tuple
+from typing import List
 
 import collections
 import random
@@ -159,6 +160,7 @@ class GameProtocol(DatagramProtocol):
         task.LoopingCall(self.handle_bullets).start(1 / 30)
         task.LoopingCall(self.handle_bonuses).start(1 / 30)
         task.LoopingCall(self.handle_hooks).start(1 / 30)
+        task.LoopingCall(self.handle_disconnects).start(5)
 
     def authenticate(self, token: str) -> Tuple[str, str]:
         """
@@ -200,12 +202,13 @@ class GameProtocol(DatagramProtocol):
         self.logger.debug("Registered new user {name}".format(name=name))
 
         client = Player(name, color, self.default_radius, self.max_x, self.max_y)
-        self.players[addr] = client
 
         self.send_to(addr, dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
-            x=client.x, y=client.y, color=color, size=client.size
+            x=client.x, y=client.y, color=color, size=client.size, others=[p.to_json() for p in self.players.values()]
         ))
+
+        self.players[addr] = client
 
     def datagramReceived(self, datagram: bytes, addr: address):
         """
@@ -236,6 +239,8 @@ class GameProtocol(DatagramProtocol):
                 player = self.players[addr]
                 if player.hook is None:
                     player.hook = GrabHook(player, data["angle"])
+            elif data["event"] == "ALIVE":
+                self.players[addr].timestamp = time.time()
             else:
                 logging.error("Received invalid action: {json}".format(json=data))
 
@@ -337,7 +342,7 @@ class GameProtocol(DatagramProtocol):
         """
         checks moves from all the players and handle collisions between them
         """
-        data = {}  # type: Dict[address, json_object]
+        data = []  # type: List[json_object]
 
         for addr, update in self.moves.items():
             if update is None:
@@ -371,17 +376,14 @@ class GameProtocol(DatagramProtocol):
             else:
                 player.y = min(self.max_y - player.radius, max(player.radius, update[1]))
 
-            data[addr] = self.players[addr].to_json()
-
+            _json = player.to_json()
             if factor_x or factor_y or player.grabbed_x or player.grabbed_y:
-                data[addr]["dirty"] = (factor_x + player.grabbed_x - delta_x, factor_y + player.grabbed_y - delta_y)
+                _json["dirty"] = (factor_x + player.grabbed_x - delta_x, factor_y + player.grabbed_y - delta_y)
                 player.grabbed_x = player.grabbed_y = 0
 
+            data.append(_json)
             self.moves[addr] = None
             player.timestamp = timestamp
-
-        if len(data):
-            self.send_all_players({"event": Event.STATE, "updates": list(data.values())})
 
         deaths = set()  # type: Set[address]
 
@@ -404,11 +406,15 @@ class GameProtocol(DatagramProtocol):
 
                     # FIXME : notify auth server for scores and so on
 
+        corpses = []
         for death in deaths:
-            self.players.pop(death)
+            corpses.append(self.players.pop(death).name)
             self.transport.write(self.death_message, addr=death)
 
         self.deaths |= deaths  # add the users dead this turn to the list of dead
+
+        if len(data):
+            self.send_all_players({"event": Event.STATE, "updates": data, "deaths": corpses})
 
     def handle_food(self):
         """
@@ -525,6 +531,26 @@ class GameProtocol(DatagramProtocol):
                 else:
                     hook.x = player2.x
                     hook.y = player2.y
+
+    def handle_disconnects(self):
+        """
+        handles all users that were not connected for too long
+        """
+        alives = []
+        deads = []
+
+        now = time.time()
+
+        for addr, player in self.players.items():
+            if now - player.timestamp > 60:
+                deads.append(addr)
+            else:
+                alives.append(player.to_json())
+
+        for dead in deads:
+            self.players.pop(dead)
+
+        self.send_all_players({"event": Event.ALIVE, "alives": alives})
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):

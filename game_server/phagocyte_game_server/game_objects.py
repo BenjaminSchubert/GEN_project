@@ -57,8 +57,8 @@ class RoundGameObject(GameObject):
         """ transforms the object to a dictionary to be sent on the wire """
         return {
             "size": self.size,
-            "x": self.x,
-            "y": self.y
+            "x": int(self.x),
+            "y": int(self.y)
         }
 
     def update_radius(self, new_radius: float):
@@ -105,7 +105,7 @@ class Player(RandomPositionedGameObject):
     """
     __slots__ = [
         "name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback",
-        "hook", "grabbed_x", "grabbed_y"
+        "hook", "grabbed_x", "grabbed_y", "timestamp"
     ]
 
     def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
@@ -121,14 +121,15 @@ class Player(RandomPositionedGameObject):
         self.hook = None  # type: GrabHook
         self.grabbed_x = 0  # type: float
         self.grabbed_y = 0  # type: float
+        self.timestamp = time.time()
 
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
         return {
             "name": self.name,
             "color": self.color,
-            "x": self.x,
-            "y": self.y,
+            "x": int(self.x),
+            "y": int(self.y),
             "size": self.size,
             "bonus": self.bonus,
             "hook": self.hook.to_json() if self.hook is not None else self.hook
@@ -186,8 +187,8 @@ class Bullet(RoundGameObject):
         return {
             "uid": self.uid,
             "color": self.color,
-            "x": self.x,
-            "y": self.y,
+            "x": int(self.x),
+            "y": int(self.y),
             "speed_x": self.speed_x,
             "speed_y": self.speed_y,
             "size": self.size
@@ -225,6 +226,6 @@ class GrabHook(GameObject):
     def to_json(self):
         """ transforms the object to a dictionary to be sent on the wire """
         return {
-            "x": self.x,
-            "y": self.y,
+            "x": int(self.x),
+            "y": int(self.y),
         }
