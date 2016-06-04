@@ -15,6 +15,7 @@ import time
 import uuid
 from math import ceil
 from typing import Dict, Set, Tuple
+from typing import List
 
 import collections
 import random
@@ -337,7 +338,7 @@ class GameProtocol(DatagramProtocol):
         """
         checks moves from all the players and handle collisions between them
         """
-        data = {}  # type: Dict[address, json_object]
+        data = []  # type: List[json_object]
 
         for addr, update in self.moves.items():
             if update is None:
@@ -371,17 +372,14 @@ class GameProtocol(DatagramProtocol):
             else:
                 player.y = min(self.max_y - player.radius, max(player.radius, update[1]))
 
-            data[addr] = self.players[addr].to_json()
-
+            _json = player.to_json()
             if factor_x or factor_y or player.grabbed_x or player.grabbed_y:
-                data[addr]["dirty"] = (factor_x + player.grabbed_x - delta_x, factor_y + player.grabbed_y - delta_y)
+                _json["dirty"] = (factor_x + player.grabbed_x - delta_x, factor_y + player.grabbed_y - delta_y)
                 player.grabbed_x = player.grabbed_y = 0
 
+            data.append(_json)
             self.moves[addr] = None
             player.timestamp = timestamp
-
-        if len(data):
-            self.send_all_players({"event": Event.STATE, "updates": list(data.values())})
 
         deaths = set()  # type: Set[address]
 
@@ -404,11 +402,15 @@ class GameProtocol(DatagramProtocol):
 
                     # FIXME : notify auth server for scores and so on
 
+        corpses = []
         for death in deaths:
-            self.players.pop(death)
+            corpses.append(self.players.pop(death).name)
             self.transport.write(self.death_message, addr=death)
 
         self.deaths |= deaths  # add the users dead this turn to the list of dead
+
+        if len(data):
+            self.send_all_players({"event": Event.STATE, "updates": data, "deaths": corpses})
 
     def handle_food(self):
         """

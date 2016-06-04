@@ -72,7 +72,7 @@ class NetworkGameClient(DatagramProtocol):
             self.name = data["name"]
             self.game.start_game(self, data)
         elif event_type == Event.STATE:
-            self.game.update_state(data["updates"])
+            self.game.update_state(data["updates"], data["deaths"])
         elif event_type == Event.FOOD:
             self.game.update_food(data.get("food", []), data.get("deleted", []))
         elif event_type == Event.BULLETS:

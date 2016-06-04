@@ -324,34 +324,32 @@ class GameInstance(Widget):
         Clock.schedule_interval(self.send_bullets, self.REFRESH_RATE)
         Clock.schedule_interval(self.move_bullets, self.REFRESH_RATE)
 
-    def update_state(self, states):
+    def update_state(self, states, deaths):
         for state in states:
             if state["name"] == self.server.name:
-                if state.get("dirty", None):
-                    self.world.main_player.correction_x += state["dirty"][0]
-                    self.world.main_player.correction_y += state["dirty"][1]
-
                 player = self.world.main_player
 
-            elif state["name"] in self.world.players.keys():
-                player = self.world.players[state["name"]]
-                player.set_position(state["x"] - player.size[0] / 2, state["y"] - player.size[1] / 2)
-
+                if state.get("dirty", None):
+                    player.correction_x += state["dirty"][0]
+                    player.correction_y += state["dirty"][1]
             else:
-                player = Player()
-                player.color = get_color_from_hex(state["color"])
-                self.world.add_widget(player)
-                self.world.players[state["name"]] = player
+                if state["name"] in self.world.players.keys():
+                    player = self.world.players[state["name"]]
+
+                else:
+                    player = Player()
+                    player.color = get_color_from_hex(state["color"])
+                    self.world.add_widget(player)
+                    self.world.players[state["name"]] = player
+
+                player.set_position(state["x"] - player.size[0] / 2, state["y"] - player.size[1] / 2)
 
             player.update(state["size"], state["bonus"], state["hook"])
 
-        names = set(state["name"] for state in states)
-        keys = set(self.world.players.keys())
-        keys -= names
-
-        for key in keys:
-            to_remove = self.world.players.pop(key)
-            self.world.remove_widget(to_remove)
+        for death in deaths:
+            dead = self.world.players.pop(death)
+            if dead:
+                self.world.remove_widget(dead)
 
     def update_food(self, new, deleted):
         for entry in new:

@@ -57,8 +57,8 @@ class RoundGameObject(GameObject):
         """ transforms the object to a dictionary to be sent on the wire """
         return {
             "size": self.size,
-            "x": self.x,
-            "y": self.y
+            "x": int(self.x),
+            "y": int(self.y)
         }
 
     def update_radius(self, new_radius: float):
@@ -127,8 +127,8 @@ class Player(RandomPositionedGameObject):
         return {
             "name": self.name,
             "color": self.color,
-            "x": self.x,
-            "y": self.y,
+            "x": int(self.x),
+            "y": int(self.y),
             "size": self.size,
             "bonus": self.bonus,
             "hook": self.hook.to_json() if self.hook is not None else self.hook
@@ -186,8 +186,8 @@ class Bullet(RoundGameObject):
         return {
             "uid": self.uid,
             "color": self.color,
-            "x": self.x,
-            "y": self.y,
+            "x": int(self.x),
+            "y": int(self.y),
             "speed_x": self.speed_x,
             "speed_y": self.speed_y,
             "size": self.size
@@ -225,6 +225,6 @@ class GrabHook(GameObject):
     def to_json(self):
         """ transforms the object to a dictionary to be sent on the wire """
         return {
-            "x": self.x,
-            "y": self.y,
+            "x": int(self.x),
+            "y": int(self.y),
         }
