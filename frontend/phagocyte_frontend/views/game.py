@@ -339,6 +339,7 @@ class GameInstance(Widget):
 
             else:
                 player = Player()
+                player.color = get_color_from_hex(state["color"])
                 self.world.add_widget(player)
                 self.world.players[state["name"]] = player
 
