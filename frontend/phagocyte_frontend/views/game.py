@@ -20,7 +20,7 @@ class BonusTypes(enum.IntEnum):
     SPEEDUP = 3
 
 
-class BoundedMixin:
+class BoundedMixin(Widget):
     """
     Limit the player to the edge of the map
     """
@@ -57,7 +57,7 @@ class BoundedMixin:
                 break
 
 
-class Player(Widget, BoundedMixin):
+class Player(BoundedMixin):
     """
 
     """
@@ -212,13 +212,13 @@ class MainPlayer(Player):
         self.set_max_speed()
 
 
-class Food(Widget, BoundedMixin):
+class Food(BoundedMixin):
     """
     The food let the player grow
     """
 
 
-class Bonus(Widget, BoundedMixin):
+class Bonus(BoundedMixin):
     """
     A bonus a user can pick
     """
@@ -236,7 +236,7 @@ class Hook(Widget):
     """
 
 
-class Bullet(Widget, BoundedMixin):
+class Bullet(BoundedMixin):
     """
     A bullet thrown by a player
     """
@@ -442,7 +442,6 @@ class GameInstance(Widget):
             self.world.remove_bullet(bullet)
 
     def _on_mouse_down(self, window, x, y, button, modifiers):
-        print(dir(self.health_bar))
         if button == "left":
             self.world.main_player.shooting = True
         elif button == "right":
