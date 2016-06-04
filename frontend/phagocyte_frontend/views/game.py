@@ -3,8 +3,7 @@ from math import atan2
 
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics.context_instructions import Color
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, ListProperty
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
@@ -27,15 +26,12 @@ class BoundedMixin(Widget):
     position_x = 0
     position_y = 0
 
-    correction_x = 0
-    correction_y = 0
+    # noinspection PyArgumentList
+    color = ListProperty([0, 0, 0, 0])
 
     def set_position(self, x, y):
-        self.correction_x /= 2
-        self.correction_y /= 2
-
-        self.position_x = max(min(x + self.correction_x, self.parent.size[0] - self.size[0]), 0)
-        self.position_y = max(min(y + self.correction_y, self.parent.size[1] - self.size[1]), 0)
+        self.position_x = max(min(x, self.parent.size[0] - self.size[0]), 0)
+        self.position_y = max(min(y, self.parent.size[1] - self.size[1]), 0)
 
         self.x = self.position_x + Window.size[0] / 2
         self.y = self.position_y + Window.size[1] / 2
@@ -47,14 +43,7 @@ class BoundedMixin(Widget):
         self.size = size, size
 
     def set_color(self, color):
-        r, g, b, a = get_color_from_hex(color)
-        for i in self.canvas.get_group(None):
-            if type(i) is Color:
-                i.r = r
-                i.g = g
-                i.b = b
-                i.a = a
-                break
+        self.color = get_color_from_hex(color)
 
 
 class Player(BoundedMixin):
@@ -106,17 +95,6 @@ class Player(BoundedMixin):
             self.hook.points[0] = self.center_x
             self.hook.points[1] = self.center_y
 
-    def set_color(self, color):
-        super().set_color(color)
-        r, g, b, a = get_color_from_hex(color)
-        for i in self.shield.canvas.get_group(None):
-            if type(i) is Color:
-                i.r = r
-                i.g = g
-                i.b = b
-                i.a = a * 0.6
-                break
-
 
 class MainPlayer(Player):
     initial_size = NumericProperty(0)
@@ -124,6 +102,9 @@ class MainPlayer(Player):
     shooting = False
     bonus_speedup = 1
     speed_x = speed_y = 0
+
+    correction_x = 0
+    correction_y = 0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -183,6 +164,12 @@ class MainPlayer(Player):
         """
         self._keyboard.release()
 
+    def set_position(self, x, y):
+        self.correction_x /= 2
+        self.correction_y /= 2
+
+        super().set_position(x + self.correction_x, y + self.correction_y)
+
     def set_size(self, size):
         super().set_size(size)
         self.set_max_speed()
@@ -211,12 +198,14 @@ class Food(BoundedMixin):
     """
     The food let the player grow
     """
+    color = [0, 1, 0, 1]
 
 
 class Bonus(BoundedMixin):
     """
     A bonus a user can pick
     """
+    color = [1, 1, 0, 1]
 
 
 class Shield(Widget):

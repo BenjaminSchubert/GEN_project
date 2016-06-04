@@ -4,7 +4,7 @@
     size: 100, 100
     canvas:
         Color:
-            rgb: 0, 0, 0
+            rgba: self.color
         Ellipse:
             pos: self.pos
             size: self.size
@@ -12,9 +12,10 @@
 
 <Food>:
     size: 35, 35
+
     canvas:
         Color:
-            rgb: 0, 1, 0
+            rgba: self.color
         Ellipse:
             pos: self.pos
             size: self.size
@@ -24,7 +25,7 @@
     size: 30, 30
     canvas:
         Color:
-            rgb: 1, 1, 0
+            rgba: self.color
         Ellipse:
             pos: self.pos
             size: self.size
@@ -35,7 +36,7 @@
 
     canvas:
         Color:
-            rgb: 0, 0, 0
+            rgba: self.player.color[0], self.player.color[1], self.player.color[2], self.player.color[3] * 0.6
         Ellipse:
             pos: self.pos
             size: self.size
@@ -54,7 +55,7 @@
     size: 20, 20
     canvas:
         Color:
-            rgb: 1, 1, 1
+            rgba: self.color
         Ellipse:
             pos: self.pos
             size: self.size
