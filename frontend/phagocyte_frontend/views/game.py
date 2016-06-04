@@ -36,11 +36,12 @@ class BoundedWidget(Widget):
         self.x = self.position_x + Window.size[0] / 2
         self.y = self.position_y + Window.size[1] / 2
 
+    def redraw(self):
+        self.x = self.position_x + Window.size[0] / 2
+        self.y = self.position_y + Window.size[1] / 2
+
     def add_position(self, x, y):
         self.set_position(x + self.position_x, y + self.position_y)
-
-    def set_size(self, size):
-        self.size = size, size
 
 
 class Player(BoundedWidget):
@@ -52,6 +53,11 @@ class Player(BoundedWidget):
         self.shield = Shield(self)
         self.bonus = None
         self.hook = None
+
+    def update(self, size, bonus, hook):
+        self.size = size, size
+        self.set_bonus(bonus)
+        self.set_hook(hook)
 
     def set_bonus(self, bonus: int):
         if self.bonus == bonus:
@@ -83,28 +89,29 @@ class Player(BoundedWidget):
 
 
 class MainPlayer(Player):
-    max_speed = 0
-    shooting = False
-    speed_x = speed_y = 0
-    bonus_speedup = NumericProperty(1)
+    bonus_speedup = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.initial_size = 0
+        self.max_speed = 0
         self.correction_x = 0
         self.correction_y = 0
+        self.speed_x = 0
+        self.speed_y = 0
+
+        self.shooting = False
 
         self.bind(size=self.set_max_speed, bonus_speedup=self.set_max_speed)
-        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
-        self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+        self.keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self.keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
 
     def _keyboard_closed(self):
         """
         Unbind the keyboard from the system
         """
-        self._keyboard.unbind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
-        self._keyboard = None
+        self.keyboard.unbind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
 
     def _on_keyboard_down(self, keyboard, keycode, *args):
         """
@@ -115,13 +122,13 @@ class MainPlayer(Player):
         :param args: eventual additional args
         :return: True to accept the key
         """
-        if keycode[1] == "up" or keycode[1] == "w":
+        if keycode[1] in ["up", "w"]:
             self.speed_x = 1
-        elif keycode[1] == "down" or keycode[1] == "s":
+        elif keycode[1] in ["down", "s"]:
             self.speed_x = -1
-        elif keycode[1] == "left" or keycode[1] == "a":
+        elif keycode[1] in ["left", "a"]:
             self.speed_y = -1
-        elif keycode[1] == "right" or keycode[1] == "d":
+        elif keycode[1] in ["right", "d"]:
             self.speed_y = 1
 
         return True
@@ -135,22 +142,12 @@ class MainPlayer(Player):
         :param args: eventual additional args
         :return: True to accept the key
         """
-        if keycode[1] == "up" or keycode[1] == "w":
+        if keycode[1] in ["down", "up", "s", "w"]:
             self.speed_x = 0
-        elif keycode[1] == "down" or keycode[1] == "s":
-            self.speed_x = 0
-        elif keycode[1] == "left" or keycode[1] == "a":
-            self.speed_y = 0
-        elif keycode[1] == "right" or keycode[1] == "d":
+        elif keycode[1] in ["left", "right", "a", "d"]:
             self.speed_y = 0
 
         return True
-
-    def release_keyboard(self):
-        """
-        We the player died, we must release the keyboard
-        """
-        self._keyboard.release()
 
     def set_position(self, x, y):
         self.correction_x /= 2
@@ -218,7 +215,7 @@ class Bullet(BoundedWidget):
 
     def __init__(self, uid, speed_x, speed_y, **kwargs):
         super().__init__(**kwargs)
-        self._id = uid
+        self.bid = uid
         self.speed_x = speed_x
         self.speed_y = speed_y
 
@@ -239,9 +236,7 @@ class World(Widget):
 
     def add_bullet(self, uid, x, y, speed_x, speed_y, color, size):
         if self.bullets.get(uid) is None:
-            self.bullets[uid] = Bullet(uid, speed_x, speed_y)
-            self.bullets[uid].color = get_color_from_hex(color)
-            self.bullets[uid].set_size(size)
+            self.bullets[uid] = Bullet(uid, speed_x, speed_y, size=(size, size), color=get_color_from_hex(color))
             self.add_widget(self.bullets[uid])
         self.bullets[uid].set_position(x, y)
 
@@ -274,19 +269,20 @@ class GameInstance(Widget):
     REFRESH_RATE = 1 / 60
     SCALE_RATIO = 8  # >= 1
     MAX_SIZE = 1000
-    scale_ratio_util = None
+    scale_ratio_util = NumericProperty(0)
     server = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.world.main_player.bind(center=self.follow_main_player)
 
     def move_main_player(self, dt):
         self.world.main_player.move(dt)
-        self.follow_main_player()
 
-    def follow_main_player(self):
+    def follow_main_player(self, instance, attribute):
         """
         Makes the camera follow the player
         """
-        self.map.scale = self.SCALE_RATIO / (self.world.main_player.width + self.scale_ratio_util) ** .5
-
         x, y = self.camera.convert_distance_to_scroll(
             self.world.main_player.center_x * self.map.scale - Window.width / 2,
             self.world.main_player.center_y * self.map.scale - Window.height / 2
@@ -314,8 +310,9 @@ class GameInstance(Widget):
         self.world.main_player.color = get_color_from_hex(data["color"])
 
         self.world.main_player.initial_size = data["size"]
-        self.world.main_player.set_size(data["size"])
+        self.world.main_player.size = data["size"], data["size"]
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
+        self.follow_main_player(self.world.main_player, None)
 
         Window.bind(on_resize=self.redraw, on_mouse_down=self._on_mouse_down, on_mouse_up=self._on_mouse_up)
 
@@ -333,27 +330,19 @@ class GameInstance(Widget):
                 if state.get("dirty", None):
                     self.world.main_player.correction_x += state["dirty"][0]
                     self.world.main_player.correction_y += state["dirty"][1]
-                self.world.main_player.set_size(state["size"])
-                self.world.main_player.set_bonus(state["bonus"])
-                self.world.main_player.set_hook(state["hook"])
+
+                player = self.world.main_player
 
             elif state["name"] in self.world.players.keys():
-                p = self.world.players[state["name"]]
-                p.set_position(
-                    state["x"] - p.size[0] / 2,
-                    state["y"] - p.size[1] / 2
-                )
-                p.set_size(state["size"])
-                p.set_bonus(state.get("bonus", None))
-                p.set_hook(state["hook"])
+                player = self.world.players[state["name"]]
+                player.set_position(state["x"] - player.size[0] / 2, state["y"] - player.size[1] / 2)
 
             else:
-                p = Player()
-                self.world.add_widget(p)
-                p.set_size(state["size"])
-                p.set_position(state["x"], state["y"])
-                p.color = get_color_from_hex(state["color"])
-                self.world.players[state["name"]] = p
+                player = Player()
+                self.world.add_widget(player)
+                self.world.players[state["name"]] = player
+
+            player.update(state["size"], state["bonus"], state["hook"])
 
         names = set(state["name"] for state in states)
         keys = set(self.world.players.keys())
@@ -392,22 +381,21 @@ class GameInstance(Widget):
                 bullet.position_x + bullet.size[0] == world_size_x or
                 bullet.position_y + bullet.size[1] == world_size_y
             ):
-                to_remove.append(bullet._id)
+                to_remove.append(bullet.bid)
 
         for bid in to_remove:
             self.world.remove_bullet(bid)
 
     def death(self):
-        Clock.unschedule(self.follow_main_player)
+        Clock.unschedule(self.move_main_player)
         Clock.unschedule(self.send_moves)
-        self.world.main_player.release_keyboard()
+        self.world.main_player.keyboard.release()
         self.parent.player_died()
 
     def redraw(self, *args):
-        self.follow_main_player()
-
-        for i in self.world.food.values():
-            i.set_position(i.position_x, i.position_y)
+        for static_objects in [self.world.food.values(), self.world.bonuses.values()]:
+            for obj in static_objects:
+                obj.redraw()
 
     def check_bullets(self, bullets, deleted):
         for bullet in bullets:

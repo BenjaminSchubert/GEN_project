@@ -98,7 +98,7 @@
             do_scale: False
             do_translation: False, False
             do_rotation: False
-            scale: 1
+            scale: root.SCALE_RATIO / (world.main_player.width + root.scale_ratio_util) ** .5
 
             canvas.before:
                 Color:
