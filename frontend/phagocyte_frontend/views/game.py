@@ -278,6 +278,8 @@ class GameInstance(Widget):
         super().__init__(**kwargs)
         self.world.main_player.bind(center=self.follow_main_player)
 
+        self.events = [self.move_main_player, self.send_moves, self.send_bullets, self.move_bullets]
+
     def move_main_player(self, dt):
         self.world.main_player.move(dt)
 
@@ -321,10 +323,8 @@ class GameInstance(Widget):
         self.start_timers()
 
     def start_timers(self):
-        Clock.schedule_interval(self.move_main_player, self.REFRESH_RATE)
-        Clock.schedule_interval(self.send_moves, self.REFRESH_RATE)
-        Clock.schedule_interval(self.send_bullets, self.REFRESH_RATE)
-        Clock.schedule_interval(self.move_bullets, self.REFRESH_RATE)
+        for event in self.events:
+            Clock.schedule_interval(event, self.REFRESH_RATE)
 
     def update_state(self, states, deaths):
         for state in states:
@@ -388,10 +388,17 @@ class GameInstance(Widget):
             self.world.remove_bullet(bid)
 
     def death(self):
-        Clock.unschedule(self.move_main_player)
-        Clock.unschedule(self.send_moves)
+        for event in self.events:
+            Clock.unschedule(event)
+
         self.world.main_player.keyboard.release()
         self.parent.player_died()
+
+    def handle_win(self, winner):
+        for event in self.events:
+            Clock.unschedule(event)
+        self.world.main_player.keyboard.release()
+        self.parent.player_won(winner, winner == self.server.name)
 
     def redraw(self, *args):
         for static_objects in [self.world.food.values(), self.world.bonuses.values()]:
