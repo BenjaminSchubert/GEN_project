@@ -23,3 +23,4 @@ class Event(enum.IntEnum):
     BONUS = 7
     HOOK = 8
     ALIVE = 9
+    FINISHED = 10

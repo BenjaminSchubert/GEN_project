@@ -17,6 +17,13 @@ class DeathPopup(Popup):
         self.restart_button.on_release = restart_call
 
 
+class WinPopup(Popup):
+    def __init__(self, main_menu_call, **kwargs):
+        super().__init__(**kwargs)
+        self.main_menu_button.on_release = self.dismiss
+        self.on_dismiss = main_menu_call
+
+
 class GameScreen(AutoLoadableScreen):
     """
     Screen where the game will be played
@@ -26,7 +33,8 @@ class GameScreen(AutoLoadableScreen):
     def __init__(self, **kw):
         super().__init__(**kw)
         self.game_instance = None
-        self.popup = DeathPopup(self.main_menu, self.restart)
+        self.death_popup = DeathPopup(self.main_menu, self.restart)
+        self.win_popup = WinPopup(self.main_menu)
 
     def setup_game(self):
         game = self.manager.get_screen(LobbyScreen.screen_name).game_list.selection[0]
@@ -54,13 +62,21 @@ class GameScreen(AutoLoadableScreen):
         self.reset_game()
 
     def player_died(self):
-        self.popup.open()
+        self.death_popup.open()
+
+    def player_won(self, name, main=True):
+        if main:
+            self.win_popup.text = "You won, congrats !"
+        else:
+            self.win_popup.text = "You lost, {name} won, sorry !".format(name=name)
+
+        self.win_popup.open()
 
     def main_menu(self):
-        self.popup.dismiss()
+        self.death_popup.dismiss()
         self.manager.current = LobbyScreen.screen_name
 
     def restart(self):
-        self.popup.dismiss()
+        self.death_popup.dismiss()
         self.reset_game()
         self.setup_game()

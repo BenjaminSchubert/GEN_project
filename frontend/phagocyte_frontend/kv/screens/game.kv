@@ -144,3 +144,26 @@
             text: "Restart"
             size_hint: (0.4, 0.4)
             pos_hint: {"x": 0.6}
+
+
+<WinPopup>:
+    title: "Game ENDS"
+    size_hint: (None, None)
+    size: (350, 200)
+    auto_dismiss: False
+    text: ""
+
+    main_menu_button: main_menu_button
+
+    BoxLayout:
+        orientation: "vertical"
+
+        Label:
+            text: root.text
+
+        Button:
+            id: main_menu_button
+
+            text: "Main Menu"
+            size_hint: (0.4, 0.4)
+            pos_hint: {"x": 0.6}

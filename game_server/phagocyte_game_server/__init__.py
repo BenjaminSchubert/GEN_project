@@ -149,8 +149,12 @@ class GameProtocol(DatagramProtocol):
         self.new_bonuses_ratio = 3  # type: int
         self.max_hit_count = 10  # type: int
         self.bonus_time = 10  # type: int
+        self.win_size = 1000  # type: int
 
         self.last_time = time.time()  # type: int
+
+        self.winning_player = None
+        self.finished = None
 
         self.logger = logger  # type: logging.Logger
 
@@ -235,7 +239,14 @@ class GameProtocol(DatagramProtocol):
         except json.decoder.JSONDecodeError:
             self.logger.warning("Invalid json received : '{json}'".format(json=datagram.decode("utf-8")))
         else:
-            if self.players.get(addr) is None:
+            if self.finished:
+                if data["event"] == Event.FINISHED:
+                    self.players.pop(addr, None)
+                    if len(self.players) == 0:
+                        self.close()
+                else:
+                    self.send_to(addr, dict(event=Event.FINISHED, win=self.winning_player))
+            elif self.players.get(addr) is None:
                 if addr in self.deaths:
                     if data["event"] == Event.DEATH:
                         self.deaths.remove(addr)
@@ -332,7 +343,7 @@ class GameProtocol(DatagramProtocol):
 
                 data_to_send.append(bullet.to_json())
 
-            self.send_all_players({"event": Event.BULLETS, "bullets": data_to_send, "deleted": deleted_bullets})
+            self.send_all_players(dict(event=Event.BULLETS, bullets=data_to_send, deleted=deleted_bullets))
 
         self.last_bullet_update = new_time
 
@@ -416,6 +427,9 @@ class GameProtocol(DatagramProtocol):
                     eater.update_size(eaten)
                     deaths.add(eaten_addr)
 
+                    if eater.size > self.win_size:
+                        self.win(eater)
+
                     # FIXME : notify auth server for scores and so on
 
         corpses = []
@@ -426,7 +440,7 @@ class GameProtocol(DatagramProtocol):
         self.deaths |= deaths  # add the users dead this turn to the list of dead
 
         if len(data):
-            self.send_all_players({"event": Event.STATE, "updates": data, "deaths": corpses})
+            self.send_all_players(dict(event=Event.STATE, updates=data, deaths=corpses))
 
     def handle_food(self):
         """
@@ -444,12 +458,14 @@ class GameProtocol(DatagramProtocol):
                 if player.collides_with(food):
                     player.update_size(food)
                     deletions.append(food.to_json())
+                    if player.size > self.win_size:
+                        self.win(player)
                     break
             else:
                 self.food.append(food)
                 food_to_send.append(food.to_json())
 
-        self.send_all_players({"event": Event.FOOD, "food": food_to_send, "deleted": deletions})
+        self.send_all_players(dict(event=Event.FOOD, food=food_to_send, deleted=deletions))
 
     def handle_bonuses(self):
         """
@@ -476,7 +492,7 @@ class GameProtocol(DatagramProtocol):
                 self.bonuses.append(bonus)
                 bonuses_to_send.append(bonus.to_json())
 
-        self.send_all_players({"event": Event.BONUS, "bonus": bonuses_to_send, "deleted": deletions})
+        self.send_all_players(dict(event=Event.BONUS, bonus=bonuses_to_send, deleted=deletions))
 
     def handle_hooks(self):
         """
@@ -562,7 +578,21 @@ class GameProtocol(DatagramProtocol):
         for dead in deads:
             self.players.pop(dead)
 
-        self.send_all_players({"event": Event.ALIVE, "alives": alives})
+        self.send_all_players(dict(event=Event.ALIVE, alives=alives))
+
+    def win(self, player: Player):
+        """
+        notify all players that a player has won
+
+        :param player: player that won
+        """
+        self.finished = True
+        self.winning_player = player.name
+
+        self.send_all_players(dict(event=Event.FINISHED, win=player.name))
+
+    def close(self):
+        reactor.stop()
 
 
 def runserver(port, auth_host, auth_port, name, capacity, debug):
