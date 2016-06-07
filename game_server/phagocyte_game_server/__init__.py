@@ -435,7 +435,7 @@ class GameProtocol(DatagramProtocol):
         deletions = []  # type: json_object
         food_to_send = []  # type: json_object
 
-        if random.randrange(100) < self.new_food_ratio:
+        if random.randrange(100) < self.new_food_ratio and len(self.food) < 50 + 50 * len(self.players)**1.1:
             self.food.appendleft(RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y))
 
         for i in range(min(len(self.food), 70)):
@@ -458,7 +458,7 @@ class GameProtocol(DatagramProtocol):
         deletions = []  # type: json_object
         bonuses_to_send = []  # type: json_object
 
-        if random.randrange(1000) < self.new_bonuses_ratio:
+        if random.randrange(1000) < self.new_bonuses_ratio and len(self.bonuses) < 5 * len(self.players) ** 1.1:
             self.bonuses.append(Bonus(self.max_x, self.max_y))
 
         for i in range(min(len(self.bonuses), 70)):
