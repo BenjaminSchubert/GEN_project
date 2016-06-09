@@ -274,6 +274,8 @@ class GameInstance(Widget):
     scale_ratio_util = NumericProperty(0)
     server = None
 
+    best_players = ListProperty(["Test1", "Test2"])
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.world.main_player.bind(center=self.follow_main_player)

@@ -115,6 +115,16 @@
         pos: self.parent.width - game_object.width/4 - 50, self.parent.height - 80
         width: game_object.width/4
 
+    Label:
+        size: self.texture_size
+        pos: self.parent.width - game_object.width/4 + 50, self.parent.height - 100
+        markup: True
+        text: "[b]Best players[/b]"
+
+    Label:
+        text: root.best_players[0]
+        pos: self.parent.width - game_object.width/4, self.parent.height - 170
+
 
 <DeathPopup>:
     title: "DEATH"
