@@ -606,7 +606,7 @@ class GameProtocol(DatagramProtocol):
 
     def check_usage(self):
         """
-        Checks that some players are still in the gamr
+        Checks that some players are still in the game
         """
         if len(self.players) != 0 and self.closing_call is not None:
             self.closing_call.cancel()

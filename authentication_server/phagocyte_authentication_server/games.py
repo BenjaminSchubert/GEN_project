@@ -88,7 +88,7 @@ class GameManager:
         if not manager:
             raise ValueError("Could not map this server to a manager")
 
-        self.games[(kwargs["ip"], kwargs["port"])] = self.Game(**kwargs, manager=manager)
+        self.games[(kwargs["ip"], kwargs["port"])] = self.Game(manager=manager, **kwargs)
 
         manager.slots += 1
 
