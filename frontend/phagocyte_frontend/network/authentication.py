@@ -4,11 +4,8 @@
 Contains client-related classes used to interact with the authentication server.
 """
 
-import json
-
 import hashlib
 import requests
-
 from kivy.logger import Logger
 
 from phagocyte_frontend.exceptions import CredentialsException
@@ -16,6 +13,12 @@ from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, PARAMETERS_
 
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
+
+
+class CreationFailedException(Exception):
+    """
+    Exception thrown when the creation of a game fails
+    """
 
 
 class Client:
@@ -31,6 +34,8 @@ class Client:
     def __init__(self, host, port):
         self.host = host
         self.port = port
+        self.username = None
+        self.password = None
 
     def get_base_url(self):
         """
@@ -53,30 +58,19 @@ class Client:
             ).hexdigest()
         }
 
-    def post_json(self, _json, endpoint):
+    def post_json(self, endpoint, **kwargs):
         """
         Sends the json using a POST request at the given relative path.
 
-        :param _json: the json to send.
         :param endpoint: the relative path (relative to the base url).
+        :param kwargs: the data to send as json.
         """
-        headers = {
-            "content-type": "application/json"
-        }
+        headers = {}
 
         if self.is_logged_in():
             headers["authorization"] = "JWT " + self.token
 
-        return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=_json)
-
-    def post_dict_as_json(self, *, endpoint, **kwargs):
-        """
-        Sends a POST request to the server, with data as json.
-
-        :param endpoint: the relative path where to POST ("/auth", for example)
-        :param kwargs: the data as dict to send as json
-        """
-        self.post_json(json.dumps(kwargs), endpoint)
+        return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=kwargs)
 
     def get_json_as_dict(self, endpoint):
         """
@@ -84,14 +78,28 @@ class Client:
 
         :param: endpoint: the relative path where to GET ("/auth", for example)
         """
-        headers = {}
+        def try_get():
+            headers = {}
 
-        if self.is_logged_in():
-            headers["authorization"] = "JWT " + self.token
+            if self.is_logged_in():
+                headers["authorization"] = "JWT " + self.token
 
-        r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
+            r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
 
-        return r.json()
+            if r.status_code == requests.codes.unauthorized:
+                self.token = None
+                raise CredentialsException("Token expired")
+
+            return r
+
+        try:
+            return try_get().json()
+        except CredentialsException:
+            if self.username is not None and self.password is not None:
+                self.login(self.username, self.password)
+                return try_get().json()
+
+            raise
 
     def register(self, username, password):
         """
@@ -100,7 +108,9 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.post_json(self.create_credentials_data(username, password), REGISTER_PATH)
+        r = self.post_json(REGISTER_PATH, **self.create_credentials_data(username, password))
+        self.username = username
+        self.password = password
 
         if r.status_code == requests.codes.conflict:
             raise CredentialsException("The user already exists")
@@ -112,7 +122,7 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.post_json(self.create_credentials_data(username, password), AUTH_PATH)
+        r = self.post_json(AUTH_PATH, **self.create_credentials_data(username, password))
 
         if r.status_code < 400:
             try:
@@ -121,6 +131,9 @@ class Client:
                 Logger.error("Malformed json")
         elif r.status_code == requests.codes.unauthorized:
             raise CredentialsException("Bad credentials")
+
+        self.username = username
+        self.password = password
 
     def is_logged_in(self):
         """
@@ -133,6 +146,8 @@ class Client:
         Logs out the user.
         """
         self.token = None
+        self.password = None
+        self.username = None
 
     def post_account_info(self, **kwargs):
         """
@@ -140,7 +155,7 @@ class Client:
 
         :param kwargs: the data as dict to send as json
         """
-        self.post_dict_as_json(endpoint=PARAMETERS_PATH, **kwargs)
+        self.post_json(endpoint=PARAMETERS_PATH, **kwargs)
 
     def get_account_info(self):
         """
@@ -154,3 +169,14 @@ class Client:
         """
         r = requests.get(self.get_base_url() + GAMES_PATH)
         return r.json()
+
+    def create_game(self, **kwargs):
+        """
+        Creates a game.
+
+        :param kwargs: the game info as dict to send as json.
+        """
+        r = self.post_json(endpoint=GAMES_PATH, **kwargs)
+
+        if r.status_code != requests.codes.ok:
+            raise CreationFailedException(r.json()["error"])

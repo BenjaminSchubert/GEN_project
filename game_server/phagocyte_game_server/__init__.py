@@ -17,6 +17,7 @@ from math import ceil
 from typing import Dict, Set, Tuple
 from typing import List
 
+import atexit
 import collections
 import random
 import requests
@@ -81,29 +82,26 @@ def bonus_timeout(player: Player) -> None:
     player.bonus_callback = None
 
 
-def register(port: int, auth_host: str, auth_port: int, name: int, capacity: int):
+def register(auth_host: str, auth_port: int, **kwargs: Dict):
     """
     registers the game server against the authentication server
 
-    :param port: port of the game server
     :param auth_host: address of the authentication server
     :param auth_port: port of the authentication server
-    :param name: name of the game server
-    :param capacity: max capacity of the game server
+    :param kwargs: arguments neeted to register the server
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect(("www.google.com", 80))
-    ip_addr = s.getsockname()
+    kwargs["ip"] = s.getsockname()[0]
     s.close()
 
-    r = requests.post(
-        "http://{}:{}/games/server".format(auth_host, auth_port),
-        json={"port": port, "name": name, "capacity": capacity, "ip": ip_addr[0]}
-    )
+    r = requests.post("http://{}:{}/games/server".format(auth_host, auth_port), json=kwargs)
 
     if r.status_code != requests.codes.ok:
         logging.fatal("Couldn't contact authentication server. exiting")
         exit(2)
+
+    return kwargs["ip"]
 
 
 class GameProtocol(DatagramProtocol):
@@ -117,10 +115,13 @@ class GameProtocol(DatagramProtocol):
     :param auth_port: port of the authentication server
     :param capacity: max capacity of the server
     :param logger: logger instance to use to report errors and other messages
+    :param token: the token used to authenticate the server
     """
     death_message = json.dumps({"event": Event.DEATH}).encode("utf-8")
 
-    def __init__(self, auth_host: str, auth_port: int, capacity: int, logger: logging.Logger):
+    def __init__(self, auth_host: str, auth_port: int, capacity: int, logger: logging.Logger, token: str, port: int,
+                 map_height: int, map_width: int, max_speed: int, max_hit_count: int, eat_ratio: float, min_radius: int,
+                 food_production_rate: int):
         self.players = dict()  # type: Dict[address, Player]
         self.moves = dict()  # type: Dict[address, Tuple[int, int]]
         self.deaths = set()  # type: Set[address]
@@ -140,14 +141,16 @@ class GameProtocol(DatagramProtocol):
         self.url = "http://{}:{}".format(self.auth_host, self.auth_port)  # type: str
         self.max_capacity = capacity  # type: int
 
-        self.max_x = 5000  # type: int
-        self.max_y = 5000  # type: int
-        self.default_radius = 50  # type: int
-        self.max_speed = 700  # type: int
-        self.eat_ratio = 1.2  # type: float
-        self.new_food_ratio = 5  # type: int
+        self.max_x = map_width  # type: int
+        self.max_y = map_height  # type: int
+        self.default_radius = min_radius  # type: int
+        self.max_speed = max_speed  # type: int
+        self.eat_ratio = eat_ratio  # type: float
+
+        self.food_production_rate = food_production_rate  # type: int
         self.new_bonuses_ratio = 3  # type: int
-        self.max_hit_count = 10  # type: int
+
+        self.max_hit_count = max_hit_count  # type: int
         self.bonus_time = 10  # type: int
         self.win_size = 1000  # type: int
 
@@ -157,6 +160,11 @@ class GameProtocol(DatagramProtocol):
         self.finished = None
 
         self.logger = logger  # type: logging.Logger
+        self.closing_call = None
+        self.token = token
+
+        self.port = port
+        self.ip = None
 
         task.LoopingCall(self.handle_players).start(1 / 30)
         task.LoopingCall(self.handle_food).start(1 / 30)
@@ -165,6 +173,8 @@ class GameProtocol(DatagramProtocol):
         task.LoopingCall(self.handle_bonuses).start(1 / 30)
         task.LoopingCall(self.handle_hooks).start(1 / 30)
         task.LoopingCall(self.handle_disconnects).start(5)
+
+        task.LoopingCall(self.check_usage).start(60)
 
     def authenticate(self, token: str) -> Tuple[str, str]:
         """
@@ -449,7 +459,7 @@ class GameProtocol(DatagramProtocol):
         deletions = []  # type: json_object
         food_to_send = []  # type: json_object
 
-        if random.randrange(100) < self.new_food_ratio and len(self.food) < 50 + 50 * len(self.players)**1.1:
+        if random.randrange(100) < self.food_production_rate and len(self.food) < 50 + 50 * len(self.players)**1.1:
             self.food.appendleft(RandomPositionedGameObject(random.randint(5, 25), self.max_x, self.max_y))
 
         for i in range(min(len(self.food), 70)):
@@ -580,6 +590,9 @@ class GameProtocol(DatagramProtocol):
 
         self.send_all_players(dict(event=Event.ALIVE, alives=alives))
 
+        if len(self.players) == 0 and self.finished:
+            self.close()
+
     def win(self, player: Player):
         """
         notify all players that a player has won
@@ -591,11 +604,40 @@ class GameProtocol(DatagramProtocol):
 
         self.send_all_players(dict(event=Event.FINISHED, win=player.name))
 
+    def check_usage(self):
+        """
+        Checks that some players are still in the game
+        """
+        if len(self.players) != 0 and self.closing_call is not None:
+            self.closing_call.cancel()
+            self.closing_call = None
+        elif len(self.players) == 0 and self.closing_call is None:
+            self.closing_call = reactor.callLater(360, self.close)
+
     def close(self):
-        reactor.stop()
+        """
+        Shuts down the system and unregisters it
+        """
+        if len(self.players) != 0:
+            self.closing_call.cancel()
+            self.closing_call = None
+            return
+
+        r = requests.delete(
+            "http://{}:{}/games/server".format(self.auth_host, self.auth_port),
+            json=dict(token=self.token, port=self.port, ip=self.ip)
+        )
+
+        if r.status_code != requests.codes.ok:
+            self.logger.error("Couldn't unregister successfully")
+
+        if reactor.running:
+            reactor.stop()
+
+        atexit.unregister(self.close)
 
 
-def runserver(port, auth_host, auth_port, name, capacity, debug):
+def runserver(port, auth_host, auth_port, name, capacity, debug, **kwargs):
     """
     launches the game server
 
@@ -609,7 +651,8 @@ def runserver(port, auth_host, auth_port, name, capacity, debug):
     logger = create_logger(name, port, debug)
 
     try:
-        reactor.listenUDP(port, GameProtocol(auth_host, auth_port, capacity, logger))
+        game_protocol = GameProtocol(auth_host, auth_port, capacity, logger, port=port, **kwargs)
+        reactor.listenUDP(port, game_protocol)
     except CannotListenError as e:
         if isinstance(e.socketError, PermissionError):
             logger.error("Permission denied. Do you have the right to open port {} ?".format(port))
@@ -619,5 +662,8 @@ def runserver(port, auth_host, auth_port, name, capacity, debug):
             raise e.socketError
     else:
         logger.info("server launched")
-        register(port, auth_host, auth_port, name, capacity)
+        ip = register(auth_host, auth_port, name=name, capacity=capacity, port=port, **kwargs)
+        game_protocol.ip = ip
         reactor.run()
+
+        atexit.register(game_protocol.close)

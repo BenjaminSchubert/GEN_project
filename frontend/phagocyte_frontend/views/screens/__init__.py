@@ -45,11 +45,11 @@ class PhagocyteScreenManager(ScreenManager):
             files_read = self.config_parser.read("config.cfg")
         except Error as e:
             Logger.error(str(e))
-            raise SystemExit(1) # FIXME : popup and then quit
+            raise SystemExit(1)  # FIXME : popup and then quit
 
         if len(files_read) == 0:
             Logger.error("Cannot read config file")
-            raise SystemExit(1) # FIXME : popup and then quit
+            raise SystemExit(1)  # FIXME : popup and then quit
 
         self.client = Client(self.config_parser.get("Server", "host"), self.config_parser.get("Server", "port"))
 
