@@ -9,7 +9,6 @@ import json
 import uuid
 
 import jwt
-import requests
 import sqlalchemy.exc
 from flask import request, jsonify, make_response
 from flask_jwt import jwt_required, current_identity
@@ -20,19 +19,6 @@ from phagocyte_authentication_server.models import User, db
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
-
-
-def create_game_server(manager):
-    """
-    Creates a new game server on the manager given in parameter
-
-    :param manager: manager on which to create a new game server
-    """
-    requests.post(
-        "http://{}:{}/create".format(manager.ip, manager.port),
-        json={"token": manager.token}
-    )
-    # TODO : handle errors
 
 
 @app.route("/register", methods=["POST"])
@@ -55,7 +41,6 @@ def validate_token():
     Validates the token and send back the user's name and color
     """
     token = request.get_json()["token"]
-    print("lol")
     try:
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
@@ -74,9 +59,11 @@ def games():
 @app.route("/games", methods=["POST"])
 def create_game():
     """ Creates a new game """
-    # TODO input validation: if not valid, return related status code + json with error
+    try:
+        app.games.create_game(request.get_json())
+    except KeyError as e:
+        return make_response(jsonify(error=str(e)), 400)
 
-    # TODO game creation
     return "", 200
 
 
@@ -102,11 +89,22 @@ def register_manager():
     token = str(uuid.uuid4())
     data = {"token": token}
     app.games.add_manager(token=token, **request.json)
-    if len(app.games.games) <= 1:
+    if len(app.games.games) < 1:
         data["create"] = True
         data["name"] = "Main"
         data["capacity"] = 200
     return jsonify(data)
+
+
+@app.route("/games/manager", methods=["DELETE"])
+def delete_manager():
+    """
+    Removes a game manager from the list
+
+    :return: 200 OK if ok
+    """
+    app.games.remove_manager(request.get_json()["token"])
+    return "", 200
 
 
 @app.route("/account/parameters", methods=["POST"])
@@ -124,8 +122,6 @@ def change_account_parameters():
 
     if "name" in request.json:
         current_identity.name = received["name"]
-
-    print(current_identity.color, " ", current_identity.username)
 
     return "", 200
 

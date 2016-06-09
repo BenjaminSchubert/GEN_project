@@ -23,8 +23,6 @@ class ParametersScreen(AutoLoadableScreen):
         """
         modification parameters user account for the specified user
         """
-        print(self.newUserName.text)
-
         self.buttonChangeParameters.disabled = True
 
         parameters = {

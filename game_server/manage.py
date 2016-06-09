@@ -29,8 +29,8 @@ def parse_args(_args):
     server = subparsers.add_parser("runserver", help="Launch server manager", add_help=False)
     server.set_defaults(func=runserver)
     server.add_argument("-?", "--help", action="help")
-    server.add_argument("-h", "--host")
-    server.add_argument("-p", "--port")
+    server.add_argument("-h", "--host", default="127.0.0.1")
+    server.add_argument("-p", "--port", default=5000)
     server.add_argument("-d", "--debug", action="store_true", help="enable the Werkzeug Debugger")
 
     node = subparsers.add_parser("node", help="Launch a new game node", add_help=False)

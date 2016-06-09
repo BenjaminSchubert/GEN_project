@@ -3,6 +3,8 @@
 """
 Game Manager handling
 """
+import requests
+
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
@@ -11,7 +13,6 @@ class GameExistsException(Exception):
     """
     Exception to be raised if a game with the same name already exists
     """
-    pass
 
 
 class GameManager:
@@ -39,7 +40,7 @@ class GameManager:
     games = {}
     managers = []
 
-    def __init__(self, app):
+    def __init__(self, app=None):
         if app is not None:
             self.init_app(app)
 
@@ -61,7 +62,6 @@ class GameManager:
         :param capacity: maximum capacity of the game server
         :raise GameExistsException: if a game with the same name already exists
         """
-        # FIXME : check that max_capacity is positive
         if self.games.get(name) is not None:
             raise GameExistsException()
 
@@ -70,6 +70,58 @@ class GameManager:
     def add_manager(self, **kwargs):
         """
         Adds a new game manager
+
         :param kwargs: arguments to define the game manager
         """
+        to_remove = None
+        for manager in self.managers:
+            if manager.host == kwargs["host"] and manager.port == kwargs["port"]:
+                to_remove = manager
+                break
+
+        if to_remove is not None:
+            self.managers.remove(to_remove)
+
         self.managers.append(self.Manager(**kwargs))
+
+    def remove_manager(self, token):
+        """
+        removes the given manager from the list of active managers
+
+        :param token: token identifying the manager
+        """
+        to_remove = None
+        for manager in self.managers:
+            if manager.token == token:
+                to_remove = manager
+                break
+
+        if to_remove is not None:
+            self.managers.remove(to_remove)
+
+    def create_game(self, data):
+        """
+        creates a new game on the first available game server
+        """
+        for manager in self.managers:
+            if manager.slots < manager.capacity:
+                break
+        else:
+            raise KeyError("Not enough servers to handle a new game")
+
+        data["token"] = manager.token
+
+        name = data.get("name", None)
+        if name is None:
+            raise KeyError("Need a name")
+
+        for game in self.games.values():
+            if game["name"] == name:
+                raise KeyError("A server with the given name already exists")
+
+        r = requests.post("http://{}:{}/games".format(manager.host, manager.port), json=data)
+
+        if r.status_code != requests.codes.ok:
+            raise KeyError(r.json())
+
+        manager.slots += 1

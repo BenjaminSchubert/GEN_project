@@ -3,6 +3,7 @@
 <CreateGameScreen>:
 
     game_name: game_name
+    capacity: capacity
     map_width: map_width
     map_height: map_height
     min_radius: min_radius
@@ -25,6 +26,15 @@
         TextInput:
             id: game_name
             multiline: False
+            hint_text: root.DEFAULT_NAME
+
+        Label:
+            text: "Number of players:"
+
+        TextInput:
+            id: capacity
+            multiline: False
+            hint_text: root.DEFAULT_CAPACITY
 
         Label:
             text: "Map width:"
