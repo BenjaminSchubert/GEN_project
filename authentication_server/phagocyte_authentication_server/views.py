@@ -53,7 +53,7 @@ def games():
     """
     Get the list of all games available
     """
-    return jsonify(app.games.games)
+    return jsonify({game.name: game.to_json() for game in app.games.games.values()})
 
 
 @app.route("/games", methods=["POST"])
@@ -74,8 +74,17 @@ def register_server():
 
     :return: 200 OK
     """
-    # FIXME : check that there are no name clashes
-    app.games.add_game(request.json["ip"], request.json["port"], request.json["name"], request.json["capacity"])
+    app.games.add_game(**request.json)
+    return "", 200
+
+
+@app.route("/games/server", methods=["DELETE"])
+def delete_game():
+    """ removes the given game from the list of available games """
+    try:
+        app.games.remove_game(**request.json)
+    except KeyError as e:
+        return jsonify(error=str(e)), 400
     return "", 200
 
 
@@ -87,13 +96,8 @@ def register_manager():
     :return: token for authentication and information on which server to create if needed
     """
     token = str(uuid.uuid4())
-    data = {"token": token}
     app.games.add_manager(token=token, **request.json)
-    if len(app.games.games) < 1:
-        data["create"] = True
-        data["name"] = "Main"
-        data["capacity"] = 200
-    return jsonify(data)
+    return jsonify({"token": token})
 
 
 @app.route("/games/manager", methods=["DELETE"])
