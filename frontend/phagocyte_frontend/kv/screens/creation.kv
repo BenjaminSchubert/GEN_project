@@ -12,99 +12,103 @@
     food_production_rate: food_production_rate
     max_hit_count: max_hit_count
 
-    GridLayout:
-        cols: 2
-        padding: 20
-        spacing: 30
+    ScrollView:
 
-        row_default_height: 35
-        row_force_default: True
+        GridLayout:
+            cols: 2
+            padding: 20
+            spacing: 30
+            size_hint_y: None
+            height: self.minimum_height
 
-        Label:
-            text: "Game name:"
+            row_default_height: 35
+            row_force_default: True
 
-        TextInput:
-            id: game_name
-            multiline: False
-            hint_text: root.DEFAULT_NAME
+            Label:
+                text: "Game name:"
 
-        Label:
-            text: "Number of players:"
+            TextInput:
+                id: game_name
+                multiline: False
+                hint_text: root.DEFAULT_NAME
 
-        TextInput:
-            id: capacity
-            multiline: False
-            hint_text: root.DEFAULT_CAPACITY
+            Label:
+                text: "Number of players:"
 
-        Label:
-            text: "Map width:"
+            TextInput:
+                id: capacity
+                multiline: False
+                hint_text: root.DEFAULT_CAPACITY
 
-        TextInput:
-            id: map_width
-            multiline: False
-            input_filter: "int"
-            hint_text: root.DEFAULT_MAP_WIDTH
+            Label:
+                text: "Map width:"
 
-        Label:
-            text: "Map height:"
+            TextInput:
+                id: map_width
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_MAP_WIDTH
 
-        TextInput:
-            id: map_height
-            multiline: False
-            input_filter: "int"
-            hint_text: root.DEFAULT_MAP_HEIGHT
+            Label:
+                text: "Map height:"
 
-        Label:
-            text: "Min phagocyte radius:"
+            TextInput:
+                id: map_height
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_MAP_HEIGHT
 
-        TextInput:
-            id: min_radius
-            multiline: False
-            input_filter: "int"
-            hint_text: root.DEFAULT_MIN_RADIUS
+            Label:
+                text: "Min phagocyte radius:"
 
-        Label:
-            text: "Max phagocyte speed:"
+            TextInput:
+                id: min_radius
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_MIN_RADIUS
 
-        TextInput:
-            id: max_speed
-            multiline: False
-            input_filter: "int"
-            hint_text: root.DEFAULT_MAX_SPEED
+            Label:
+                text: "Max phagocyte speed:"
 
-        Label:
-            text: "Eat ratio:"
+            TextInput:
+                id: max_speed
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_MAX_SPEED
 
-        TextInput:
-            id: eat_ratio
-            multiline: False
-            input_filter: 'float'
-            hint_text: root.DEFAULT_EAT_RATIO
+            Label:
+                text: "Eat ratio:"
 
-        Label:
-            text: "Food production rate:"
+            TextInput:
+                id: eat_ratio
+                multiline: False
+                input_filter: 'float'
+                hint_text: root.DEFAULT_EAT_RATIO
 
-        TextInput:
-            id: food_production_rate
-            multiline: False
-            input_filter: "int"
-            hint_text: root.DEFAULT_MAP_WIDTH
+            Label:
+                text: "Food production rate:"
 
-        Label:
-            text: "Max hit count:"
+            TextInput:
+                id: food_production_rate
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_MAP_WIDTH
 
-        TextInput:
-            id: max_hit_count
-            multiline: False
-            input_filter: "int"
-            hint_text: root.DEFAULT_MAX_HIT_COUNT
+            Label:
+                text: "Max hit count:"
 
-        Button:
-            text: "Cancel"
-            size_hint: 1, 0.3
-            on_release: root.manager.main_screen()
+            TextInput:
+                id: max_hit_count
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_MAX_HIT_COUNT
 
-        Button:
-            text: "Validate"
-            size_hint: 1, 0.3
-            on_release: root.game_creation()
+            Button:
+                text: "Cancel"
+                size_hint: 1, 0.3
+                on_release: root.manager.main_screen()
+
+            Button:
+                text: "Validate"
+                size_hint: 1, 0.3
+                on_release: root.game_creation()
