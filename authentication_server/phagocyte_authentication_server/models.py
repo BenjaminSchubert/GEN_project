@@ -8,9 +8,9 @@ import hashlib
 import os
 import random
 
-from sqlalchemy import Column, INTEGER, BINARY, VARCHAR
+from sqlalchemy import Column, INTEGER, FLOAT, BINARY, VARCHAR, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from phagocyte_authentication_server.sqlalchemy_session import SQLAlchemy
 
@@ -44,8 +44,7 @@ class User(Base):
     salt = Column(BINARY(255), nullable=False)
     color = Column(VARCHAR(6), default=random_color)
 
-    level = Column(INTEGER, default=1)
-    xp = Column(INTEGER, default=0)
+    stats = relationship("Stats", uselist=False, back_populates="user", cascade="delete")
 
     def hash_password(self, password: str) -> bytes:
         """
@@ -85,6 +84,27 @@ class User(Base):
         :return: dictionary to send to the user
         """
         return {
+            "uid": self.id,
             "username": self.username,
             "color": self.color,
         }
+
+
+class Stats(Base):
+    """
+    Statistics model for various information about users
+    """
+    __tablename__ = "statistics"
+
+    id = Column(INTEGER, ForeignKey('user.id'), primary_key=True)
+    user = relationship("User", back_populates="stats")
+    games_played = Column(INTEGER, default=0)
+    games_won = Column(INTEGER, default=0)
+    deaths = Column(INTEGER, default=0)
+    players_eaten = Column(INTEGER, default=0)
+    matter_lost = Column(FLOAT, default=0)
+    matter_absorbed = Column(FLOAT, default=0)
+    bonuses_taken = Column(INTEGER, default=0)
+    bullets_shot = Column(INTEGER, default=0)
+    successful_hooks = Column(INTEGER, default=0)
+    time_played = Column(FLOAT, default=0)

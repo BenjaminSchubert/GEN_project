@@ -97,6 +97,7 @@ class Player(RandomPositionedGameObject):
     """
     Represents a player in the game
 
+    :param uid: the unique id of the player
     :param name: name of the player
     :param color: color used to represent the player
     :param radius: radius of the disc representing the player
@@ -105,10 +106,11 @@ class Player(RandomPositionedGameObject):
     """
     __slots__ = [
         "name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback",
-        "hook", "grabbed_x", "grabbed_y", "timestamp"
+        "hook", "grabbed_x", "grabbed_y", "timestamp", "uid", "matter_gained", "matter_lost", "players_eaten",
+        "bonuses_taken", "bullets_shot", "successful_hooks", "start_time"
     ]
 
-    def __init__(self, name: str, color: str, radius: float, max_x: int, max_y: int):
+    def __init__(self, uid: int, name: str, color: str, radius: float, max_x: int, max_y: int):
         super().__init__(radius, max_x, max_y)
         self.initial_size = self.size  # type: int
         self.name = name  # type: str
@@ -123,6 +125,15 @@ class Player(RandomPositionedGameObject):
         self.grabbed_y = 0  # type: float
         self.timestamp = time.time()
 
+        self.uid = uid  # type: int
+        self.matter_gained = 0  # type: float
+        self.matter_lost = 0  # type: float
+        self.players_eaten = 0  # type: int
+        self.bonuses_taken = 0  # type: int
+        self.bullets_shot = 0  # type: int
+        self.successful_hooks = 0  # type: int
+        self.start_time = time.time()  # type: float
+
     def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
         return {
@@ -133,6 +144,20 @@ class Player(RandomPositionedGameObject):
             "size": self.size,
             "bonus": self.bonus,
             "hook": self.hook.to_json() if self.hook is not None else self.hook
+        }
+
+    def get_stats(self, died=False, won=False) -> json_object:
+        """ get the statistics about the current player """
+        return {
+            "death": died,
+            "won": won,
+            "eaten": self.players_eaten,
+            "matter_lost": self.matter_lost,
+            "matter_gained": self.matter_gained,
+            "bonuses_taken": self.bonuses_taken,
+            "bullets_shot": self.bullets_shot,
+            "successful_hooks": self.successful_hooks,
+            "time_played": time.time() - self.start_time
         }
 
     def update_size(self, obj: RoundGameObject):
@@ -147,6 +172,8 @@ class Player(RandomPositionedGameObject):
 
         self.update_radius((self.radius ** 2 + gain) ** 0.5)
         self.max_speed = 50 * self.initial_size / self.size ** 0.5
+
+        self.matter_gained += gain
 
     def collides_with(self, obj: GameObject) -> bool:
         """
@@ -168,6 +195,8 @@ class Bullet(RoundGameObject):
     def __init__(self, angle: float, player: Player):
         size = player.size / 100
         player.size -= size
+        player.matter_lost += size
+        player.bullets_shot += 1
 
         if player.bonus == BonusTypes.POWERUP:
             size *= 2

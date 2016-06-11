@@ -10,12 +10,13 @@ import uuid
 
 import jwt
 import sqlalchemy.exc
+import sqlalchemy.orm
 from flask import request, jsonify, make_response
 from flask_jwt import jwt_required, current_identity
 
 from phagocyte_authentication_server import app
 from phagocyte_authentication_server.auth import identity
-from phagocyte_authentication_server.models import User, db
+from phagocyte_authentication_server.models import User, db, Stats
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
@@ -28,14 +29,18 @@ def create_user():
     """
     data = request.get_json()
     user = User(username=data["username"], password=data["password"])
+    user.stats = Stats()
     try:
         db.session.add(user)
+        db.session.add(user.stats)
         db.session.commit()
     except sqlalchemy.exc.IntegrityError:
         return make_response(jsonify(error="user with the same name already exists"), 409)
 
+    return "", 200
 
-@app.route("/validate", methods=["POST"])
+
+@app.route("/account/validate", methods=["POST"])
 def validate_token():
     """
     Validates the token and send back the user's name and color
@@ -139,3 +144,34 @@ def get_account_parameters():
     :return: the account info as json.
     """
     return jsonify(current_identity.as_dict)
+
+
+@app.route("/account/<uid>", methods=["POST"])
+def update_statistics(uid):
+    """
+    Updates the statistics for the given player
+    """
+    try:
+        stats = db.session.query(User).filter(User.id == uid).one().stats
+    except sqlalchemy.orm.exc.NoResultFound:
+        return jsonify(error="user does not exist"), 404
+
+    stats.bullets_shot += request.json["bullets_shot"]
+    stats.matter_absorbed += request.json["matter_gained"]
+    stats.bonuses_taken += request.json["bonuses_taken"]
+    stats.time_played += request.json["time_played"]
+    stats.matter_lost += request.json["matter_lost"]
+    stats.successful_hooks += request.json["successful_hooks"]
+    stats.players_eaten += request.json["eaten"]
+
+    stats.games_played += 1
+
+    if request.json["won"]:
+        stats.games_won += 1
+
+    if request.json["death"]:
+        stats.deaths += 1
+
+    db.session.commit()
+
+    return "", 200

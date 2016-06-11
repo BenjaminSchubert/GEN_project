@@ -33,7 +33,6 @@ app.config.from_pyfile(app.config["CONFIG_PATH"])
 # Database setup
 db.init_app(app)
 
-# Create database TODO : remove this once a real database with Postgre or MySQL is implemented
 with app.app_context():
     Base.metadata.create_all(db.engine)
 
