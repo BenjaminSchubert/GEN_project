@@ -4,7 +4,7 @@ from math import atan2
 import time
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.properties import NumericProperty, ListProperty
+from kivy.properties import NumericProperty, ListProperty, ObjectProperty
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
@@ -66,6 +66,8 @@ class Player(BoundedWidget):
             return
         elif self.bonus == BonusTypes.SHIELD:
             self.remove_widget(self.shield)
+            # todo : to correct
+            GameInstance.bonus_label.text = "voila un test"
 
         if bonus == BonusTypes.SHIELD:
             self.add_widget(self.shield)
@@ -273,6 +275,8 @@ class GameInstance(Widget):
     MAX_SIZE = 1000
     scale_ratio_util = NumericProperty(0)
     server = None
+    # todo : to correct
+    bonus_label = ObjectProperty(None)
 
     best_players = ListProperty(["Test1", "Test2"])
 

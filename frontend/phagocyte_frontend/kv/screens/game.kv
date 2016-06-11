@@ -83,6 +83,7 @@
     map: map
     root: root
     health_bar: health_bar
+    bonus_label: bonus_label
 
     size: root.size
 
@@ -114,6 +115,12 @@
         value: (self.parent.world.main_player.size[0] - self.parent.world.main_player.initial_size) / (self.parent.MAX_SIZE - self.parent.world.main_player.initial_size) * 100
         pos: self.parent.width - game_object.width/4 - 50, self.parent.height - 80
         width: game_object.width/4
+
+    Label:
+        id: bonus_label
+        text: "test"
+        pos: self.parent.health_bar.x - 200, self.parent.health_bar.y
+        color: [1, 1, 1, 1]
 
     Label:
         size: self.texture_size
