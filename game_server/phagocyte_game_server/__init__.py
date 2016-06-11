@@ -441,9 +441,11 @@ class GameProtocol(DatagramProtocol):
 
                     if eaten.uid is not None:
                         try:
+                            stats = eaten.get_stats(died=True)
+                            stats["token"] = self.token
                             requests.post(
                                 "{}/account/{}".format(self.url, eaten.uid),
-                                json=eaten.get_stats(died=True)
+                                json=stats
                             )
                         except Exception as e:
                             self.logger.error("Couldn't post stats for player, got" + str(e))
@@ -619,9 +621,11 @@ class GameProtocol(DatagramProtocol):
             if player.uid is None:
                 continue
             try:
+                stats = player.get_stats(won=(player == winner))
+                stats["token"] = self.token
                 requests.post(
                     "{}/account/{}".format(self.url, player.uid),
-                    json=player.get_stats(won=(player == winner))
+                    json=stats
                 )
             except Exception as e:
                 self.logger.error("Couldn't log information for player, got " + str(e))

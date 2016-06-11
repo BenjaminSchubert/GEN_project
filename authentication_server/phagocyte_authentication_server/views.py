@@ -151,18 +151,26 @@ def update_statistics(uid):
     """
     Updates the statistics for the given player
     """
+    _json = request.get_json()
+
+    for manager in app.games.managers:
+        if manager.token == _json["token"]:
+            break
+    else:
+        return jsonify(error="not authenticated"), 401
+
     try:
         stats = db.session.query(User).filter(User.id == uid).one().stats
     except sqlalchemy.orm.exc.NoResultFound:
         return jsonify(error="user does not exist"), 404
 
-    stats.bullets_shot += request.json["bullets_shot"]
-    stats.matter_absorbed += request.json["matter_gained"]
-    stats.bonuses_taken += request.json["bonuses_taken"]
-    stats.time_played += request.json["time_played"]
-    stats.matter_lost += request.json["matter_lost"]
-    stats.successful_hooks += request.json["successful_hooks"]
-    stats.players_eaten += request.json["eaten"]
+    stats.bullets_shot += _json["bullets_shot"]
+    stats.matter_absorbed += _json["matter_gained"]
+    stats.bonuses_taken += _json["bonuses_taken"]
+    stats.time_played += _json["time_played"]
+    stats.matter_lost += _json["matter_lost"]
+    stats.successful_hooks += _json["successful_hooks"]
+    stats.players_eaten += _json["eaten"]
 
     stats.games_played += 1
 
