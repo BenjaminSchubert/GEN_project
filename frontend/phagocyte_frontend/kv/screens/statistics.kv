@@ -1,0 +1,80 @@
+#:kivy 1.9.1
+
+<StatisticsScreen>:
+
+    ScrollView:
+
+        GridLayout:
+            cols: 2
+            padding: 20
+            spacing: 30
+            size_hint_y: None
+            height: self.minimum_height
+
+            row_default_height: 35
+            row_force_default: True
+
+            Label:
+                text: "Games played:"
+
+            Label:
+                text: root.games_played
+
+            Label:
+                text: "Games won:"
+
+            Label:
+                text: root.games_won
+
+            Label:
+                text: "Players eaten:"
+
+            Label:
+                text: root.players_eaten
+
+            Label:
+                text: "Number of times eaten:"
+
+            Label:
+                text: root.deaths
+
+            Label:
+                text: "Matter lost:"
+
+            Label:
+                text: root.matter_lost
+
+            Label:
+                text: "Matter absorbed:"
+
+            Label:
+                text: root.matter_absorbed
+
+            Label:
+                text: "Bonuses taken:"
+
+            Label:
+                text: root.bonuses_taken
+
+            Label:
+                text: "Bullets shot:"
+
+            Label:
+                text: root.bullets_shot
+
+            Label:
+                text: "Hooked successfully:"
+
+            Label:
+                text: root.successful_hooks
+
+            Label:
+                text: "Time played:"
+
+            Label:
+                text: root.time_played
+
+            Button:
+                text: "Go back"
+                size_hint: 1, 0.3
+                on_release: root.manager.main_screen()

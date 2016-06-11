@@ -76,8 +76,7 @@ class User(Base):
         self.salt = os.urandom(255)
         return self.hash_password(value)
 
-    @property
-    def as_dict(self):
+    def to_json(self):
         """
         Transforms the user to a json format
 
@@ -108,3 +107,17 @@ class Stats(Base):
     bullets_shot = Column(INTEGER, default=0)
     successful_hooks = Column(INTEGER, default=0)
     time_played = Column(FLOAT, default=0)
+
+    def to_json(self):
+        return {
+            "games_played": self.games_played,
+            "games_won": self.games_won,
+            "deaths": self.deaths,
+            "players_eaten": self.players_eaten,
+            "matter_lost": self.matter_lost,
+            "matter_absorbed": self.matter_absorbed,
+            "bonuses_taken": self.bonuses_taken,
+            "bullets_shot": self.bullets_shot,
+            "successful_hooks": self.successful_hooks,
+            "time_played": self.time_played
+        }

@@ -50,7 +50,7 @@ def validate_token():
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
         return (jsonify(error="signature expired"), 403)
-    return jsonify(user.as_dict)
+    return jsonify(user.to_json)
 
 
 @app.route("/games", methods=["GET"])
@@ -140,10 +140,17 @@ def change_account_parameters():
 def get_account_parameters():
     """
     Gets the accounts parameters.
-
-    :return: the account info as json.
     """
-    return jsonify(current_identity.as_dict)
+    return jsonify(current_identity.to_json())
+
+
+@app.route("/account/statistics")
+@jwt_required()
+def get_statistics():
+    """
+    gets statistics about this account
+    """
+    return jsonify(current_identity.stats.to_json())
 
 
 @app.route("/account/<uid>", methods=["POST"])

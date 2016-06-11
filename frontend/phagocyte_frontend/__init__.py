@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 
 from kivy.config import Config
+
+from phagocyte_frontend.views.screens.statistics import StatisticsScreen
+
+
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 
@@ -35,5 +39,6 @@ class Phagocyte(App):
         screen_manager.add_widget(ParametersScreen())
         screen_manager.add_widget(GameScreen())
         screen_manager.add_widget(CreateGameScreen())
+        screen_manager.add_widget(StatisticsScreen())
 
         return screen_manager
