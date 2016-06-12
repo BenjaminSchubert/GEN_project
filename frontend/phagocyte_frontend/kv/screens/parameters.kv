@@ -4,23 +4,24 @@
 
 <ParametersScreen>:
     #import
-    newUserName: newUserName
-    newBallColor: newBallColor
-    oldPassword: oldPassword
-    newPassword: newPassword
-    newPasswordConfirmation: newPasswordConfirmation
-    buttonChangeParameters: buttonChangeParameters
-    buttonChangePassword: buttonChangePassword
+    new_user_name: new_user_name
+    new_ball_color: new_ball_color
+    old_password: old_password
+    new_password: new_password
+    new_password_confirmation: new_password_confirmation
+    button_change_parameters: button_change_parameters
+    button_change_password: button_change_password
 
     GridLayout:
         cols: 2
-        spacing: 5
+        padding: 10
+        spacing: 20
 
         Label:
             text: "New user name:"
 
         TextInput:
-            id: newUserName
+            id: new_user_name
             multiline: False
             text: root.username
 
@@ -28,15 +29,15 @@
             text: "New ball color:"
 
         ColorPicker:
-            id: newBallColor
-            size_hint: 1, 4
+            id: new_ball_color
+            size_hint: 1, 4.5
             color: get_color_from_hex(root.color)
 
         BoxLayout:
 
         Button:
-            id: buttonChangeParameters
-            size_hint: 1, 0.3
+            id: button_change_parameters
+            size_hint: 1, 1.2
             text: "Save"
             on_release: root.validate_parameters()
 
@@ -44,7 +45,7 @@
             text: "Old password:"
 
         TextInput:
-            id: oldPassword
+            id: old_password
             password: True
             multiline: False
 
@@ -52,7 +53,7 @@
             text: "New password:"
 
         TextInput:
-            id: newPassword
+            id: new_password
             password: True
             multiline: False
 
@@ -60,17 +61,17 @@
             text: "Confirm new password:"
 
         TextInput:
-            id: newPasswordConfirmation
+            id: new_password_confirmation
             password: True
             multiline: False
 
         Button:
-            size_hint: 1, 0.3
+            size_hint: 1, 1.2
             text: "Cancel"
             on_release: root.manager.main_screen()
 
         Button:
-            id: buttonChangePassword
-            size_hint: 1, 0.3
+            id: button_change_password
+            size_hint: 1, 1.2
             text: "Change password"
             on_release: root.validate_password()

@@ -36,40 +36,42 @@ class ParametersScreen(AutoLoadableScreen):
         """
         modification parameters user account for the specified user
         """
-        self.buttonChangeParameters.disabled = True
+        self.button_change_parameters.disabled = True
 
         parameters = {
-            "color": self.newBallColor.hex_color
+            "color": self.new_ball_color.hex_color
         }
 
-        if self.newUserName.text != "":
-            parameters["name"] = self.newUserName.text
+        if self.new_user_name.text != "":
+            parameters["name"] = self.new_user_name.text
 
         try:
             self.manager.client.post_account_info(**parameters)
         except ConnectionError:
             self.manager.warn("Could not connect to server", title="Error")
+        else:
+            self.manager.warn("Parameters changed", callback=self.manager.main_screen)
 
-        self.buttonChangeParameters.disabled = False
+        self.button_change_parameters.disabled = False
 
     def validate_password(self):
         """
         modification password user account for the specified user
         """
-        self.buttonChangePassword.disabled = True
+        self.button_change_password.disabled = True
 
-        if self.oldPassword.text == "":
+        if self.old_password.text == "":
             self.manager.warn("Old password can't be emtpy", title="Error")
-        elif self.newPassword.text == "":
+        elif self.new_password.text == "":
             self.manager.warn("New password can't be emtpy", title="Error")
-        elif self.newPasswordConfirmation.text == "":
+        elif self.new_password_confirmation.text == "":
             self.manager.warn("New password confirmation can't be empty", title="Error")
-        elif self.newPassword.text != self.newPasswordConfirmation.text:
+        elif self.new_password.text != self.new_password_confirmation.text:
             self.manager.warn("New password doesn't match the confirmation", title="Error")
         else:
             password = {
-                "old_password": self.oldPassword.text,
-                "new_password": self.newPassword.text
+                "old_password": self.old_password.text,
+                "new_password": self.new_password.text
             }
 
             try:
@@ -78,5 +80,7 @@ class ParametersScreen(AutoLoadableScreen):
                 self.manager.warn(str(e), title="Error")
             except ConnectionError:
                 self.manager.warn("Could not connect to server", title="Error")
+            else:
+                self.manager.warn("Parameters changed", callback=self.manager.main_screen)
 
-        self.buttonChangePassword.disabled = False
+        self.button_change_password.disabled = False
