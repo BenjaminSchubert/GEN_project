@@ -83,7 +83,6 @@
     map: map
     root: root
     health_bar: health_bar
-    bonus_label: bonus_label
 
     size: root.size
 
@@ -117,8 +116,7 @@
         width: game_object.width/4
 
     Label:
-        id: bonus_label
-        text: "test"
+        text: root.bonus_label
         pos: self.parent.health_bar.x - 200, self.parent.health_bar.y
         color: [1, 1, 1, 1]
 

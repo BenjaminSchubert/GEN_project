@@ -4,10 +4,9 @@ from math import atan2
 import time
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty
+from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
-
 
 @enum.unique
 class BonusTypes(enum.IntEnum):
@@ -66,8 +65,8 @@ class Player(BoundedWidget):
             return
         elif self.bonus == BonusTypes.SHIELD:
             self.remove_widget(self.shield)
-            # todo : to correct
-            GameInstance.bonus_label.text = "voila un test"
+            # FIXME access to the game instance
+            # game_instance.bonus_label = "Shield"
 
         if bonus == BonusTypes.SHIELD:
             self.add_widget(self.shield)
@@ -275,9 +274,8 @@ class GameInstance(Widget):
     MAX_SIZE = 1000
     scale_ratio_util = NumericProperty(0)
     server = None
-    # todo : to correct
-    bonus_label = ObjectProperty(None)
 
+    bonus_label = StringProperty("")
     best_players = ListProperty(["Test1", "Test2"])
 
     def __init__(self, **kwargs):
@@ -358,6 +356,10 @@ class GameInstance(Widget):
             dead = self.world.players.pop(death)
             if dead:
                 self.world.remove_widget(dead)
+
+        # FIXME should be elsewhere (update_state is not called when 1 player is playing)
+        #print(list(self.world.players.values()).sort(key=lambda x: x.size[0], reverse=True))
+        #self.best_players = list(self.world.players.values()).sort(key=lambda x : x.size[0], reverse=True)
 
     def update_food(self, new, deleted):
         for entry in new:
