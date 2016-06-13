@@ -12,8 +12,13 @@ import twisted.internet
 import phagocyte_frontend.network.twisted_reactor
 from phagocyte_frontend.exceptions import CredentialsException
 
+# starting twisted hack to fix the reactor used in kivy
+import sys
+if 'twisted.internet.reactor' in sys.modules:
+    del sys.modules['twisted.internet.reactor']
 
 twisted.internet._threadedselect = phagocyte_frontend.network.twisted_reactor
+# end twisted hack to fix the reactor used in kivy
 
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()

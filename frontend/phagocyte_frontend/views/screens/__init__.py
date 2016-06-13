@@ -6,13 +6,13 @@ from abc import ABCMeta
 from configparser import ConfigParser, Error
 from functools import partial
 import os
+from kivy import Logger
 
 from kivy.lang import Builder
-from kivy.logger import Logger
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from phagocyte_frontend.network.authentication import Client
-from phagocyte_frontend.views import KV_DIRECTORY
+from phagocyte_frontend.views import resource_path
 from phagocyte_frontend.views.popups import InfoPopup
 
 
@@ -28,7 +28,7 @@ class AutoLoadableScreen(Screen):
     __metaclass__ = ABCMeta
 
     def __init__(self, **kwargs):
-        Builder.load_file(os.path.join(KV_DIRECTORY, "screens/{name}.kv").format(name=self.screen_name))
+        Builder.load_file(os.path.join(resource_path(), "screens/{name}.kv").format(name=self.screen_name))
         super(Screen, self).__init__(**kwargs)
         self.name = self.screen_name
 
@@ -37,13 +37,14 @@ class PhagocyteScreenManager(ScreenManager):
     """
     Screen manager for the application
 
+    :param config_parser: config parser used to get information
     :param kwargs: additional keyword arguments
     """
     info_popup = InfoPopup()
 
-    def __init__(self, **kwargs):
+    def __init__(self, config_parser: ConfigParser, **kwargs):
         super().__init__(**kwargs)
-        self.config_parser = ConfigParser()
+        self.config_parser = config_parser
         self.callback = None
 
         try:

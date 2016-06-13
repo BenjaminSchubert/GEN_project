@@ -28,13 +28,17 @@ class Phagocyte(App):
     """
     main kivy application
     """
+    def __init__(self, config_parser, **kwargs):
+        super().__init__(**kwargs)
+        self.config_parser = config_parser
+
     def build(self) -> PhagocyteScreenManager:
         """
         Load all needed screens into the screen manager
 
         :return: the screen manager
         """
-        screen_manager = PhagocyteScreenManager()
+        screen_manager = PhagocyteScreenManager(self.config_parser)
         screen_manager.add_widget(LobbyScreen())
         screen_manager.add_widget(LoginScreen())
         screen_manager.add_widget(RegisterScreen())
