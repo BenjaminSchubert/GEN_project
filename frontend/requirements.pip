@@ -4,6 +4,5 @@ requests
 cython
 kivy
 pyenchant
-cv2
 pillow
 hg+http://bitbucket.org/pygame/pygame
