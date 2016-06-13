@@ -10,12 +10,13 @@ import uuid
 
 import jwt
 import sqlalchemy.exc
+import sqlalchemy.orm
 from flask import request, jsonify, make_response
 from flask_jwt import jwt_required, current_identity
 
 from phagocyte_authentication_server import app
 from phagocyte_authentication_server.auth import identity
-from phagocyte_authentication_server.models import User, db
+from phagocyte_authentication_server.models import User, db, Stats
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
@@ -28,14 +29,18 @@ def create_user():
     """
     data = request.get_json()
     user = User(username=data["username"], password=data["password"])
+    user.stats = Stats()
     try:
         db.session.add(user)
+        db.session.add(user.stats)
         db.session.commit()
     except sqlalchemy.exc.IntegrityError:
         return make_response(jsonify(error="user with the same name already exists"), 409)
 
+    return "", 200
 
-@app.route("/validate", methods=["POST"])
+
+@app.route("/account/validate", methods=["POST"])
 def validate_token():
     """
     Validates the token and send back the user's name and color
@@ -45,7 +50,7 @@ def validate_token():
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
         return (jsonify(error="signature expired"), 403)
-    return jsonify(user.as_dict)
+    return jsonify(user.to_json())
 
 
 @app.route("/games", methods=["GET"])
@@ -135,7 +140,53 @@ def change_account_parameters():
 def get_account_parameters():
     """
     Gets the accounts parameters.
-
-    :return: the account info as json.
     """
-    return jsonify(current_identity.as_dict)
+    return jsonify(current_identity.to_json())
+
+
+@app.route("/account/statistics")
+@jwt_required()
+def get_statistics():
+    """
+    gets statistics about this account
+    """
+    return jsonify(current_identity.stats.to_json())
+
+
+@app.route("/account/<uid>", methods=["POST"])
+def update_statistics(uid):
+    """
+    Updates the statistics for the given player
+    """
+    _json = request.get_json()
+
+    for manager in app.games.managers:
+        if manager.token == _json["token"]:
+            break
+    else:
+        return jsonify(error="not authenticated"), 401
+
+    try:
+        stats = db.session.query(User).filter(User.id == uid).one().stats
+    except sqlalchemy.orm.exc.NoResultFound:
+        return jsonify(error="user does not exist"), 404
+
+    stats.bullets_shot += _json["bullets_shot"]
+    stats.matter_absorbed += _json["matter_gained"]
+    stats.bonuses_taken += _json["bonuses_taken"]
+    stats.time_played += _json["time_played"]
+    stats.matter_lost += _json["matter_lost"]
+    stats.successful_hooks += _json["successful_hooks"]
+    stats.players_eaten += _json["eaten"]
+
+    stats.games_played += 1
+
+    if request.json["won"]:
+        stats.games_won += 1
+
+    if request.json["death"]:
+        stats.deaths += 1
+
+    db.session.commit()
+
+    return "", 200

@@ -40,7 +40,7 @@ class GameScreen(AutoLoadableScreen):
         game = self.manager.get_screen(LobbyScreen.screen_name).game_list.selection[0]
 
         self.game_instance = GameInstance()
-        REACTOR.listenUDP(0, NetworkGameClient(game.ip, game.port, self.manager.client.token, self.game_instance))
+        REACTOR.listenUDP(0, NetworkGameClient(game.ip, game.port, self.manager.client, self.game_instance))
 
         self.add_widget(self.game_instance)
 

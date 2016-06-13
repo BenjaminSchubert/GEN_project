@@ -12,6 +12,7 @@ from phagocyte_frontend.views.screens import AutoLoadableScreen
 from phagocyte_frontend.views.screens.login import LoginScreen
 from phagocyte_frontend.views.screens.parameters import ParametersScreen
 from phagocyte_frontend.views.screens.register import RegisterScreen
+from phagocyte_frontend.views.screens.statistics import StatisticsScreen
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
@@ -107,6 +108,15 @@ class LobbyScreen(AutoLoadableScreen):
             self.manager.warn("You need to be connected", title="Error")
         else:
             self.manager.current = ParametersScreen.screen_name
+
+    def user_statistics_process(self):
+        """
+        shows the user's statistics
+        """
+        if not self.manager.client.is_logged_in():
+            self.manager.warn("You need to be connected", title="Error")
+        else:
+            self.manager.current = StatisticsScreen.screen_name
 
     def play(self):
         self.manager.current = "game"

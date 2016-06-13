@@ -63,7 +63,7 @@ class AuthenticationError(Exception):
     :param msg: information about the error
     """
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: Dict):
         self.msg = msg
 
 
@@ -176,7 +176,7 @@ class GameProtocol(DatagramProtocol):
 
         task.LoopingCall(self.check_usage).start(60)
 
-    def authenticate(self, token: str) -> Tuple[str, str]:
+    def authenticate(self, token: str) -> Tuple[str, str, str]:
         """
         tries to authenticate the user against the authentication server
 
@@ -184,9 +184,9 @@ class GameProtocol(DatagramProtocol):
         :raise AuthenticationError: if authentication failed
         :return: name and color of the user as returned by the authentication server
         """
-        r = requests.post(self.url + "/validate", json=dict(token=token))
+        r = requests.post(self.url + "/account/validate", json=dict(token=token))
         if r.status_code == requests.codes.ok:
-            return r.json()["username"], r.json()["color"]
+            return r.json()["uid"], r.json()["username"], r.json()["color"]
 
         raise AuthenticationError(r.json())
 
@@ -205,12 +205,13 @@ class GameProtocol(DatagramProtocol):
         elif data.get("token") is None:
             color = random_color()
             name = data.get("name", str(uuid.uuid4()))
+            uid = None
         else:
             try:
-                name, color = self.authenticate(data.get("token"))
+                uid, name, color = self.authenticate(data.get("token"))
             except AuthenticationError as e:
                 self.logger.warning("User from {addr} tried to register with invalid token".format(addr=addr))
-                self.send_to(addr, dict(event=Event.ERROR, error=e.msg))
+                self.send_to(addr, dict(event=Event.ERROR, error=e.msg["error"], previous=Event.TOKEN))
                 return
 
         for player in self.players.values():
@@ -227,7 +228,7 @@ class GameProtocol(DatagramProtocol):
                     break
         else:
             self.logger.debug("Registered new user {name}".format(name=name))
-            client = Player(name, color, self.default_radius, self.max_x, self.max_y)
+            client = Player(uid, name, color, self.default_radius, self.max_x, self.max_y)
 
         self.send_to(addr, dict(
             event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
@@ -340,6 +341,7 @@ class GameProtocol(DatagramProtocol):
 
                             if player.size >= player.initial_size:
                                 lost_size = player.size / 3
+                                player.matter_lost += lost_size
                                 player.size = max(player.initial_size, player.size - lost_size)
                                 player.radius = player.size / 2
                                 self.throw_food(int(lost_size), player.x, player.y, player.radius)
@@ -437,10 +439,19 @@ class GameProtocol(DatagramProtocol):
                     eater.update_size(eaten)
                     deaths.add(eaten_addr)
 
+                    if eaten.uid is not None:
+                        try:
+                            stats = eaten.get_stats(died=True)
+                            stats["token"] = self.token
+                            requests.post(
+                                "{}/account/{}".format(self.url, eaten.uid),
+                                json=stats
+                            )
+                        except Exception as e:
+                            self.logger.error("Couldn't post stats for player, got" + str(e))
+
                     if eater.size > self.win_size:
                         self.win(eater)
-
-                    # FIXME : notify auth server for scores and so on
 
         corpses = []
         for death in deaths:
@@ -497,6 +508,7 @@ class GameProtocol(DatagramProtocol):
                     player.bonus = bonus.bonus
                     player.bonus_callback = reactor.callLater(10, bonus_timeout, player)
                     deletions.append(bonus.to_json())
+                    player.bonuses_taken += 1
                     break
             else:
                 self.bonuses.append(bonus)
@@ -521,6 +533,7 @@ class GameProtocol(DatagramProtocol):
                     if player2.collides_with(hook):
                         hook.hooked_player = player2
                         hook.moves = 0
+                        player1.successful_hooks += 1
                         break
 
                 else:
@@ -593,16 +606,29 @@ class GameProtocol(DatagramProtocol):
         if len(self.players) == 0 and self.finished:
             self.close()
 
-    def win(self, player: Player):
+    def win(self, winner: Player):
         """
         notify all players that a player has won
 
-        :param player: player that won
+        :param winner: player that won
         """
         self.finished = True
-        self.winning_player = player.name
+        self.winning_player = winner.name
 
-        self.send_all_players(dict(event=Event.FINISHED, win=player.name))
+        self.send_all_players(dict(event=Event.FINISHED, win=winner.name))
+
+        for player in self.players.values():
+            if player.uid is None:
+                continue
+            try:
+                stats = player.get_stats(won=(player == winner))
+                stats["token"] = self.token
+                requests.post(
+                    "{}/account/{}".format(self.url, player.uid),
+                    json=stats
+                )
+            except Exception as e:
+                self.logger.error("Couldn't log information for player, got " + str(e))
 
     def check_usage(self):
         """
@@ -618,7 +644,7 @@ class GameProtocol(DatagramProtocol):
         """
         Shuts down the system and unregisters it
         """
-        if len(self.players) != 0:
+        if len(self.players) != 0 and self.closing_call is not None:
             self.closing_call.cancel()
             self.closing_call = None
             return

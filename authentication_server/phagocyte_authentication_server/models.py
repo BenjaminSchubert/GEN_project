@@ -8,9 +8,9 @@ import hashlib
 import os
 import random
 
-from sqlalchemy import Column, INTEGER, BINARY, VARCHAR
+from sqlalchemy import Column, INTEGER, FLOAT, BINARY, VARCHAR, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from phagocyte_authentication_server.sqlalchemy_session import SQLAlchemy
 
@@ -44,8 +44,7 @@ class User(Base):
     salt = Column(BINARY(255), nullable=False)
     color = Column(VARCHAR(6), default=random_color)
 
-    level = Column(INTEGER, default=1)
-    xp = Column(INTEGER, default=0)
+    stats = relationship("Stats", uselist=False, back_populates="user", cascade="delete")
 
     def hash_password(self, password: str) -> bytes:
         """
@@ -77,14 +76,48 @@ class User(Base):
         self.salt = os.urandom(255)
         return self.hash_password(value)
 
-    @property
-    def as_dict(self):
+    def to_json(self):
         """
         Transforms the user to a json format
 
         :return: dictionary to send to the user
         """
         return {
+            "uid": self.id,
             "username": self.username,
             "color": self.color,
+        }
+
+
+class Stats(Base):
+    """
+    Statistics model for various information about users
+    """
+    __tablename__ = "statistics"
+
+    id = Column(INTEGER, ForeignKey('user.id'), primary_key=True)
+    user = relationship("User", back_populates="stats")
+    games_played = Column(INTEGER, default=0)
+    games_won = Column(INTEGER, default=0)
+    deaths = Column(INTEGER, default=0)
+    players_eaten = Column(INTEGER, default=0)
+    matter_lost = Column(FLOAT, default=0)
+    matter_absorbed = Column(FLOAT, default=0)
+    bonuses_taken = Column(INTEGER, default=0)
+    bullets_shot = Column(INTEGER, default=0)
+    successful_hooks = Column(INTEGER, default=0)
+    time_played = Column(FLOAT, default=0)
+
+    def to_json(self):
+        return {
+            "games_played": self.games_played,
+            "games_won": self.games_won,
+            "deaths": self.deaths,
+            "players_eaten": self.players_eaten,
+            "matter_lost": self.matter_lost,
+            "matter_absorbed": self.matter_absorbed,
+            "bonuses_taken": self.bonuses_taken,
+            "bullets_shot": self.bullets_shot,
+            "successful_hooks": self.successful_hooks,
+            "time_played": self.time_played
         }

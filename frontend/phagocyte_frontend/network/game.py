@@ -9,6 +9,7 @@ import json
 import twisted.internet
 
 import phagocyte_frontend.network.twisted_reactor
+from phagocyte_frontend.exceptions import CredentialsException
 
 
 twisted.internet._threadedselect = phagocyte_frontend.network.twisted_reactor
@@ -18,6 +19,8 @@ install_twisted_reactor()
 
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
+
+from kivy.logger import Logger
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 
@@ -46,15 +49,16 @@ class NetworkGameClient(DatagramProtocol):
 
     :param host: the ip of the server
     :param port: the port of the server
-    :param token: the token of the client
+    :param auth_client: the client handling authentication
     """
     name = None
 
-    def __init__(self, host, port, token, game):
+    def __init__(self, host, port, auth_client, game):
         self.host = host
         self.port = port
-        self.token = token
+        self.auth_client = auth_client
         self.game = game
+        self.tried_connection = False
 
     def startProtocol(self):
         """
@@ -90,17 +94,25 @@ class NetworkGameClient(DatagramProtocol):
             self.send_dict(event=Event.FINISHED)
             self.game.handle_win(data.get("win"))
         elif event_type == Event.ERROR:
-            print("Error: ", data)  # FIXME
+            if data.get("previous") == Event.TOKEN:
+                if not self.tried_connection:
+                    self.auth_client.login()
+                    self.send_token()
+                    self.tried_connection = True
+                else:
+                    raise CredentialsException(data.get("error"))
+
+            Logger.error(datagram)
         elif event_type is None:
-            print("The datagram doesn't have any event: ", data)
+            Logger.error("The datagram doesn't have any event: ", datagram)
         else:
-            print("Unhandled event type : data is ", data)
+            Logger.error("Unhandled event type : data is ", datagram)
 
     def send_token(self):
         """
         Sends the token to the server.
         """
-        self.send_dict(event=Event.TOKEN, token=self.token)
+        self.send_dict(event=Event.TOKEN, token=self.auth_client.token)
 
     def send_state(self, position):
         """

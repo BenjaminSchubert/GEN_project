@@ -9,7 +9,7 @@ import requests
 from kivy.logger import Logger
 
 from phagocyte_frontend.exceptions import CredentialsException
-from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, PARAMETERS_PATH, GAMES_PATH
+from phagocyte_frontend.network.api import REGISTER_PATH, AUTH_PATH, PARAMETERS_PATH, GAMES_PATH, STATISTICS_PATH
 
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
@@ -115,13 +115,19 @@ class Client:
         if r.status_code == requests.codes.conflict:
             raise CredentialsException("The user already exists")
 
-    def login(self, username, password):
+    def login(self, username=None, password=None):
         """
         Logs in the user using his username and password.
 
         :param username: the username to use.
         :param password: the password to use.
         """
+        if username is None:
+            username = self.username
+
+        if password is None:
+            password = self.password
+
         r = self.post_json(AUTH_PATH, **self.create_credentials_data(username, password))
 
         if r.status_code < 400:
@@ -159,9 +165,15 @@ class Client:
 
     def get_account_info(self):
         """
-        Fetches the accounts info and returns them as a dict.
+        Fetches the accounts info and returns them.
         """
         return self.get_json_as_dict(PARAMETERS_PATH)
+
+    def get_account_statistics(self):
+        """
+        Fetches the statistics for the player and returns them
+        """
+        return self.get_json_as_dict(STATISTICS_PATH)
 
     def get_games(self):
         """

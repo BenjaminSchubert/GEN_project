@@ -11,3 +11,8 @@ __pycache__
 
 # database stuff
 *.db
+
+
+# build files
+build/
+dist/
