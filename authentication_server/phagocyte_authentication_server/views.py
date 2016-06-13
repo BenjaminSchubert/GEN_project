@@ -50,7 +50,7 @@ def validate_token():
         user = identity(app.extensions["jwt"].jwt_decode_callback(token))
     except jwt.exceptions.ExpiredSignatureError:
         return (jsonify(error="signature expired"), 403)
-    return jsonify(user.to_json)
+    return jsonify(user.to_json())
 
 
 @app.route("/games", methods=["GET"])

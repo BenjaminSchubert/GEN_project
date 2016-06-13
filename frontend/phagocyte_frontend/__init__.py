@@ -5,7 +5,7 @@ from kivy.config import Config
 from phagocyte_frontend.views.screens.statistics import StatisticsScreen
 
 
-Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+Config.set('input', 'mouse', 'mouse, multitouch_on_demand')
 
 
 from kivy.app import App

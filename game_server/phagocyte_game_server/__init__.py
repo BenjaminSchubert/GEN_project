@@ -63,7 +63,7 @@ class AuthenticationError(Exception):
     :param msg: information about the error
     """
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: Dict):
         self.msg = msg
 
 
@@ -176,7 +176,7 @@ class GameProtocol(DatagramProtocol):
 
         task.LoopingCall(self.check_usage).start(60)
 
-    def authenticate(self, token: str) -> Tuple[str, str]:
+    def authenticate(self, token: str) -> Tuple[str, str, str]:
         """
         tries to authenticate the user against the authentication server
 
@@ -211,7 +211,7 @@ class GameProtocol(DatagramProtocol):
                 uid, name, color = self.authenticate(data.get("token"))
             except AuthenticationError as e:
                 self.logger.warning("User from {addr} tried to register with invalid token".format(addr=addr))
-                self.send_to(addr, dict(event=Event.ERROR, error=e.msg))
+                self.send_to(addr, dict(event=Event.ERROR, error=e.msg["error"], previous=Event.TOKEN))
                 return
 
         for player in self.players.values():
