@@ -9,8 +9,8 @@
 block_cipher = None
 
 
-a = Analysis(['../main.py'],
-             pathex=['/home/tellendil/git/heig-vd/gen/project/frontend/build'],
+a = Analysis(['../../frontend/main.py'],
+             pathex=['../build'],
              binaries=None,
              datas=None,
              hiddenimports=[],
@@ -29,7 +29,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          Tree("../phagocyte_frontend/kv", prefix="kv"),
+          Tree("../frontend/phagocyte_frontend/kv", prefix="kv"),
           name='phagocytes',
           debug=False,
           strip=True,
