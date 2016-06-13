@@ -102,11 +102,11 @@ class NetworkGameClient(DatagramProtocol):
                 else:
                     raise CredentialsException(data.get("error"))
 
-            Logger.error(data)
+            Logger.error(datagram)
         elif event_type is None:
-            Logger.error("The datagram doesn't have any event: ", data)
+            Logger.error("The datagram doesn't have any event: ", datagram)
         else:
-            Logger.error("Unhandled event type : data is ", data)
+            Logger.error("Unhandled event type : data is ", datagram)
 
     def send_token(self):
         """
