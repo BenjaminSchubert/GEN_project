@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Various commands for the runserver utility
 
@@ -7,6 +5,9 @@ These can be called through the manager and are useful for handling
 the state of the application
 """
 
+from typing import Tuple
+
+from flask import Flask
 from flask_script import Command, Option
 
 
@@ -24,13 +25,13 @@ class Server(Command):
 
     help = description = "Run Phagocyte Authentication Server"
 
-    def __init__(self, host, port, debug):
+    def __init__(self, host: str, port: int, debug: bool):
         super().__init__()
         self.port = port
         self.host = host
         self.debug = debug
 
-    def get_options(self):
+    def get_options(self) -> Tuple[Option]:
         """
         Lists all options available to the given command
 
@@ -43,7 +44,7 @@ class Server(Command):
         )
 
     # noinspection PyMethodOverriding
-    def run(self, app, host, port, debug):
+    def run(self, app: Flask, host: str, port: int, debug: bool):
         """
         Launches the application with the given parameters
 

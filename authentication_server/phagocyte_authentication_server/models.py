@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 """
 Models for the Phagocyte Application authentication
 """
@@ -12,6 +10,7 @@ from sqlalchemy import Column, INTEGER, FLOAT, BINARY, VARCHAR, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import validates, relationship
 
+from phagocyte_authentication_server.custom_types import json_object
 from phagocyte_authentication_server.sqlalchemy_session import SQLAlchemy
 
 
@@ -23,7 +22,7 @@ db = SQLAlchemy()
 Base = declarative_base()
 
 
-def random_color():
+def random_color() -> str:
     """
     get a new random color in hexadecimal
 
@@ -108,7 +107,7 @@ class Stats(Base):
     successful_hooks = Column(INTEGER, default=0)
     time_played = Column(FLOAT, default=0)
 
-    def to_json(self):
+    def to_json(self) -> json_object:
         return {
             "games_played": self.games_played,
             "games_won": self.games_won,
