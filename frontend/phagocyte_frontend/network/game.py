@@ -7,6 +7,7 @@ import enum
 import json
 from typing import Dict, Union
 
+import time
 import twisted.internet
 
 import phagocyte_frontend.network.twisted_reactor
@@ -18,7 +19,7 @@ twisted.internet._threadedselect = phagocyte_frontend.network.twisted_reactor
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()
 
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from twisted.internet.protocol import DatagramProtocol
 
 from kivy.logger import Logger
@@ -69,6 +70,7 @@ class NetworkGameClient(DatagramProtocol):
         self.game = game
         self.died = False
         self.tried_connection = False
+        self.last_timestamp = 0
 
     def startProtocol(self):
         """
@@ -92,6 +94,8 @@ class NetworkGameClient(DatagramProtocol):
         if event_type == Event.GAME_INFO:
             self.name = data["name"]
             self.game.start_game(self, data)
+            self.last_timestamp = time.time()
+            task.LoopingCall(self.check_server_alive).start(3)
         elif event_type == Event.STATE:
             self.game.update_state(data["updates"], data["deaths"])
         elif event_type == Event.FOOD:
@@ -106,6 +110,7 @@ class NetworkGameClient(DatagramProtocol):
             self.game.death()
         elif event_type == Event.ALIVE:
             self.game.handle_alives(data.get("alives"))
+            self.last_timestamp = time.time()
         elif event_type == Event.FINISHED:
             self.send_dict(event=Event.FINISHED)
             self.game.handle_win(data.get("win"))
@@ -147,6 +152,11 @@ class NetworkGameClient(DatagramProtocol):
 
         else:
             Logger.error("Got unknown error code {code}".format(code=code))
+
+    def check_server_alive(self):
+        if self.last_timestamp < time.time() - 10:
+            self.game.handle_error("Cannot reach game server anymore, sorry !")
+            self.last_timestamp = time.time()
 
     def send_token(self):
         """
