@@ -7,6 +7,7 @@
     map_width: map_width
     map_height: map_height
     min_radius: min_radius
+    win_size: win_size
     max_speed: max_speed
     eat_ratio: eat_ratio
     food_production_rate: food_production_rate
@@ -66,6 +67,15 @@
                 multiline: False
                 input_filter: "int"
                 hint_text: root.DEFAULT_MIN_RADIUS
+
+            Label:
+                text: "Winning size:"
+
+            TextInput:
+                id: win_size
+                multiline: False
+                input_filter: "int"
+                hint_text: root.DEFAULT_WIN_SIZE
 
             Label:
                 text: "Max phagocyte speed:"
