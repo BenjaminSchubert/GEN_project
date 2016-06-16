@@ -26,7 +26,7 @@ from twisted.internet import reactor, task
 from twisted.internet.error import CannotListenError
 from twisted.internet.protocol import DatagramProtocol
 
-from phagocyte_game_server.events import Event
+from phagocyte_game_server.events import Event, Error
 from phagocyte_game_server.game_objects import Bonus, BonusTypes, RandomPositionedGameObject, Bullet, Player,\
     RoundGameObject, GrabHook
 from phagocyte_game_server.custom_types import address, json_object
@@ -199,7 +199,12 @@ class GameProtocol(DatagramProtocol):
         """
         if data.get("event") != Event.TOKEN:
             self.logger.warning("User from {addr} not registered tried to gain access".format(addr=addr))
-            self.send_to(addr, dict(event=Event.ERROR, error="Client not registered"))
+            self.send_to(addr, dict(event=Event.ERROR, code=Error.NO_TOKEN))
+            return
+
+        elif len(self.players) >= self.max_capacity:
+            self.logger.info("Refusing user due to too much people")
+            self.send_to(addr, dict(event=Event.ERROR, code=Error.MAX_CAPACITY))
             return
 
         elif data.get("token") is None:
@@ -211,15 +216,14 @@ class GameProtocol(DatagramProtocol):
                 uid, name, color = self.authenticate(data.get("token"))
             except AuthenticationError as e:
                 self.logger.warning("User from {addr} tried to register with invalid token".format(addr=addr))
-                self.send_to(addr, dict(event=Event.ERROR, error=e.msg["error"], previous=Event.TOKEN))
+                self.send_to(addr, dict(event=Event.ERROR, error=e.msg["error"], code=Error.TOKEN_INVALID))
                 return
 
         for player in self.players.values():
             if player.name == name:
                 if time.time() - player.timestamp < 15:
                     self.logger.warning("User from {addr} tried to connect as a user already playing".format(addr=addr))
-                    self.send_to(addr, dict(
-                        event=Event.ERROR, error="Another user is already connected with the same username"))
+                    self.send_to(addr, dict(event=Event.ERROR, code=Error.DUPLICATE_USERNAME))
                     return
 
                 else:

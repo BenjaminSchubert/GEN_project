@@ -162,8 +162,11 @@ class GameManager:
         if data["name"] == "":
             raise ValueError("Need a name")
 
-        if not (2 < int(data["capacity"]) < 200):
+        if int(data["capacity"]) > 200:
             raise ValueError("Cannot handle that much users in a game")
+
+        if int(data["capacity"]) < 2:
+            raise ValueError("Cannot create a game with so few users")
 
         if int(data["map_width"]) < 500:
             raise ValueError("Cannot create a map with width smaller than 500")
