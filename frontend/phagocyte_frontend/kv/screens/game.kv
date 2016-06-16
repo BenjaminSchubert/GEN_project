@@ -128,7 +128,7 @@
 
     ProgressBar:
         id: health_bar
-        value: (world.main_player.size[0] - world.main_player.initial_size) / (self.parent.MAX_SIZE - world.main_player.initial_size) * 100
+        value: (world.main_player.size[0] - world.main_player.initial_size) / (self.parent.win_size - world.main_player.initial_size) * 100
         pos: self.parent.width - game_object.width/4 - 50, -20
         width: game_object.width / 4
 

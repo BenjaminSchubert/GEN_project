@@ -275,7 +275,7 @@ class GameInstance(Widget):
     """
     REFRESH_RATE = 1 / 60
     SCALE_RATIO = 8  # >= 1
-    MAX_SIZE = 1000
+    win_size = NumericProperty(1000)
     scale_ratio_util = NumericProperty(0)
     server = None
 
@@ -317,6 +317,8 @@ class GameInstance(Widget):
         self.server = server
 
         self.world.size = (data["max_x"], data["max_y"])
+
+        self.win_size = data["win_size"]
 
         self.world.main_player.set_position(data["x"], data["y"])
         self.world.main_player.color = get_color_from_hex(data["color"])

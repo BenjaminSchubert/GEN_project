@@ -17,6 +17,7 @@ class CreateGameScreen(AutoLoadableScreen):
     DEFAULT_MAP_WIDTH = "5000"
     DEFAULT_MAP_HEIGHT = "5000"
     DEFAULT_MIN_RADIUS = "50"
+    DEFAULT_WIN_SIZE = "500"
     DEFAULT_MAX_SPEED = "400"
     DEFAULT_EAT_RATIO = "1.2"
     DEFAULT_FOOD_PRODUCTION_RATE = "5"
@@ -36,6 +37,7 @@ class CreateGameScreen(AutoLoadableScreen):
                 map_width=self.map_width.text or self.DEFAULT_MAP_WIDTH,
                 map_height=self.map_height.text or self.DEFAULT_MAP_HEIGHT,
                 min_radius=self.min_radius.text or self.DEFAULT_MIN_RADIUS,
+                win_size=self.win_size.text or self.DEFAULT_WIN_SIZE,
                 max_speed=self.max_speed.text or self.DEFAULT_MAX_SPEED,
                 eat_ratio=self.eat_ratio.text or self.DEFAULT_EAT_RATIO,
                 food_production_rate=self.food_production_rate.text or self.DEFAULT_FOOD_PRODUCTION_RATE,

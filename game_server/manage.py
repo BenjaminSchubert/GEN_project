@@ -45,7 +45,7 @@ def parse_args(_args):
     node.add_argument("--token", help="Token used by the manager", required=True)
 
     for entry in ["capacity", "map_width", "min_radius", "food_production_rate",
-                  "map_height", "max_speed", "max_hit_count"]:
+                  "map_height", "max_speed", "max_hit_count", "win_size"]:
         node.add_argument("--" + entry, type=int)
 
     for entry in ["eat_ratio"]:

@@ -121,7 +121,7 @@ class GameProtocol(DatagramProtocol):
 
     def __init__(self, auth_host: str, auth_port: int, capacity: int, logger: logging.Logger, token: str, port: int,
                  map_height: int, map_width: int, max_speed: int, max_hit_count: int, eat_ratio: float, min_radius: int,
-                 food_production_rate: int):
+                 food_production_rate: int, win_size: int):
         self.players = dict()  # type: Dict[address, Player]
         self.moves = dict()  # type: Dict[address, Tuple[int, int]]
         self.deaths = set()  # type: Set[address]
@@ -152,7 +152,7 @@ class GameProtocol(DatagramProtocol):
 
         self.max_hit_count = max_hit_count  # type: int
         self.bonus_time = 10  # type: int
-        self.win_size = 1000  # type: int
+        self.win_size = win_size  # type: int
 
         self.last_time = time.time()  # type: int
 
@@ -231,7 +231,7 @@ class GameProtocol(DatagramProtocol):
             client = Player(uid, name, color, self.default_radius, self.max_x, self.max_y)
 
         self.send_to(addr, dict(
-            event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y,
+            event=Event.GAME_INFO, name=name, max_x=self.max_x, max_y=self.max_y, win_size=self.win_size,
             x=client.x, y=client.y, color=color, size=client.size, others=[p.to_json() for p in self.players.values()]
         ))
 
