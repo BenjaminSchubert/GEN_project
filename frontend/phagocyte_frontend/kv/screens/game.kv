@@ -111,13 +111,14 @@
 
     ProgressBar:
         id: health_bar
-        value: (self.parent.world.main_player.size[0] - self.parent.world.main_player.initial_size) / (self.parent.MAX_SIZE - self.parent.world.main_player.initial_size) * 100
+        value: (world.main_player.size[0] - world.main_player.initial_size) / (self.parent.MAX_SIZE - world.main_player.initial_size) * 100
         pos: self.parent.width - game_object.width/4 - 50, self.parent.height - 80
         width: game_object.width / 4
 
     Label:
-        text: root.bonus_label
-        pos: self.parent.health_bar.x - 200, self.parent.health_bar.y
+        text: world.main_player.current_bonus
+        pos: self.parent.width / 2 - self.width / 2, self.parent.health_bar.y
+        font_size: 30
         color: [1, 1, 1, 1]
 
     Label:

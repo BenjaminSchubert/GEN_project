@@ -1,4 +1,5 @@
 import enum
+from itertools import chain
 from math import atan2
 
 import time
@@ -67,8 +68,6 @@ class Player(BoundedWidget):
             return
         elif self.bonus == BonusTypes.SHIELD:
             self.remove_widget(self.shield)
-            # FIXME access to the game instance
-            # game_instance.bonus_label = "Shield"
 
         if bonus == BonusTypes.SHIELD:
             self.add_widget(self.shield)
@@ -95,6 +94,7 @@ class Player(BoundedWidget):
 
 class MainPlayer(Player):
     bonus_speedup = NumericProperty(0)
+    current_bonus = StringProperty("")
 
     def __init__(self, **kwargs):
         super().__init__(name=None, **kwargs)
@@ -176,6 +176,8 @@ class MainPlayer(Player):
             self.bonus_speedup = 1.5
         else:
             self.bonus_speedup = 1
+
+        self.current_bonus = BonusTypes(bonus).name if bonus is not None else ""
 
 
 class Food(BoundedWidget):
@@ -458,12 +460,10 @@ class GameInstance(Widget):
             self.world.players.pop(player[0])
             self.world.remove_widget(player[1])
 
-        best_players = sorted(self.world.players.values(), key=lambda x: x.size[0], reverse=True)
-
-        for i in range(len(best_players)):
-            if best_players[i].size[0] < self.world.main_player.size[0]:
-                best_players.insert(i, self.world.main_player)
-                break
+        best_players = sorted(
+            chain(self.world.players.values(), [self.world.main_player]),
+            key=lambda x: x.size[0], reverse=True
+        )
 
         for i in range(3):
             if len(best_players) <= i:
