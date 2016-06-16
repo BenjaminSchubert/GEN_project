@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from kivy.properties import StringProperty
 
+from phagocyte_frontend.network.authentication import CreationFailedException
 from phagocyte_frontend.views.screens import AutoLoadableScreen
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
@@ -15,9 +16,13 @@ class ParametersScreen(AutoLoadableScreen):
     color = StringProperty("#000000")
 
     def on_enter(self, *args):
-        infos = self.manager.client.get_account_info()
-        self.username = infos["username"]
-        self.color = infos["color"]
+        try:
+            infos = self.manager.client.get_account_info()
+        except ConnectionError:
+            self.manager.warn("Could not connect to server", title="Error", callback=self.manager.main_screen)
+        else:
+            self.username = infos["username"]
+            self.color = infos["color"]
 
     def validate_parameters(self):
         """
@@ -32,7 +37,10 @@ class ParametersScreen(AutoLoadableScreen):
         if self.newUserName.text != "":
             parameters["name"] = self.newUserName.text
 
-        self.manager.client.post_account_info(**parameters)
+        try:
+            self.manager.client.post_account_info(**parameters)
+        except ConnectionError:
+            self.manager.warn("Could not connect to server", title="Error")
 
         self.buttonChangeParameters.disabled = False
 
@@ -56,6 +64,11 @@ class ParametersScreen(AutoLoadableScreen):
                 "new_password": self.newPassword.text
             }
 
-            self.manager.client.post_account_info(**password)
+            try:
+                self.manager.client.post_account_info(**password)
+            except CreationFailedException as e:
+                self.manager.warn(str(e), title="Error")
+            except ConnectionError:
+                self.manager.warn("Could not connect to server", title="Error")
 
         self.buttonChangePassword.disabled = False

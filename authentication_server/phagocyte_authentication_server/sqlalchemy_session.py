@@ -25,12 +25,8 @@ class SQLAlchemy:
             app.extensions = {}
 
         app.extensions['sqlalchemy'] = self
-        pool_size = app.config.get('SQLALCHEMY_POOL_SIZE', 5)
-        max_overflow = app.config.get('SQLALCHEMY_MAX_OVERFLOW', 15)
 
-        self.engine = create_engine(
-            app.config['SQLALCHEMY_DATABASE_URI']#, pool_size=pool_size, #max_overflow=max_overflow # TODO : add back once on real database
-        )
+        self.engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
         self.session = scoped_session(sessionmaker(self.engine))
         app.teardown_appcontext(self.close_session)
 
