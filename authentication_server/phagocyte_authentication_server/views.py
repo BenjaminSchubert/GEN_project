@@ -9,6 +9,7 @@ import json
 import uuid
 
 import jwt
+import re
 import sqlalchemy.exc
 import sqlalchemy.orm
 from flask import request, jsonify, make_response
@@ -124,13 +125,27 @@ def change_account_parameters():
 
     :return: 200 OK
     """
-    received = json.loads(request.get_json())
+    received = request.get_json()
 
     if "color" in received:
-        current_identity.color = received["color"]
+        if re.match("^#[0-9A-Fa-f]{8}$", received["color"]):
+            current_identity.color = received["color"]
+        else:
+            return jsonify(error="invalid color format"), 400
 
-    if "name" in request.json:
-        current_identity.name = received["name"]
+    if "name" in received:
+        current_identity.username = received["name"]
+
+    if "new_password" in received:
+        if "old_password" not in received or not current_identity.check_password(received["old_password"]):
+            return jsonify(error="Old password incorrect"), 403
+
+        current_identity.password = received["new_password"]
+
+    try:
+        db.session.commit()
+    except sqlalchemy.exc.IntegrityError:
+        return jsonify(error="Username already taken"), 400
 
     return "", 200
 

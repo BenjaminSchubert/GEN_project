@@ -24,6 +24,8 @@ class RegisterScreen(AutoLoadableScreen):
             self.manager.client.register(self.username.text, self.password.text)
         except CredentialsException as e:
             self.manager.warn(str(e), title="Error")
+        except ConnectionError:
+            self.manager.warn("Could not connect to the server", title="Error")
         else:  # we already connect the user if his registration is correct
             self.manager.client.login(self.username.text, self.password.text)
             self.manager.warn("Welcome here !", callback=self.manager.main_screen)

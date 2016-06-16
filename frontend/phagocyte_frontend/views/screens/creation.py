@@ -45,5 +45,7 @@ class CreateGameScreen(AutoLoadableScreen):
             )
         except CreationFailedException as e:
             self.manager.warn(str(e), title="Error")
+        except ConnectionError:
+            self.manager.warn("Could not connect to the server", title="Error")
         else:
             self.manager.main_screen()

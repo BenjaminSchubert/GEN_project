@@ -44,19 +44,13 @@ class Client:
         return "http://{host}:{port}".format(host=self.host, port=self.port)
 
     @staticmethod
-    def create_credentials_data(username, password):
+    def hash_password(password):
         """
         Creates the data to send, containing the username and the hashed password.
 
-        :param username: the username to send.
         :param password: the password to hash and send.
         """
-        return {
-            "username": username,
-            "password": hashlib.sha512(
-                (hashlib.sha512(password.encode("utf-8")).hexdigest() + username).encode("utf-8")
-            ).hexdigest()
-        }
+        return hashlib.sha512(password.encode("utf-8")).hexdigest()
 
     def post_json(self, endpoint, **kwargs):
         """
@@ -64,19 +58,25 @@ class Client:
 
         :param endpoint: the relative path (relative to the base url).
         :param kwargs: the data to send as json.
+        :raise: ConnectionError: when unable to connect to the host
         """
         headers = {}
 
         if self.is_logged_in():
             headers["authorization"] = "JWT " + self.token
 
-        return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=kwargs)
+        try:
+            return requests.post(url=self.get_base_url() + endpoint, headers=headers, json=kwargs)
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError()
 
     def get_json_as_dict(self, endpoint):
         """
         Gets the data as dict from the server at the endpoint (the server should return a json for this endpoint).
 
         :param: endpoint: the relative path where to GET ("/auth", for example)
+        :raise ConnectionError: when unable to connect to the host
+        :raise CredentialsException: when the token has expired
         """
         def try_get():
             headers = {}
@@ -84,7 +84,10 @@ class Client:
             if self.is_logged_in():
                 headers["authorization"] = "JWT " + self.token
 
-            r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
+            try:
+                r = requests.get(url=self.get_base_url() + endpoint, headers=headers)
+            except requests.exceptions.ConnectionError:
+                raise ConnectionError()
 
             if r.status_code == requests.codes.unauthorized:
                 self.token = None
@@ -108,7 +111,7 @@ class Client:
         :param username: the username to use.
         :param password: the password to use.
         """
-        r = self.post_json(REGISTER_PATH, **self.create_credentials_data(username, password))
+        r = self.post_json(REGISTER_PATH, username=username, password=self.hash_password(password))
         self.username = username
         self.password = password
 
@@ -128,7 +131,7 @@ class Client:
         if password is None:
             password = self.password
 
-        r = self.post_json(AUTH_PATH, **self.create_credentials_data(username, password))
+        r = self.post_json(AUTH_PATH, username=username, password=self.hash_password(password))
 
         if r.status_code < 400:
             try:
@@ -161,7 +164,14 @@ class Client:
 
         :param kwargs: the data as dict to send as json
         """
-        self.post_json(endpoint=PARAMETERS_PATH, **kwargs)
+        if "new_password" in kwargs.keys():
+            kwargs["new_password"] = self.hash_password(kwargs["new_password"])
+            kwargs["old_password"] = self.hash_password(kwargs["old_password"])
+
+        r = self.post_json(endpoint=PARAMETERS_PATH, **kwargs)
+
+        if r.status_code != requests.codes.ok:
+            raise CreationFailedException(r.json()["error"])
 
     def get_account_info(self):
         """
