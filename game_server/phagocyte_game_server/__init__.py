@@ -533,18 +533,15 @@ class GameProtocol(DatagramProtocol):
 
                     if player2.collides_with(hook):
                         hook.hooked_player = player2
-                        hook.moves = 0
                         player1.successful_hooks += 1
                         break
 
                 else:
-                    hook.x = max(0, min(self.max_x, hook.x + 2 * player1.max_speed * hook.ratio_x * (1 / 30)))
-                    hook.y = max(0, min(self.max_y, hook.y + 2 * player1.max_speed * hook.ratio_y * (1 / 30)))
+                    hook.x = max(0, min(self.max_x, hook.x + 2 * player1.initial_max_speed * hook.ratio_x * (1 / 30)))
+                    hook.y = max(0, min(self.max_y, hook.y + 2 * player1.initial_max_speed * hook.ratio_y * (1 / 30)))
 
-                    if hook.moves >= 30:
+                    if (hook.x - player1.x) ** 2 + (hook.y - player1.y) ** 2 >= (2 * player1.size) ** 2:
                         player1.hook = None
-                    else:
-                        hook.moves += 1
 
             else:
                 # we need to move the players closer from each other
