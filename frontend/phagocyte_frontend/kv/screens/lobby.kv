@@ -1,7 +1,6 @@
 #:kivy 1.9.1
 
 <LobbyScreen>:
-
     BoxLayout:
         padding: 20
         spacing: 60
@@ -33,19 +32,6 @@
             size_hint: 0.5, 0.6
             pos_hint: {"y": 0.2}
 
-            Button:
-                text: "Create a new game"
-                text_size: self.width, None
-                halign: "center"
-                valign: "middle"
-                on_release: root.game_creation_process()
-
-            Button:
-                text: "Create a new user"
-                text_size: self.width, None
-                halign: "center"
-                valign: "middle"
-                on_release: root.user_creation_process()
 
             Button:
                 text: "Login"
@@ -55,7 +41,23 @@
                 on_release: root.user_login_process()
 
             Button:
-                text: "Modify accounts parameters"
+                text: "Register"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.user_creation_process()
+
+            Label:
+
+            Button:
+                text: "Create a new game"
+                text_size: self.width, None
+                halign: "center"
+                valign: "middle"
+                on_release: root.game_creation_process()
+
+            Button:
+                text: "Parameters"
                 text_size: self.width, None
                 halign: "center"
                 valign: "middle"

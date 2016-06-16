@@ -1,10 +1,11 @@
 import enum
+from itertools import chain
 from math import atan2
 
 import time
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.properties import NumericProperty, ListProperty
+from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
@@ -49,10 +50,11 @@ class Player(BoundedWidget):
     """
 
     """
-    def __init__(self, **kwargs):
+    def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.shield = Shield(self)
         self.timestamp = time.time()
+        self.name = name
         self.bonus = None
         self.hook = None
 
@@ -92,9 +94,10 @@ class Player(BoundedWidget):
 
 class MainPlayer(Player):
     bonus_speedup = NumericProperty(0)
+    current_bonus = StringProperty("")
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(name=None, **kwargs)
 
         self.initial_size = 0
         self.max_speed = 0
@@ -173,6 +176,8 @@ class MainPlayer(Player):
             self.bonus_speedup = 1.5
         else:
             self.bonus_speedup = 1
+
+        self.current_bonus = BonusTypes(bonus).name if bonus is not None else ""
 
 
 class Food(BoundedWidget):
@@ -274,6 +279,9 @@ class GameInstance(Widget):
     scale_ratio_util = NumericProperty(0)
     server = None
 
+    bonus_label = StringProperty("")
+    best_players = ListProperty(["", "", ""])
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.world.main_player.bind(center=self.follow_main_player)
@@ -315,6 +323,8 @@ class GameInstance(Widget):
 
         self.world.main_player.initial_size = data["size"]
         self.world.main_player.size = data["size"], data["size"]
+        self.world.main_player.name = data["name"]
+
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
         self.follow_main_player(self.world.main_player, None)
 
@@ -339,7 +349,7 @@ class GameInstance(Widget):
                     player = self.world.players[state["name"]]
 
                 else:
-                    player = Player()
+                    player = Player(name=state["name"])
                     player.color = get_color_from_hex(state["color"])
                     self.world.add_widget(player)
                     self.world.players[state["name"]] = player
@@ -435,7 +445,7 @@ class GameInstance(Widget):
             if player is not None:
                 player.timestamp = now
             else:
-                p = Player()
+                p = Player(name=alive["name"])
                 p.color = get_color_from_hex(alive["color"])
                 self.world.add_widget(p)
                 self.world.players[alive["name"]] = p
@@ -449,3 +459,15 @@ class GameInstance(Widget):
         for player in to_remove:
             self.world.players.pop(player[0])
             self.world.remove_widget(player[1])
+
+        best_players = sorted(
+            chain(self.world.players.values(), [self.world.main_player]),
+            key=lambda x: x.size[0], reverse=True
+        )
+
+        for i in range(3):
+            if len(best_players) <= i:
+                self.best_players[i] = ""
+            else:
+                name = best_players[i].name
+                self.best_players[i] = "{:<15.15}".format(name)
