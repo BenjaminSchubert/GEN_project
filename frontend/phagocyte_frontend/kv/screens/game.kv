@@ -1,5 +1,22 @@
 #:kivy 1.9.1
 
+
+<ProgressBar>:
+    canvas:
+        Color:
+            rgb: 1, 1, 1
+        BorderImage:
+            border: (12, 12, 12, 12)
+            pos: self.x, self.center_y - 12
+            size: self.width, 35
+            source: 'atlas://data/images/defaulttheme/progressbar_background'
+        BorderImage:
+            border: [int(min(self.width * (self.value / float(self.max)) if self.max else 0, 12))] * 4
+            pos: self.x, self.center_y - 12
+            size: self.width * (self.value / float(self.max)) if self.max else 0, 35
+            source: 'atlas://data/images/defaulttheme/progressbar'
+
+
 <Player>:
     size: 1, 1
     canvas:
@@ -112,7 +129,7 @@
     ProgressBar:
         id: health_bar
         value: (world.main_player.size[0] - world.main_player.initial_size) / (self.parent.MAX_SIZE - world.main_player.initial_size) * 100
-        pos: self.parent.width - game_object.width/4 - 50, self.parent.height - 80
+        pos: self.parent.width - game_object.width/4 - 50, -20
         width: game_object.width / 4
 
     Label:
@@ -141,6 +158,7 @@
         text: root.best_players[2]
         font_size: 25
         pos: self.parent.width - 180, self.parent.height - 205
+
 
 <DeathPopup>:
     title: "DEATH"

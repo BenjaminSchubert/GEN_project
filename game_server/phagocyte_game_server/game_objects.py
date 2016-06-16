@@ -195,6 +195,7 @@ class Bullet(RoundGameObject):
     def __init__(self, angle: float, player: Player):
         size = player.size / 100
         player.size -= size
+        player.radius = player.size / 2
         player.matter_lost += size
         player.bullets_shot += 1
 
