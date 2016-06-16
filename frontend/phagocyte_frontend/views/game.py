@@ -292,6 +292,12 @@ class GameInstance(Widget):
 
         self.events = [self.move_main_player, self.send_moves, self.send_bullets, self.move_bullets]
 
+    def _stop_game(self):
+        for event in self.events:
+            Clock.unschedule(event)
+
+        self.world.main_player.keyboard.release()
+
     def move_main_player(self, dt):
         self.world.main_player.move(dt)
 
@@ -404,17 +410,16 @@ class GameInstance(Widget):
             self.world.remove_bullet(bid)
 
     def death(self):
-        for event in self.events:
-            Clock.unschedule(event)
-
-        self.world.main_player.keyboard.release()
+        self._stop_game()
         self.parent.player_died()
 
     def handle_win(self, winner):
-        for event in self.events:
-            Clock.unschedule(event)
-        self.world.main_player.keyboard.release()
+        self._stop_game()
         self.parent.player_won(winner, winner == self.server.name)
+
+    def handle_error(self, error_message):
+        self._stop_game()
+        self.parent.handle_error(error_message)
 
     def redraw(self, *args):
         for static_objects in [self.world.food.values(), self.world.bonuses.values()]:

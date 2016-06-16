@@ -9,6 +9,7 @@ import enum
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
+@enum.unique
 class Event(enum.IntEnum):
     """
     Enumeration of all events valid in the game
@@ -24,3 +25,11 @@ class Event(enum.IntEnum):
     HOOK = 8
     ALIVE = 9
     FINISHED = 10
+
+
+@enum.unique
+class Error(enum.IntEnum):
+    TOKEN_INVALID = 0
+    MAX_CAPACITY = 1
+    NO_TOKEN = 2
+    DUPLICATE_USERNAME = 3

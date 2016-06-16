@@ -80,3 +80,6 @@ class GameScreen(AutoLoadableScreen):
         self.death_popup.dismiss()
         self.reset_game()
         self.setup_game()
+
+    def handle_error(self, error):
+        self.manager.warn(error, title="Error", callback=self.manager.main_screen)

@@ -5,6 +5,7 @@ Client-side classes to communicate with the game server.
 """
 import enum
 import json
+from typing import Dict, Union
 
 import twisted.internet
 
@@ -43,6 +44,14 @@ class Event(enum.IntEnum):
     FINISHED = 10
 
 
+@enum.unique
+class Error(enum.IntEnum):
+    TOKEN_INVALID = 0
+    MAX_CAPACITY = 1
+    NO_TOKEN = 2
+    DUPLICATE_USERNAME = 3
+
+
 class NetworkGameClient(DatagramProtocol):
     """
     Executes various actions related to messages related to client - game server communication.
@@ -58,6 +67,7 @@ class NetworkGameClient(DatagramProtocol):
         self.port = port
         self.auth_client = auth_client
         self.game = game
+        self.died = False
         self.tried_connection = False
 
     def startProtocol(self):
@@ -71,7 +81,12 @@ class NetworkGameClient(DatagramProtocol):
         """
         Executes various actions based on the type of the message.
         """
-        data = json.loads(datagram.decode("utf-8"))
+        try:
+            data = json.loads(datagram.decode("utf-8"))
+        except json.decoder.JSONDecodeError:
+            Logger.warning("Invalid json received : '{json}".format(json=datagram.decode("utf-8")))
+            return
+
         event_type = data.get("event", None)
 
         if event_type == Event.GAME_INFO:
@@ -86,6 +101,7 @@ class NetworkGameClient(DatagramProtocol):
         elif event_type == Event.BONUS:
             self.game.update_bonus(data.get("bonus", []), data.get("deleted", []))
         elif event_type == Event.DEATH:
+            self.died = True
             self.send_dict(event=Event.DEATH)
             self.game.death()
         elif event_type == Event.ALIVE:
@@ -94,19 +110,43 @@ class NetworkGameClient(DatagramProtocol):
             self.send_dict(event=Event.FINISHED)
             self.game.handle_win(data.get("win"))
         elif event_type == Event.ERROR:
-            if data.get("previous") == Event.TOKEN:
-                if not self.tried_connection:
-                    self.auth_client.login()
-                    self.send_token()
-                    self.tried_connection = True
-                else:
-                    raise CredentialsException(data.get("error"))
-
-            Logger.error(datagram)
+            self.handle_error(data)
         elif event_type is None:
-            Logger.error("The datagram doesn't have any event: ", datagram)
+            Logger.error("The datagram doesn't have any event: ", datagram.decode("utf-8"))
         else:
-            Logger.error("Unhandled event type : data is ", datagram)
+            Logger.error("Unhandled event type : data is ", datagram.decode("utf-8"))
+
+    def handle_error(self, data: Dict[str, Union[str, int]]) -> None:
+        """
+        Handles errors received from the client
+
+        :param data: data containing information about the error
+        """
+        code = data.get("code", None)
+
+        if code is None:
+            Logger.error("Got error without code : {data}".format(data=data))
+
+        elif code == Error.TOKEN_INVALID:
+            if not self.tried_connection:
+                self.auth_client.login()
+                self.send_token()
+                self.tried_connection = True
+            else:
+                raise CredentialsException(data.get("error"))
+
+        elif code == Error.NO_TOKEN:
+            if not self.died:
+                Logger.warning("Token needed to access game")
+
+        elif code == Error.MAX_CAPACITY:
+            self.game.handle_error("The game is complete, please choose another one")
+
+        elif code == Error.DUPLICATE_USERNAME:
+            self.game.handle_error("Another user with the same name is already playing here")
+
+        else:
+            Logger.error("Got unknown error code {code}".format(code=code))
 
     def send_token(self):
         """
