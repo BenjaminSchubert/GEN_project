@@ -67,6 +67,7 @@ class NetworkGameClient(DatagramProtocol):
         self.port = port
         self.auth_client = auth_client
         self.game = game
+        self.died = False
         self.tried_connection = False
 
     def startProtocol(self):
@@ -100,6 +101,7 @@ class NetworkGameClient(DatagramProtocol):
         elif event_type == Event.BONUS:
             self.game.update_bonus(data.get("bonus", []), data.get("deleted", []))
         elif event_type == Event.DEATH:
+            self.died = True
             self.send_dict(event=Event.DEATH)
             self.game.death()
         elif event_type == Event.ALIVE:
@@ -134,7 +136,8 @@ class NetworkGameClient(DatagramProtocol):
                 raise CredentialsException(data.get("error"))
 
         elif code == Error.NO_TOKEN:
-            Logger.warning("Token needed to access game")
+            if not self.died:
+                Logger.warning("Token needed to access game")
 
         elif code == Error.MAX_CAPACITY:
             self.game.handle_error("The game is complete, please choose another one")

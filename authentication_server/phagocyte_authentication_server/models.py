@@ -40,8 +40,8 @@ class User(Base):
 
     id = Column(INTEGER, primary_key=True, autoincrement=True)
     username = Column(VARCHAR(255), unique=True)
-    password = Column(BINARY(64), nullable=False)
-    salt = Column(BINARY(255), nullable=False)
+    password = Column(BINARY(64))
+    salt = Column(BINARY(255))
     color = Column(VARCHAR(6), default=random_color)
 
     stats = relationship("Stats", uselist=False, back_populates="user", cascade="delete")
