@@ -333,6 +333,7 @@ class GameProtocol(DatagramProtocol):
                         has_hit = True
 
                         if player.bonus == BonusTypes.SHIELD:
+                            deleted_bullets.append(bullet.uid)
                             break
 
                         player.hit_count += ceil((bullet.size / 10)**.5)
