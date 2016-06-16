@@ -4,12 +4,9 @@
 Various views for the Phagocyte authentication server
 """
 
-import json
-
-import uuid
-
 import jwt
 import re
+import requests
 import sqlalchemy.exc
 import sqlalchemy.orm
 from flask import request, jsonify, make_response
@@ -69,6 +66,8 @@ def create_game():
         app.games.create_game(request.get_json())
     except ValueError as e:
         return make_response(jsonify(error=str(e)), 400)
+    except requests.exceptions.ConnectionError:
+        return make_response(jsonify(error="Couldn't connect game server, please try again later"), 500)
 
     return "", 200
 
@@ -101,9 +100,7 @@ def register_manager():
 
     :return: token for authentication and information on which server to create if needed
     """
-    token = str(uuid.uuid4())
-    app.games.add_manager(token=token, **request.json)
-    return jsonify({"token": token})
+    return jsonify(dict(token=app.games.add_manager(**request.json)))
 
 
 @app.route("/games/manager", methods=["DELETE"])
