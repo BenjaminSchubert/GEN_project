@@ -3,6 +3,7 @@
 """
 Game Manager handling
 """
+import uuid
 
 import requests
 
@@ -28,13 +29,12 @@ class GameManager:
 
         :param host: hostname of the server
         :param port: port of the server
-        :param token: token to send to authenticate on the server
         :param capacity: maximum capacity of the server
         """
-        def __init__(self, host, port, token, capacity):
+        def __init__(self, host, port, capacity):
             self.host = host
             self.port = port
-            self.token = token
+            self.token = None
             self.capacity = capacity
             self.slots = 0
 
@@ -121,16 +121,23 @@ class GameManager:
 
         :param kwargs: arguments to define the game manager
         """
-        to_remove = None
+        old_manager = None
         for manager in self.managers:
             if manager.host == kwargs["host"] and manager.port == kwargs["port"]:
-                to_remove = manager
+                old_manager = manager
                 break
 
-        if to_remove is not None:
-            self.managers.remove(to_remove)
+        manager = self.Manager(**kwargs)
+        if old_manager is not None:
+            manager.token = old_manager.token
+            self.managers.remove(old_manager)
 
-        self.managers.append(self.Manager(**kwargs))
+        else:
+            manager.token = str(uuid.uuid4())
+
+        self.managers.append(manager)
+
+        return manager.token
 
     def remove_manager(self, token):
         """
