@@ -107,15 +107,16 @@ class Player(RandomPositionedGameObject):
     __slots__ = [
         "name", "color", "timestamp", "initial_size", "max_speed", "hit_count", "bonus", "bonus_callback",
         "hook", "grabbed_x", "grabbed_y", "timestamp", "uid", "matter_gained", "matter_lost", "players_eaten",
-        "bonuses_taken", "bullets_shot", "successful_hooks", "start_time"
+        "bonuses_taken", "bullets_shot", "successful_hooks", "start_time", "initial_max_speed",
     ]
 
-    def __init__(self, uid: int, name: str, color: str, radius: float, max_x: int, max_y: int):
+    def __init__(self, uid: str, name: str, color: str, radius: float, max_x: int, max_y: int):
         super().__init__(radius, max_x, max_y)
         self.initial_size = self.size  # type: int
         self.name = name  # type: str
         self.color = color  # type: str
         self.timestamp = time.time()  # type: int
+        self.initial_max_speed = 50 * self.initial_size / self.initial_size ** 0.5  # type: float
         self.max_speed = 50 * self.initial_size / self.size ** 0.5  # type: float
         self.hit_count = 0  # type: int
         self.bonus = None  # type: Bonus
@@ -143,7 +144,7 @@ class Player(RandomPositionedGameObject):
             "y": int(self.y),
             "size": self.size,
             "bonus": self.bonus,
-            "hook": self.hook.to_json() if self.hook is not None else self.hook
+            "hook": self.hook.to_json() if self.hook is not None else None
         }
 
     def get_stats(self, died=False, won=False) -> json_object:
