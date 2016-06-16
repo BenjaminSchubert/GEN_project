@@ -86,8 +86,12 @@ class Player(BoundedWidget):
         elif self.hook is None:
             self.hook = Hook(self)
             self.add_widget(self.hook)
+            # this is a hack to force the display of the hook if the player doesn't move. Couldn't find a better way
+            self.x += 1
 
         else:
+            # this is a hack to force the display of the hook if the player doesn't move. Couldn't find a better way
+            self.x += 1
             self.hook.end_x = hook["x"] + Window.size[0] / 2
             self.hook.end_y = hook["y"] + Window.size[1] / 2
 

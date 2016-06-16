@@ -461,7 +461,7 @@ class GameProtocol(DatagramProtocol):
 
         self.deaths |= deaths  # add the users dead this turn to the list of dead
 
-        if len(data):
+        if len(data) or len(corpses):
             self.send_all_players(dict(event=Event.STATE, updates=data, deaths=corpses))
 
     def handle_food(self):
