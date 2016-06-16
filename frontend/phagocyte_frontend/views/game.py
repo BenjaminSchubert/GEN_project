@@ -8,6 +8,7 @@ from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
 
+
 @enum.unique
 class BonusTypes(enum.IntEnum):
     """
@@ -48,10 +49,11 @@ class Player(BoundedWidget):
     """
 
     """
-    def __init__(self, **kwargs):
+    def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.shield = Shield(self)
         self.timestamp = time.time()
+        self.name = name
         self.bonus = None
         self.hook = None
 
@@ -95,7 +97,7 @@ class MainPlayer(Player):
     bonus_speedup = NumericProperty(0)
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(name=None, **kwargs)
 
         self.initial_size = 0
         self.max_speed = 0
@@ -276,7 +278,7 @@ class GameInstance(Widget):
     server = None
 
     bonus_label = StringProperty("")
-    best_players = ListProperty(["Test1", "Test2"])
+    best_players = ListProperty(["", "", ""])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -319,6 +321,8 @@ class GameInstance(Widget):
 
         self.world.main_player.initial_size = data["size"]
         self.world.main_player.size = data["size"], data["size"]
+        self.world.main_player.name = data["name"]
+
         self.scale_ratio_util = self.SCALE_RATIO ** 2 - data["size"]
         self.follow_main_player(self.world.main_player, None)
 
@@ -343,7 +347,7 @@ class GameInstance(Widget):
                     player = self.world.players[state["name"]]
 
                 else:
-                    player = Player()
+                    player = Player(name=state["name"])
                     player.color = get_color_from_hex(state["color"])
                     self.world.add_widget(player)
                     self.world.players[state["name"]] = player
@@ -356,10 +360,6 @@ class GameInstance(Widget):
             dead = self.world.players.pop(death)
             if dead:
                 self.world.remove_widget(dead)
-
-        # FIXME should be elsewhere (update_state is not called when 1 player is playing)
-        #print(list(self.world.players.values()).sort(key=lambda x: x.size[0], reverse=True))
-        #self.best_players = list(self.world.players.values()).sort(key=lambda x : x.size[0], reverse=True)
 
     def update_food(self, new, deleted):
         for entry in new:
@@ -443,7 +443,7 @@ class GameInstance(Widget):
             if player is not None:
                 player.timestamp = now
             else:
-                p = Player()
+                p = Player(name=alive["name"])
                 p.color = get_color_from_hex(alive["color"])
                 self.world.add_widget(p)
                 self.world.players[alive["name"]] = p
@@ -457,3 +457,17 @@ class GameInstance(Widget):
         for player in to_remove:
             self.world.players.pop(player[0])
             self.world.remove_widget(player[1])
+
+        best_players = sorted(self.world.players.values(), key=lambda x: x.size[0], reverse=True)
+
+        for i in range(len(best_players)):
+            if best_players[i].size[0] < self.world.main_player.size[0]:
+                best_players.insert(i, self.world.main_player)
+                break
+
+        for i in range(3):
+            if len(best_players) <= i:
+                self.best_players[i] = ""
+            else:
+                name = best_players[i].name
+                self.best_players[i] = "{:<15.15}".format(name)

@@ -113,7 +113,7 @@
         id: health_bar
         value: (self.parent.world.main_player.size[0] - self.parent.world.main_player.initial_size) / (self.parent.MAX_SIZE - self.parent.world.main_player.initial_size) * 100
         pos: self.parent.width - game_object.width/4 - 50, self.parent.height - 80
-        width: game_object.width/4
+        width: game_object.width / 4
 
     Label:
         text: root.bonus_label
@@ -121,15 +121,25 @@
         color: [1, 1, 1, 1]
 
     Label:
-        size: self.texture_size
-        pos: self.parent.width - game_object.width/4 + 50, self.parent.height - 100
+        pos: self.parent.width - 180, self.parent.height - 110
         markup: True
+        font_size: 30
         text: "[b]Best players[/b]"
 
     Label:
         text: root.best_players[0]
-        pos: self.parent.width - game_object.width/4, self.parent.height - 170
+        font_size: 25
+        pos: self.parent.width - 180, self.parent.height - 145
 
+    Label:
+        text: root.best_players[1]
+        font_size: 25
+        pos: self.parent.width - 180, self.parent.height - 175
+
+    Label:
+        text: root.best_players[2]
+        font_size: 25
+        pos: self.parent.width - 180, self.parent.height - 205
 
 <DeathPopup>:
     title: "DEATH"
