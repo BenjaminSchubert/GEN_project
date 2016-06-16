@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 """
 Game server manager for Phagocytes
 
@@ -37,9 +35,17 @@ class NotifierFlask(Flask):
     ports_used = None
 
     def setup_ports(self):
+        """
+        initializes which ports are available for this server
+        """
         self.ports_used = [False] * self.capacity
 
-    def next_available_port(self):
+    def next_available_port(self) -> int:
+        """
+        gets the next available port usable by the server
+
+        :return: the index of the next available port
+        """
         for index in range(len(self.ports_used)):
             if not self.ports_used[index]:
                 self.ports_used[index] = True
@@ -47,7 +53,7 @@ class NotifierFlask(Flask):
 
         raise FullCapacityException()
 
-    def get_token(self, host, port):
+    def get_token(self, host: str, port: int):
         """
         Get the server authentication token against the authentication server
 
@@ -65,7 +71,7 @@ class NotifierFlask(Flask):
             print("Couldn't contact authentication server")
             exit(2)
 
-    def run(self, host=None, port=None, debug=None, **options):
+    def run(self, host: str=None, port: int=None, debug: bool=None, **options):
         """
         Gets the token from the authentication server before launching Flask
 

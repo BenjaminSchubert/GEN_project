@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 """
 Definition of events that can be sent on the game
 """
@@ -29,6 +27,9 @@ class Event(enum.IntEnum):
 
 @enum.unique
 class Error(enum.IntEnum):
+    """
+    Enumeration of all errors that the server can throw to a player
+    """
     TOKEN_INVALID = 0
     MAX_CAPACITY = 1
     NO_TOKEN = 2

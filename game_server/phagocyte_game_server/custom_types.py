@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+"""
+Collection of custom types used in the server
+"""
+
 from typing import Tuple, Union, List, Dict
 
 
