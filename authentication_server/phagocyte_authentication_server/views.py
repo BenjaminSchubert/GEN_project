@@ -66,7 +66,7 @@ def create_game():
     """ Creates a new game """
     try:
         app.games.create_game(request.get_json())
-    except KeyError as e:
+    except ValueError as e:
         return make_response(jsonify(error=str(e)), 400)
 
     return "", 200

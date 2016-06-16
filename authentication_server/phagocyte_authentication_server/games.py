@@ -155,15 +155,47 @@ class GameManager:
             if manager.slots < manager.capacity:
                 break
         else:
-            raise KeyError("Not enough servers to handle a new game")
+            raise ValueError("Not enough servers to handle a new game")
 
         data["token"] = manager.token
 
-        name = data.get("name", None)
-        if name is None:
-            raise KeyError("Need a name")
+        if data["name"] == "":
+            raise ValueError("Need a name")
+
+        if not (2 < int(data["capacity"]) < 200):
+            raise ValueError("Cannot handle that much users in a game")
+
+        if int(data["map_width"]) < 500:
+            raise ValueError("Cannot create a map with width smaller than 500")
+
+        if int(data["map_height"]) < 500:
+            raise ValueError("Cannot create map with height smaller than 500")
+
+        if int(data["min_radius"]) < 1:
+            raise ValueError("The minimum radius must be at least 1")
+
+        if int(data["win_size"]) < int(data["min_radius"]):
+            raise ValueError("The size for winning must be greater than the default player's size")
+
+        if int(data["win_size"]) > int(data["map_width"]):
+            raise ValueError("The size for winning must be smaller than the map's width")
+
+        if int(data["win_size"]) > int(data["map_height"]):
+            raise ValueError("The size for winning must be smaller than the map's height")
+
+        if int(data["max_speed"]) < 1:
+            raise ValueError("The maximum speed must be positive")
+
+        if float(data["eat_ratio"]) <= 1:
+            raise ValueError("The eat ratio cannot be smaller than 1")
+
+        if float(data["food_production_rate"]) <= 0:
+            raise ValueError("The food production rate cannot be smaller than 0")
+
+        if int(data["max_hit_count"]) == 0:
+            raise ValueError("The maximum hit count cannot be 0")
 
         r = requests.post("http://{}:{}/games".format(manager.host, manager.port), json=data)
 
         if r.status_code != requests.codes.ok:
-            raise KeyError(r.json())
+            raise ValueError(r.json())

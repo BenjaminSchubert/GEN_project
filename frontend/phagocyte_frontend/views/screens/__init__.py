@@ -2,6 +2,8 @@
 
 
 from configparser import ConfigParser, Error
+from functools import partial
+
 import os
 
 from abc import ABCMeta
@@ -15,10 +17,6 @@ from phagocyte_frontend.views.popups import InfoPopup
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
-
-
-def noop(*_):
-    """ simple function that does nothing """
 
 
 class AutoLoadableScreen(Screen):
@@ -40,6 +38,7 @@ class PhagocyteScreenManager(ScreenManager):
     def __init__(self, **kw):
         super().__init__(**kw)
         self.config_parser = ConfigParser()
+        self.callback = None
 
         try:
             files_read = self.config_parser.read("config.cfg")
@@ -68,10 +67,14 @@ class PhagocyteScreenManager(ScreenManager):
         :param callback:
         :return:
         """
-        if callback is None:
-            callback = noop
-
         self.info_popup.msg = msg
         self.info_popup.title = title
-        self.info_popup.bind(on_dismiss=callback)
+        self.callback = partial(self.callback_handler, callback)
+        self.info_popup.bind(on_dismiss=self.callback)
         self.info_popup.open()
+
+    def callback_handler(self, callback, *args):
+        """ simple function that does nothing """
+        if callback is not None:
+            callback(*args)
+        self.info_popup.unbind(on_dismiss=self.callback)
