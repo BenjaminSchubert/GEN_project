@@ -3,6 +3,7 @@
 set -e
 
 
+rm -rf archives
 mkdir -p archives
 
 if which virtualenv && [ ! -d .env ]; then
@@ -17,8 +18,10 @@ pip install -r ../frontend/requirements.pip
 pip install -r ../authentication_server/requirements.pip
 pip install -r ../game_server/requirements.pip
 
-# frontend
+pip install typing || true
 
+
+# frontend
 pyinstaller frontend/phagocytes.windows.spec
 cp ../frontend/config.cfg dist/
 cp frontend/README dist/
