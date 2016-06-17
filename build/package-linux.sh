@@ -12,7 +12,7 @@ if which virtualenv && [ ! -d .env ]; then
 fi
 
 # install dependencies
-pip install cython
+pip install cython pyinstaller
 pip install -r ../frontend/requirements.pip
 pip install -r ../authentication_server/requirements.pip
 pip install -r ../game_server/requirements.pip

@@ -7,6 +7,7 @@ Runs the phagocyte client application
 from configparser import ConfigParser, Error
 
 import os
+import sys
 from kivy import Logger
 
 from phagocyte_frontend import Phagocyte
@@ -17,7 +18,13 @@ def get_config_parser():
     Gets the config parser
     """
     config_parser = ConfigParser()
-    config_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config.cfg")
+
+    if getattr(sys, 'frozen', False):
+        application_path = os.path.dirname(sys.executable)
+    else:
+        application_path = os.path.dirname(__file__)
+
+    config_file = os.path.join(os.path.abspath(application_path), "config.cfg")
 
     try:
         files_read = config_parser.read(config_file)
