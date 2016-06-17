@@ -8,6 +8,7 @@ See runserver.py for how to run the server
 
 
 import os
+import sys
 from flask import Flask
 from flask_jwt import JWT
 from flask_script import Manager
@@ -25,7 +26,12 @@ __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 app = Flask("phagocyte_auth")
 
 # Flask configuration
-app.config["CONFIG_PATH"] = os.environ.get("PHAGOCYTE_AUTH_SERVER", os.path.join(app.root_path, "config.cfg"))
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+else:
+    application_path = os.path.dirname(os.path.dirname(__file__))
+
+app.config["CONFIG_PATH"] = os.environ.get("PHAGOCYTE_AUTH_SERVER", os.path.join(application_path, "config.cfg"))
 app.config.from_pyfile(app.config["CONFIG_PATH"])
 
 # Database setup

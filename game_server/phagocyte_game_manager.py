@@ -104,7 +104,12 @@ class NotifierFlask(Flask):
 app = NotifierFlask("phagocytes_game_manager")
 
 # Flask configuration
-config_path = os.environ.get("PHAGOCYTE_GAMEMANAGER_SERVER", os.path.join(app.root_path, "config.cfg"))
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+else:
+    application_path = os.path.dirname(__file__)
+
+config_path = os.environ.get("PHAGOCYTE_GAMEMANAGER_SERVER", os.path.join(application_path, "config.cfg"))
 app.config.from_pyfile(config_path)
 app.setup_ports()
 
