@@ -58,6 +58,6 @@ rm -r phagocytes-game-mac
 
 mv phagocytes-game-mac.zip archives/
 
-
-rm -r .env
-
+if [ -d .env ]; then
+    rm -r .env
+fi

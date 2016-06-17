@@ -53,6 +53,6 @@ rm -r build
 
 mv phagocytes-game-linux archives/
 
-
-rm -r .env
-
+if [ -d .env ]; then
+    rm -r .env
+fi

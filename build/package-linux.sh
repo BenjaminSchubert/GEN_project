@@ -59,6 +59,6 @@ rm -r phagocytes-game-linux
 
 mv phagocytes-game-linux.zip archives/
 
-
-rm -r .env
-
+if [ -d .env ]; then
+    rm -r .env
+fi
