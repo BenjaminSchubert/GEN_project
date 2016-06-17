@@ -1,3 +1,7 @@
+"""
+Package containing the different views of the application
+"""
+
 import os
 
 

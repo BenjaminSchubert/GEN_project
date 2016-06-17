@@ -1,4 +1,6 @@
-#!/usr/bin/python3
+"""
+Main configuration for the Phagocyte Application
+"""
 
 from kivy.config import Config
 
@@ -26,7 +28,7 @@ class Phagocyte(App):
     """
     main kivy application
     """
-    def build(self):
+    def build(self) -> PhagocyteScreenManager:
         """
         Load all needed screens into the screen manager
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Regroups client-related exceptions.
 """
@@ -14,8 +12,8 @@ class CredentialsException(Exception):
     :param msg: What the exception is about.
     """
 
-    def __init__(self, msg):
-        self.msg = msg
+    def __init__(self, msg: str):
+        self.msg = msg  # type: str
 
     def __str__(self):
         return self.msg
