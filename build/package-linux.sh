@@ -19,7 +19,7 @@ pip install -r ../game_server/requirements.pip
 
 # frontend
 
-pyinstaller frontend/phagocytes.spec
+pyinstaller frontend/phagocytes.windows.spec
 cp ../frontend/config.cfg dist/
 cp frontend/README dist/
 

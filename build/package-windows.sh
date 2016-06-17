@@ -31,7 +31,7 @@ mv phagocytes-client-linux archives/
 
 
 # auth server
-pyinstaller auth-server/phagocytes-auth.spec
+pyinstaller auth-server/phagocytes-auth.windows.spec
 cp ../authentication_server/config.cfg dist/
 cp auth-server/README dist/
 
@@ -43,7 +43,7 @@ mv phagocytes-auth-linux archives/
 
 
 # game server
-pyinstaller game-server/phagocytes-game.spec
+pyinstaller game-server/phagocytes-game.windows.spec
 cp ../game_server/config.cfg dist/
 cp game-server/README dist/
 

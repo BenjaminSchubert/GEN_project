@@ -5,4 +5,3 @@ cython
 kivy
 pyenchant
 pillow
-hg+http://bitbucket.org/pygame/pygame
