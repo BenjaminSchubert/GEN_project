@@ -2,7 +2,7 @@
 
 set -e
 
-
+rm -rf archives
 mkdir -p archives
 
 if which virtualenv && [ ! -d .env ]; then
