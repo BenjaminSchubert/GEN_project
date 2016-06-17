@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 """
 Various views for the Phagocyte authentication server
 """
@@ -61,7 +59,9 @@ def games():
 
 @app.route("/games", methods=["POST"])
 def create_game():
-    """ Creates a new game """
+    """
+    Creates a new game
+    """
     try:
         app.games.create_game(request.get_json())
     except ValueError as e:
@@ -76,8 +76,6 @@ def create_game():
 def register_server():
     """
     Registers a new game server
-
-    :return: 200 OK
     """
     app.games.add_game(**request.json)
     return "", 200
@@ -85,7 +83,9 @@ def register_server():
 
 @app.route("/games/server", methods=["DELETE"])
 def delete_game():
-    """ removes the given game from the list of available games """
+    """
+    removes the given game from the list of available games
+    """
     try:
         app.games.remove_game(**request.json)
     except KeyError as e:
@@ -107,8 +107,6 @@ def register_manager():
 def delete_manager():
     """
     Removes a game manager from the list
-
-    :return: 200 OK if ok
     """
     app.games.remove_manager(request.get_json()["token"])
     return "", 200
@@ -119,8 +117,6 @@ def delete_manager():
 def change_account_parameters():
     """
     Changes the account parameters.
-
-    :return: 200 OK
     """
     received = request.get_json()
 

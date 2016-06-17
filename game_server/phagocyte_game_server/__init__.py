@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Phagocyte's game handler
 
@@ -76,13 +74,13 @@ def random_color() -> str:
     return "#%06x" % random.randint(0, 0xFFFFFF)
 
 
-def bonus_timeout(player: Player) -> None:
+def bonus_timeout(player: Player):
     """ sets the given bonus to None """
     player.bonus = None
     player.bonus_callback = None
 
 
-def register(auth_host: str, auth_port: int, **kwargs: Dict):
+def register(auth_host: str, auth_port: int, **kwargs: Dict) -> str:
     """
     registers the game server against the authentication server
 
@@ -116,12 +114,21 @@ class GameProtocol(DatagramProtocol):
     :param capacity: max capacity of the server
     :param logger: logger instance to use to report errors and other messages
     :param token: the token used to authenticate the server
+    :param port: port on which the server is listening
+    :param map_height: height of the map to handle
+    :param map_width: width of the map to handle
+    :param max_speed: maximum speed achievable by the players
+    :param max_hit_count: number of hits to take before loosing some matter
+    :param eat_ratio: size after which a player can eat another
+    :param min_radius: minimal size a player can have
+    :param food_production_rate: rate at which new food appears on the screen
+    :param win_size: size after which a player wins
     """
     death_message = json.dumps({"event": Event.DEATH}).encode("utf-8")
 
     def __init__(self, auth_host: str, auth_port: int, capacity: int, logger: logging.Logger, token: str, port: int,
                  map_height: int, map_width: int, max_speed: int, max_hit_count: int, eat_ratio: float, min_radius: int,
-                 food_production_rate: int, win_size: int):
+                 food_production_rate: float, win_size: int):
         self.players = dict()  # type: Dict[address, Player]
         self.moves = dict()  # type: Dict[address, Tuple[int, int]]
         self.deaths = set()  # type: Set[address]
@@ -364,10 +371,18 @@ class GameProtocol(DatagramProtocol):
 
         self.last_bullet_update = new_time
 
-    def throw_food(self, size_to_disptach, player_x, player_y, player_radius):
-        while size_to_disptach > 10:
-            size = random.randint(10, size_to_disptach)
-            size_to_disptach -= size
+    def throw_food(self, size_to_dispatch: float, player_x: float, player_y: float, player_radius: float):
+        """
+        Throwss some food around the player
+
+        :param size_to_dispatch: quantity of food to throw
+        :param player_x: position of the player on the x axis
+        :param player_y: position of the player on the y axis
+        :param player_radius: radius of the player
+        """
+        while size_to_dispatch > 10:
+            size = random.randint(10, size_to_dispatch)
+            size_to_dispatch -= size
             radius = size / 2
             f = RoundGameObject(radius)
             f.x = max(radius, (min(self.max_x - radius, random.randint(
@@ -665,7 +680,7 @@ class GameProtocol(DatagramProtocol):
         atexit.unregister(self.close)
 
 
-def runserver(port, auth_host, auth_port, name, capacity, debug, **kwargs):
+def runserver(port: int, auth_host: str, auth_port: int, name: str, capacity: int, debug: bool, **kwargs):
     """
     launches the game server
 
@@ -675,6 +690,7 @@ def runserver(port, auth_host, auth_port, name, capacity, debug, **kwargs):
     :param name: name of the game server
     :param capacity: capacity of the game server
     :param debug: whether to turn on debugging or not
+    :param kwargs: additional arguments to pass to the GameProtocol
     """
     logger = create_logger(name, port, debug)
 

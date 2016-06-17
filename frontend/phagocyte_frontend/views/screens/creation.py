@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+"""
+Screen for the creation of a new game
+"""
 
 from kivy.properties import StringProperty
 
@@ -10,6 +12,9 @@ __author__ = "Sébastien Boson <sebastboson@gmail.com>"
 
 
 class CreateGameScreen(AutoLoadableScreen):
+    """
+    Screen for the creation of a new game
+    """
     screen_name = "creation"
 
     DEFAULT_NAME = StringProperty("Game")
@@ -24,6 +29,11 @@ class CreateGameScreen(AutoLoadableScreen):
     DEFAULT_MAX_HIT_COUNT = "10"
 
     def on_enter(self, *args):
+        """
+        Sets the name of the game to the name of the player when entering
+
+        :param args: additional arguments
+        """
         self.DEFAULT_NAME = self.manager.client.username + "'s game"
 
     def game_creation(self):

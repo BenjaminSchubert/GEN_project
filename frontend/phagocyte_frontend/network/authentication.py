@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Contains client-related classes used to interact with the authentication server.
 """

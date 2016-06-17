@@ -1,4 +1,6 @@
-__author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
+"""
+Statistics screen
+"""
 
 from kivy.properties import StringProperty
 
@@ -6,7 +8,13 @@ from phagocyte_frontend.network.authentication import CreationFailedException
 from phagocyte_frontend.views.screens import AutoLoadableScreen
 
 
+__author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
+
+
 class StatisticsScreen(AutoLoadableScreen):
+    """
+    Screen to show game statistics to the player
+    """
     screen_name = "statistics"
 
     games_played = StringProperty()
@@ -21,6 +29,11 @@ class StatisticsScreen(AutoLoadableScreen):
     time_played = StringProperty()
 
     def on_enter(self, *args):
+        """
+        On enter will fetch statistics for the logged in player
+
+        :param args: additional arguments
+        """
         try:
             stats = self.manager.client.get_account_statistics()
         except CreationFailedException as e:

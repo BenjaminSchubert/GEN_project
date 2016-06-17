@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-
+"""
+Screen for the login of the user
+"""
 
 from phagocyte_frontend.exceptions import CredentialsException
 from phagocyte_frontend.views.screens import AutoLoadableScreen

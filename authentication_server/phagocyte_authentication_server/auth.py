@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
-
 """
 Authentication for Phagocyte. Here are defined various authentication
 related functions, mostly linked to JWT
 """
+
+from typing import Dict
 
 import sqlalchemy.orm
 
@@ -13,7 +13,7 @@ from phagocyte_authentication_server.models import User, db
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
-def authenticate(username, password):
+def authenticate(username: str, password: str):
     """
     authenticates a user
 
@@ -31,7 +31,7 @@ def authenticate(username, password):
         return user
 
 
-def identity(payload):
+def identity(payload: Dict):
     """
     get the user identified by the given payload
 

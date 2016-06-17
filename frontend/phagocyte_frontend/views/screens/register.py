@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-
+"""
+Register screen
+"""
 
 from phagocyte_frontend.exceptions import CredentialsException
 from phagocyte_frontend.views.screens import AutoLoadableScreen

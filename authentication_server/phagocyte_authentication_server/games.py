@@ -1,11 +1,14 @@
-#!/usr/bin/python3
-
 """
 Game Manager handling
 """
+
 import uuid
+from typing import Dict
 
 import requests
+from flask import Flask
+
+from phagocyte_authentication_server.custom_types import json_object
 
 
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
@@ -31,27 +34,35 @@ class GameManager:
         :param port: port of the server
         :param capacity: maximum capacity of the server
         """
-        def __init__(self, host, port, capacity):
-            self.host = host
-            self.port = port
-            self.token = None
-            self.capacity = capacity
-            self.slots = 0
+        def __init__(self, host: str, port: int, capacity: int):
+            self.host = host  # type: str
+            self.port = port  # type: int
+            self.token = None  # type: str
+            self.capacity = capacity  # type: int
+            self.slots = 0  # type: int
 
     class Game:
         """
         Representation of a game
+
+        :param name: name of the game
+        :param token: authentication token for this game
+        :param capacity: maximum capacity this game can handle
+        :param ip: ip to connect to the game
+        :param port: port to connect to the game
+        :param manager: manager responsible for this game
+        :param kwargs: additional keyword arguments
         """
-        def __init__(self, name, token, capacity, ip, port, manager, **kwargs):
-            self.name = name
-            self.token = token
-            self.max_capacity = capacity
-            self.active_users = 0
-            self.ip = ip
-            self.port = port
+        def __init__(self, name: str, token: str, capacity: int, ip: str, port: int, manager, **kwargs):
+            self.name = name  # type: str
+            self.token = token  # type: str
+            self.max_capacity = capacity  # type: int
+            self.active_users = 0  # type: int
+            self.ip = ip  # type: str
+            self.port = port  # type: int
             self.manager = manager
 
-        def to_json(self):
+        def to_json(self) -> json_object:
             return {
                 "name": self.name,
                 "ip": self.ip,
@@ -61,11 +72,11 @@ class GameManager:
     games = {}
     managers = []
 
-    def __init__(self, app=None):
+    def __init__(self, app: Flask=None):
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app):
+    def init_app(self, app: Flask):
         """
         Registers the GameManager on Flask
 
@@ -75,9 +86,10 @@ class GameManager:
 
     def add_game(self, **kwargs):
         """
+        adds a new game
 
-        :param kwargs:
-        :return:
+        :param kwargs: parameter of the game
+        :raise ValueError: if no manager exist for this game
         """
         manager = None
 
@@ -92,7 +104,15 @@ class GameManager:
 
         manager.slots += 1
 
-    def remove_game(self, ip, port, token):
+    def remove_game(self, ip: str, port: int, token: str):
+        """
+        Removes the given game from the list of available games
+
+        :param ip: ip on which the game was listening
+        :param port: port on which the game was listening
+        :param token: token authenticating the game
+        :raise KeyError: if the game is not found or couldn't be deleted
+        """
         game = self.games.get((ip, port), None)
 
         if game is None:
@@ -115,11 +135,12 @@ class GameManager:
             if r.status_code != requests.codes.ok:
                 raise KeyError(r.json())
 
-    def add_manager(self, **kwargs):
+    def add_manager(self, **kwargs) -> str:
         """
         Adds a new game manager
 
         :param kwargs: arguments to define the game manager
+        :return the token of the manager that was added
         """
         old_manager = None
         for manager in self.managers:
@@ -139,7 +160,7 @@ class GameManager:
 
         return manager.token
 
-    def remove_manager(self, token):
+    def remove_manager(self, token: str):
         """
         removes the given manager from the list of active managers
 
@@ -154,9 +175,12 @@ class GameManager:
         if to_remove is not None:
             self.managers.remove(to_remove)
 
-    def create_game(self, data):
+    def create_game(self, data: Dict):
         """
         creates a new game on the first available game server
+
+        :param data: data used to create the new game
+        :raise ValueError: if one data is not valid
         """
         for manager in self.managers:
             if manager.slots < manager.capacity:

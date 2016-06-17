@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-
+"""
+Package containing the lobby screen
+"""
 
 from kivy.adapters.dictadapter import DictAdapter
 from kivy.logger import Logger
@@ -18,22 +19,24 @@ from phagocyte_frontend.views.screens.statistics import StatisticsScreen
 __author__ = "Benjamin Schubert <ben.c.schubert@gmail.com>"
 
 
-data = [{'text': str(i), 'is_selected': False} for i in range(100)]
-
-
 class GameListItemButton(ListItemButton):
     """
     Get the list of game servers
+
+    :param ip: ip of the server
+    :param port: port of the server
+    :param kwargs: additional arguments
     """
-    def __init__(self, ip, port, **kwargs):
+    def __init__(self, ip: str, port: int, **kwargs):
         super().__init__(**kwargs)
         self.ip = ip
         self.port = port
 
+    # noinspection PyUnusedLocal
     @classmethod
     def display_converter(cls, row_index, entry):
         """
-        display a game server infos
+        display a game server information
 
         :param row_index: index of the server
         :param entry: values
@@ -50,26 +53,32 @@ class GameListItemButton(ListItemButton):
 class LobbyScreen(AutoLoadableScreen):
     """
     The main lobby screen
+
+    :param kwargs: additional keyword arguments
     """
     screen_name = "lobby"
+
     game_list = DictAdapter(
         data={}, cls=GameListItemButton, args_converter=GameListItemButton.display_converter,
         allow_empty_selection=False
     )
 
-    def __init__(self, **kw):
-        super().__init__(**kw)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         # update the game list instantly (next frame)
         Clock.schedule_once(self.update_game_list)
         # update the game list every 5 seconds
         Clock.schedule_interval(self.update_game_list, 5)
 
     def update_game_list(self, _):
-        """ Updates the game list. """
+        """
+        Updates the game list.
+
+        :param _: unused argument
+        """
         try:
             self.game_list.data = self.manager.client.get_games()
         except exceptions.ConnectionError:
-            # FIXME do not use a popover but an error log in gui instead
             self.manager.warn("Cannot connect to server", title="Error")
             Logger.error("Cannot connect to server")
 
@@ -119,4 +128,7 @@ class LobbyScreen(AutoLoadableScreen):
             self.manager.current = StatisticsScreen.screen_name
 
     def play(self):
+        """
+        moves the player to the game
+        """
         self.manager.current = "game"

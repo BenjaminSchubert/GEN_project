@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
-
 """
 This module contains class representing each type of in game objects
 """
+
 import enum
 import itertools
-
+from math import sin, cos
 import random
 import time
-
-from math import sin, cos
 
 from phagocyte_game_server.custom_types import json_object
 
@@ -147,8 +144,13 @@ class Player(RandomPositionedGameObject):
             "hook": self.hook.to_json() if self.hook is not None else None
         }
 
-    def get_stats(self, died=False, won=False) -> json_object:
-        """ get the statistics about the current player """
+    def get_stats(self, died: bool=False, won: bool=False) -> json_object:
+        """
+        get the statistics about the current player
+
+        :param died: whether this player died or not
+        :param won: whether the player won or not
+        """
         return {
             "death": died,
             "won": won,
@@ -189,6 +191,9 @@ class Player(RandomPositionedGameObject):
 class Bullet(RoundGameObject):
     """
     Represents a bullet in game
+
+    :param angle: angle at which the bullet is moving
+    :param player: player that shot the bullet
     """
     __slots__ = ["uid", "color", "speed_x", "speed_y", "player"]
     id_counter = itertools.count()  # type: itertools.count
@@ -229,6 +234,9 @@ class Bullet(RoundGameObject):
 class Bonus(RandomPositionedGameObject):
     """
     Bonus object a user can take
+
+    :param max_x: maximum position on the x axis where the bonus can be
+    :param max_y maximum position on the y axis where the bonus can be
     """
     __slots__ = ["bonus"]
 
@@ -242,6 +250,9 @@ class Bonus(RandomPositionedGameObject):
 class GrabHook(GameObject):
     """
     Object representing the hook a player can throw to grab another player to him
+
+    :param player: player that shot the hook
+    :param angle: angle at which the hook was thrown
     """
     __slots__ = ["ratio_x", "ratio_y", "hooked_player", "moves"]
 
@@ -254,7 +265,7 @@ class GrabHook(GameObject):
         self.hooked_player = None  # type: Player
         self.moves = 0  # type: int
 
-    def to_json(self):
+    def to_json(self) -> json_object:
         """ transforms the object to a dictionary to be sent on the wire """
         return {
             "x": int(self.x),
