@@ -28,9 +28,9 @@ cp frontend/README dist/
 
 rm -r build
 
-mv dist phagocytes-client-linux
+mv dist phagocytes-client-windows
 
-mv phagocytes-client-linux archives/
+mv phagocytes-client-windows archives/
 
 
 # auth server
@@ -40,9 +40,9 @@ cp auth-server/README dist/
 
 rm -r build
 
-mv dist phagocytes-auth-linux
+mv dist phagocytes-auth-windows
 
-mv phagocytes-auth-linux archives/
+mv phagocytes-auth-windows archives/
 
 
 # game server
@@ -50,11 +50,11 @@ pyinstaller game-server/phagocytes-game.windows.spec
 cp ../game_server/config.cfg dist/
 cp game-server/README dist/
 
-mv dist phagocytes-game-linux
+mv dist phagocytes-game-windows
 
 rm -r build
 
-mv phagocytes-game-linux archives/
+mv phagocytes-game-windows archives/
 
 if [ -d .env ]; then
     rm -r .env

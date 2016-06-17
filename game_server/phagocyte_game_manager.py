@@ -90,10 +90,14 @@ class NotifierFlask(Flask):
 
         :param kwargs: arguments to pass to the executable
         """
-        cmd = [
-            sys.executable, "manage.py", "node", "-p", str(self.config["PORT_GAMESERVER"] + self.next_available_port()),
-            "-a", str(app.config["AUTH_SERVER"]), "--auth-port", str(app.config["AUTH_SERVER_PORT"]),
-        ] + [entry for entries in [["--" + key, item] for key, item in kwargs.items()] for entry in entries]
+        cmd = [sys.executable]
+        if not getattr(sys, 'frozen', False):
+            cmd.append("manage.py")
+        cmd.extend(
+            [
+                "node", "-p", str(self.config["PORT_GAMESERVER"] + self.next_available_port()),
+                "-a", str(app.config["AUTH_SERVER"]), "--auth-port", str(app.config["AUTH_SERVER_PORT"]),
+            ] + [entry for entries in [["--" + key, item] for key, item in kwargs.items()] for entry in entries])
 
         if self.debug:
             cmd.append("-d")
