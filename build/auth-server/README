@@ -1,0 +1,16 @@
+## Installation
+
+Le serveur d'authentification doit être le premier à être lancé
+
+Quelques configurations sont disponibles dans le fichier config.cfg disponible à côté du binaire.
+
+Ces configurations sont :
+
+    * SECRET_KEY, soit la clé secrète utilisée par l'application, afin de sécuriser les communications
+    * SQLALCHEMY_DATABASE_URI, qui est l'URI pour accéder à la base de donnée SQLite
+
+
+Afin de lancer le serveur, il faut exécuter la commande :
+
+    `phagocytes-auth -p ${port} -h ${host}`
+

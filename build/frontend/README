@@ -1,0 +1,16 @@
+## Installation
+
+Le client est le dernier à être lancé
+
+Quelques configurations sont disponibles dans le fichier config.cfg disponible à côté du binaire.
+
+Ces configurations sont :
+
+    * host: le host du serveur d'authentification sur lequel le jeu doit se connecter
+    * port: le port sur lequel le serveur d'authentification écoute
+
+dans la section "server"
+
+Lancer le serveur s'exécute ainsi :
+
+    `phagocytes`

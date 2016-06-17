@@ -1,0 +1,17 @@
+## Installation
+
+Le serveur de jeu doit être le premier à être lancé
+
+Quelques configurations sont disponibles dans le fichier config.cfg disponible à côté du binaire.
+
+Ces configurations sont :
+
+    * AUTH_SERVER, le FQDN ou l'address IP du serveur d'authentification
+    * AUTH_SERVER_PORT, le port sur lequel le serveur d'authentification écoute
+    * PORT_GAMESERVER, le premier port disponible pour l'application
+
+
+Lancer le serveur s'exécute ainsi :
+
+    `phagocytes-game -p ${port} -h ${host}`
+
