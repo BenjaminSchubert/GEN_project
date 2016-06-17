@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+"""
+Parameter's screen
+"""
+
 from kivy.properties import StringProperty
 
 from phagocyte_frontend.network.authentication import CreationFailedException
@@ -16,6 +19,11 @@ class ParametersScreen(AutoLoadableScreen):
     color = StringProperty("#000000")
 
     def on_enter(self, *args):
+        """
+        fetches account information from the server on enter
+
+        :param args: additional arguments
+        """
         try:
             infos = self.manager.client.get_account_info()
         except ConnectionError:

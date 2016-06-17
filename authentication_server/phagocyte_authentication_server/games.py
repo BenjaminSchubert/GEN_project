@@ -51,8 +51,9 @@ class GameManager:
         :param ip: ip to connect to the game
         :param port: port to connect to the game
         :param manager: manager responsible for this game
+        :param kwargs: additional keyword arguments
         """
-        def __init__(self, name: str, token: str, capacity: int, ip: str, port: int, manager):
+        def __init__(self, name: str, token: str, capacity: int, ip: str, port: int, manager, **kwargs):
             self.name = name  # type: str
             self.token = token  # type: str
             self.max_capacity = capacity  # type: int

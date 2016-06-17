@@ -7,7 +7,7 @@ from itertools import chain
 from math import atan2
 
 import time
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Any
 from typing import Tuple
 
 from kivy.clock import Clock
@@ -651,7 +651,7 @@ class GameInstance(Widget):
             self.world.remove_bullet(bullet)
 
     # noinspection PyUnusedLocal
-    def _on_mouse_down(self, window: Window, x: float, y: float, button: str, modifiers: Dict[str, any]):
+    def _on_mouse_down(self, window: Window, x: float, y: float, button: str, modifiers: Dict[str, Any]):
         """
         Event fired when the mouse is pressed
 

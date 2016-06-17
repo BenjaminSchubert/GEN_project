@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+"""
+Defines the various api path
+"""
 
 __author__ = "Basile Vu <basile.vu@gmail.com>"
 

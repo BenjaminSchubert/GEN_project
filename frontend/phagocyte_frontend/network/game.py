@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-
 """
 Client-side classes to communicate with the game server.
 """
+
 import enum
 import json
 from typing import Dict, Union
@@ -32,6 +31,9 @@ REACTOR = reactor
 
 @enum.unique
 class Event(enum.IntEnum):
+    """
+    Events that a client can receive
+    """
     ERROR = 0
     TOKEN = 1
     GAME_INFO = 2
@@ -47,6 +49,9 @@ class Event(enum.IntEnum):
 
 @enum.unique
 class Error(enum.IntEnum):
+    """
+    Error that a client can receive
+    """
     TOKEN_INVALID = 0
     MAX_CAPACITY = 1
     NO_TOKEN = 2
@@ -60,6 +65,7 @@ class NetworkGameClient(DatagramProtocol):
     :param host: the ip of the server
     :param port: the port of the server
     :param auth_client: the client handling authentication
+    :param game: game instance
     """
     name = None
 
