@@ -2,6 +2,7 @@
 
 set -e
 
+
 mkdir -p archives
 
 if which virtualenv && [ ! -d .env ]; then
@@ -18,17 +19,15 @@ pip install -r ../game_server/requirements.pip
 
 # frontend
 
-pyinstaller frontend/phagocytes.spec
+pyinstaller frontend/phagocytes.windows.spec
 cp ../frontend/config.cfg dist/
 cp frontend/README dist/
 
-mv dist phagocytes-client-mac
-zip -r phagocytes-client-mac.zip phagocytes-client-mac/
+rm -r build
 
-rm -r build 
-rm -r phagocytes-client-mac
+mv dist phagocytes-client-linux
 
-mv phagocytes-client-mac.zip archives/
+mv phagocytes-client-linux archives/
 
 
 # auth server
@@ -36,13 +35,11 @@ pyinstaller auth-server/phagocytes-auth.spec
 cp ../authentication_server/config.cfg dist/
 cp auth-server/README dist/
 
-mv dist phagocytes-auth-mac
-zip -r phagocytes-auth-mac.zip phagocytes-auth-mac/
-
 rm -r build
-rm -r phagocytes-auth-mac
 
-mv phagocytes-auth-mac.zip archives/
+mv dist phagocytes-auth-linux
+
+mv phagocytes-auth-linux archives/
 
 
 # game server
@@ -50,13 +47,11 @@ pyinstaller game-server/phagocytes-game.spec
 cp ../game_server/config.cfg dist/
 cp game-server/README dist/
 
-mv dist phagocytes-game-mac
-zip -r phagocytes-game-mac.zip phagocytes-game-mac/
+mv dist phagocytes-game-linux
 
 rm -r build
-rm -r phagocytes-game-mac
 
-mv phagocytes-game-mac.zip archives/
+mv phagocytes-game-linux archives/
 
 
 rm -r .env
